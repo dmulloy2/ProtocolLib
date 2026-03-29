@@ -19,46 +19,43 @@ class WrappedServerboundSetCreativeModeSlotPacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundSetCreativeModeSlotPacket w = new WrappedServerboundSetCreativeModeSlotPacket();
-        w.setSlotNum((short) 5);
-        w.setItemStack(new ItemStack(Material.STONE));
+    void testAllArgsCreate() {
+        ItemStack item = new ItemStack(Material.DIAMOND_SWORD);
+        WrappedServerboundSetCreativeModeSlotPacket w = new WrappedServerboundSetCreativeModeSlotPacket((short) 5, item);
 
         assertEquals(PacketType.Play.Client.SET_CREATIVE_SLOT, w.getHandle().getType());
 
         ServerboundSetCreativeModeSlotPacket p = (ServerboundSetCreativeModeSlotPacket) w.getHandle().getHandle();
 
         assertEquals(5, p.slotNum());
-        assertNotNull(p.itemStack());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ServerboundSetCreativeModeSlotPacket nmsPacket = new ServerboundSetCreativeModeSlotPacket(
-                5, net.minecraft.world.item.ItemStack.EMPTY
-        );
+    void testNoArgsCreate() {
+        WrappedServerboundSetCreativeModeSlotPacket w = new WrappedServerboundSetCreativeModeSlotPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundSetCreativeModeSlotPacket wrapper = new WrappedServerboundSetCreativeModeSlotPacket(container);
+        assertEquals(PacketType.Play.Client.SET_CREATIVE_SLOT, w.getHandle().getType());
 
-        assertEquals((short) 5, wrapper.getSlotNum());
-        assertNotNull(wrapper.getItemStack());
+        ServerboundSetCreativeModeSlotPacket p = (ServerboundSetCreativeModeSlotPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.slotNum());
     }
 
     @Test
     void testModifyExistingPacket() {
+        ItemStack item = new ItemStack(Material.STONE);
         ServerboundSetCreativeModeSlotPacket nmsPacket = new ServerboundSetCreativeModeSlotPacket(
-                5, net.minecraft.world.item.ItemStack.EMPTY
-        );
+                5, net.minecraft.world.item.ItemStack.EMPTY);
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSetCreativeModeSlotPacket wrapper = new WrappedServerboundSetCreativeModeSlotPacket(container);
 
-        wrapper.setItemStack(new ItemStack(Material.STONE, 3));
+        assertEquals(5, wrapper.getSlotNum());
 
-        assertEquals((short) 5, wrapper.getSlotNum());
-        assertNotNull(wrapper.getItemStack());
-        assertEquals(Material.STONE, wrapper.getItemStack().getType());
+        wrapper.setSlotNum((short) 10);
+        wrapper.setItemStack(item);
+
+        assertEquals(10, nmsPacket.slotNum());
     }
 
     @Test

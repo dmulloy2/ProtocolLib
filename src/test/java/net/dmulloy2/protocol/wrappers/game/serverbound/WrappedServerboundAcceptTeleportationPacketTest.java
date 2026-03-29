@@ -17,25 +17,25 @@ class WrappedServerboundAcceptTeleportationPacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundAcceptTeleportationPacket w = new WrappedServerboundAcceptTeleportationPacket();
-        w.setId(42);
+    void testAllArgsCreate() {
+        WrappedServerboundAcceptTeleportationPacket w = new WrappedServerboundAcceptTeleportationPacket(7);
 
         assertEquals(PacketType.Play.Client.TELEPORT_ACCEPT, w.getHandle().getType());
 
         ServerboundAcceptTeleportationPacket p = (ServerboundAcceptTeleportationPacket) w.getHandle().getHandle();
 
-        assertEquals(42, p.getId());
+        assertEquals(7, p.getId());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ServerboundAcceptTeleportationPacket nmsPacket = new ServerboundAcceptTeleportationPacket(7);
+    void testNoArgsCreate() {
+        WrappedServerboundAcceptTeleportationPacket w = new WrappedServerboundAcceptTeleportationPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundAcceptTeleportationPacket wrapper = new WrappedServerboundAcceptTeleportationPacket(container);
+        assertEquals(PacketType.Play.Client.TELEPORT_ACCEPT, w.getHandle().getType());
 
-        assertEquals(7, wrapper.getId());
+        ServerboundAcceptTeleportationPacket p = (ServerboundAcceptTeleportationPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getId());
     }
 
     @Test
@@ -45,9 +45,11 @@ class WrappedServerboundAcceptTeleportationPacketTest {
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundAcceptTeleportationPacket wrapper = new WrappedServerboundAcceptTeleportationPacket(container);
 
+        assertEquals(7, wrapper.getId());
+
         wrapper.setId(99);
 
-        assertEquals(99, wrapper.getId());
+        assertEquals(99, nmsPacket.getId());
     }
 
     @Test

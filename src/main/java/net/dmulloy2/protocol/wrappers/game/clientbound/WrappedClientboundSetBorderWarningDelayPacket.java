@@ -18,8 +18,7 @@ public class WrappedClientboundSetBorderWarningDelayPacket extends AbstractPacke
 
     public WrappedClientboundSetBorderWarningDelayPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetBorderWarningDelayPacket(PacketContainer packet) {
         super(packet, TYPE);

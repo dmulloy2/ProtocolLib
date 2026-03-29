@@ -19,37 +19,37 @@ class WrappedServerboundSwingPacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundSwingPacket w = new WrappedServerboundSwingPacket();
-        w.setHand(EnumWrappers.Hand.MAIN_HAND);
+    void testAllArgsCreate() {
+        WrappedServerboundSwingPacket w = new WrappedServerboundSwingPacket(EnumWrappers.Hand.OFF_HAND);
 
         assertEquals(PacketType.Play.Client.ARM_ANIMATION, w.getHandle().getType());
 
         ServerboundSwingPacket p = (ServerboundSwingPacket) w.getHandle().getHandle();
 
-        assertEquals(InteractionHand.MAIN_HAND, p.getHand());
+        assertEquals(InteractionHand.OFF_HAND, p.getHand());
     }
 
     @Test
-    void testReadFromExistingPacket() {
+    void testNoArgsCreate() {
+        WrappedServerboundSwingPacket w = new WrappedServerboundSwingPacket();
+
+        assertEquals(PacketType.Play.Client.ARM_ANIMATION, w.getHandle().getType());
+
+        assertNotNull(w.getHand());
+    }
+
+    @Test
+    void testModifyExistingPacket() {
         ServerboundSwingPacket nmsPacket = new ServerboundSwingPacket(InteractionHand.OFF_HAND);
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSwingPacket wrapper = new WrappedServerboundSwingPacket(container);
 
         assertEquals(EnumWrappers.Hand.OFF_HAND, wrapper.getHand());
-    }
 
-    @Test
-    void testModifyExistingPacket() {
-        ServerboundSwingPacket nmsPacket = new ServerboundSwingPacket(InteractionHand.MAIN_HAND);
+        wrapper.setHand(EnumWrappers.Hand.MAIN_HAND);
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundSwingPacket wrapper = new WrappedServerboundSwingPacket(container);
-
-        wrapper.setHand(EnumWrappers.Hand.OFF_HAND);
-
-        assertEquals(EnumWrappers.Hand.OFF_HAND, wrapper.getHand());
+        assertEquals(InteractionHand.MAIN_HAND, nmsPacket.getHand());
     }
 
     @Test

@@ -23,8 +23,7 @@ public class WrappedClientboundBlockDestructionPacket extends AbstractPacket {
 
     public WrappedClientboundBlockDestructionPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundBlockDestructionPacket(PacketContainer packet) {
         super(packet, TYPE);

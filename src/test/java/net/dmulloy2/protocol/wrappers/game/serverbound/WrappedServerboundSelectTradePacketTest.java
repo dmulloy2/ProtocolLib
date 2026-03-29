@@ -17,25 +17,25 @@ class WrappedServerboundSelectTradePacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundSelectTradePacket w = new WrappedServerboundSelectTradePacket();
-        w.setItem(2);
+    void testAllArgsCreate() {
+        WrappedServerboundSelectTradePacket w = new WrappedServerboundSelectTradePacket(4);
 
         assertEquals(PacketType.Play.Client.TR_SEL, w.getHandle().getType());
 
         ServerboundSelectTradePacket p = (ServerboundSelectTradePacket) w.getHandle().getHandle();
 
-        assertEquals(2, p.getItem());
+        assertEquals(4, p.getItem());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ServerboundSelectTradePacket nmsPacket = new ServerboundSelectTradePacket(4);
+    void testNoArgsCreate() {
+        WrappedServerboundSelectTradePacket w = new WrappedServerboundSelectTradePacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundSelectTradePacket wrapper = new WrappedServerboundSelectTradePacket(container);
+        assertEquals(PacketType.Play.Client.TR_SEL, w.getHandle().getType());
 
-        assertEquals(4, wrapper.getItem());
+        ServerboundSelectTradePacket p = (ServerboundSelectTradePacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getItem());
     }
 
     @Test
@@ -45,9 +45,11 @@ class WrappedServerboundSelectTradePacketTest {
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSelectTradePacket wrapper = new WrappedServerboundSelectTradePacket(container);
 
-        wrapper.setItem(0);
+        assertEquals(4, wrapper.getItem());
 
-        assertEquals(0, wrapper.getItem());
+        wrapper.setItem(9);
+
+        assertEquals(9, nmsPacket.getItem());
     }
 
     @Test

@@ -19,8 +19,7 @@ public class WrappedClientboundOpenBookPacket extends AbstractPacket {
 
     public WrappedClientboundOpenBookPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundOpenBookPacket(PacketContainer packet) {
         super(packet, TYPE);

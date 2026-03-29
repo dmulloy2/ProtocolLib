@@ -24,8 +24,7 @@ public class WrappedClientboundSetEquipmentPacket extends AbstractPacket {
 
     public WrappedClientboundSetEquipmentPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetEquipmentPacket(PacketContainer packet) {
         super(packet, TYPE);

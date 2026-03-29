@@ -18,8 +18,7 @@ public class WrappedClientboundSetSimulationDistancePacket extends AbstractPacke
 
     public WrappedClientboundSetSimulationDistancePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetSimulationDistancePacket(PacketContainer packet) {
         super(packet, TYPE);

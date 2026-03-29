@@ -21,8 +21,7 @@ public class WrappedServerboundSpectateEntityPacket extends AbstractPacket {
 
     public WrappedServerboundSpectateEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedServerboundSpectateEntityPacket(int entityId) {
         this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class }).createPacket(entityId));

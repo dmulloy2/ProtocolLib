@@ -19,8 +19,7 @@ public class WrappedClientboundPlayerRotationPacket extends AbstractPacket {
 
     public WrappedClientboundPlayerRotationPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundPlayerRotationPacket(PacketContainer packet) {
         super(packet, TYPE);

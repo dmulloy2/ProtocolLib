@@ -19,7 +19,10 @@ public class WrappedServerboundContainerClosePacket extends AbstractPacket {
 
     public WrappedServerboundContainerClosePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundContainerClosePacket(int containerId) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class }).createPacket(containerId));
     }
 
     public WrappedServerboundContainerClosePacket(PacketContainer packet) {

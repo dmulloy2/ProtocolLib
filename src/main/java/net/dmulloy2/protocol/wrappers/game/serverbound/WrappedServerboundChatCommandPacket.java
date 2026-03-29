@@ -19,7 +19,10 @@ public class WrappedServerboundChatCommandPacket extends AbstractPacket {
 
     public WrappedServerboundChatCommandPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundChatCommandPacket(String command) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { String.class }).createPacket(command));
     }
 
     public WrappedServerboundChatCommandPacket(PacketContainer packet) {

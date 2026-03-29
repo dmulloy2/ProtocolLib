@@ -22,8 +22,7 @@ public class WrappedClientboundLevelEventPacket extends AbstractPacket {
 
     public WrappedClientboundLevelEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundLevelEventPacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -17,29 +17,36 @@ class WrappedServerboundMovePlayerPosPacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundMovePlayerPosPacket w = new WrappedServerboundMovePlayerPosPacket();
-        w.setX(3.0);
-        w.setY(70.0);
-        w.setZ(-8.0);
-        w.setOnGround(true);
-        w.setHorizontalCollision(false);
+    void testAllArgsCreate() {
+        WrappedServerboundMovePlayerPosPacket w = new WrappedServerboundMovePlayerPosPacket(5.0, 63.5, 10.0, true, false);
 
         assertEquals(PacketType.Play.Client.POSITION, w.getHandle().getType());
 
         ServerboundMovePlayerPacket.Pos p = (ServerboundMovePlayerPacket.Pos) w.getHandle().getHandle();
 
-        assertEquals(3.0, p.getX(0.0), 1e-9);
-        assertEquals(70.0, p.getY(0.0), 1e-9);
-        assertEquals(-8.0, p.getZ(0.0), 1e-9);
+        assertEquals(5.0, p.getX(0.0), 1e-9);
+        assertEquals(63.5, p.getY(0.0), 1e-9);
+        assertEquals(10.0, p.getZ(0.0), 1e-9);
         assertTrue(p.isOnGround());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ServerboundMovePlayerPacket.Pos nmsPacket = new ServerboundMovePlayerPacket.Pos(
-                5.0, 63.5, 10.0, true, false
-        );
+    void testNoArgsCreate() {
+        WrappedServerboundMovePlayerPosPacket w = new WrappedServerboundMovePlayerPosPacket();
+
+        assertEquals(PacketType.Play.Client.POSITION, w.getHandle().getType());
+
+        ServerboundMovePlayerPacket.Pos p = (ServerboundMovePlayerPacket.Pos) w.getHandle().getHandle();
+
+        assertEquals(0.0, p.getX(0.0), 1e-9);
+        assertEquals(0.0, p.getY(0.0), 1e-9);
+        assertEquals(0.0, p.getZ(0.0), 1e-9);
+        assertFalse(p.isOnGround());
+    }
+
+    @Test
+    void testModifyExistingPacket() {
+        ServerboundMovePlayerPacket.Pos nmsPacket = new ServerboundMovePlayerPacket.Pos(5.0, 63.5, 10.0, true, false);
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundMovePlayerPosPacket wrapper = new WrappedServerboundMovePlayerPosPacket(container);
@@ -49,22 +56,17 @@ class WrappedServerboundMovePlayerPosPacketTest {
         assertEquals(10.0, wrapper.getZ(), 1e-9);
         assertTrue(wrapper.isOnGround());
         assertFalse(wrapper.isHorizontalCollision());
-    }
 
-    @Test
-    void testModifyExistingPacket() {
-        ServerboundMovePlayerPacket.Pos nmsPacket = new ServerboundMovePlayerPacket.Pos(
-                0.0, 64.0, 0.0, false, false
-        );
+        wrapper.setX(100.0);
+        wrapper.setY(70.0);
+        wrapper.setZ(200.0);
+        wrapper.setOnGround(false);
+        wrapper.setHorizontalCollision(true);
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundMovePlayerPosPacket wrapper = new WrappedServerboundMovePlayerPosPacket(container);
-
-        wrapper.setOnGround(true);
-
-        assertEquals(0.0, wrapper.getX(), 1e-9);
-        assertEquals(64.0, wrapper.getY(), 1e-9);
-        assertTrue(wrapper.isOnGround());
+        assertEquals(100.0, nmsPacket.getX(0.0), 1e-9);
+        assertEquals(70.0, nmsPacket.getY(0.0), 1e-9);
+        assertEquals(200.0, nmsPacket.getZ(0.0), 1e-9);
+        assertFalse(nmsPacket.isOnGround());
     }
 
     @Test

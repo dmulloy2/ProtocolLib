@@ -22,8 +22,7 @@ public class WrappedServerboundPaddleBoatPacket extends AbstractPacket {
 
     public WrappedServerboundPaddleBoatPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedServerboundPaddleBoatPacket(boolean left, boolean right) {
         this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { boolean.class, boolean.class }).createPacket(left, right));

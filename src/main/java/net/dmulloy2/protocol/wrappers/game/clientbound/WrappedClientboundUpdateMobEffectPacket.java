@@ -30,8 +30,7 @@ public class WrappedClientboundUpdateMobEffectPacket extends AbstractPacket {
 
     public WrappedClientboundUpdateMobEffectPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundUpdateMobEffectPacket(PacketContainer packet) {
         super(packet, TYPE);

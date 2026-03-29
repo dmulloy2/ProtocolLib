@@ -23,7 +23,13 @@ public class WrappedServerboundInteractPacket extends AbstractPacket {
 
     public WrappedServerboundInteractPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundInteractPacket(int entityId, boolean usingSecondaryAction, EnumWrappers.Hand hand) {
+        this();
+        setEntityId(entityId);
+        setUsingSecondaryAction(usingSecondaryAction);
+        setHand(hand);
     }
 
     public WrappedServerboundInteractPacket(PacketContainer packet) {

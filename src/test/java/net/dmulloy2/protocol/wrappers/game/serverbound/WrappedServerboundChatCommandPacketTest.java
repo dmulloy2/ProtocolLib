@@ -17,37 +17,37 @@ class WrappedServerboundChatCommandPacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundChatCommandPacket w = new WrappedServerboundChatCommandPacket();
-        w.setCommand("tp 0 64 0");
+    void testAllArgsCreate() {
+        WrappedServerboundChatCommandPacket w = new WrappedServerboundChatCommandPacket("say hello");
 
         assertEquals(PacketType.Play.Client.CHAT_COMMAND, w.getHandle().getType());
 
         ServerboundChatCommandPacket p = (ServerboundChatCommandPacket) w.getHandle().getHandle();
 
-        assertEquals("tp 0 64 0", p.command());
+        assertEquals("say hello", p.command());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ServerboundChatCommandPacket nmsPacket = new ServerboundChatCommandPacket("say hello");
+    void testNoArgsCreate() {
+        WrappedServerboundChatCommandPacket w = new WrappedServerboundChatCommandPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundChatCommandPacket wrapper = new WrappedServerboundChatCommandPacket(container);
+        assertEquals(PacketType.Play.Client.CHAT_COMMAND, w.getHandle().getType());
 
-        assertEquals("say hello", wrapper.getCommand());
+        assertEquals("", w.getCommand());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundChatCommandPacket nmsPacket = new ServerboundChatCommandPacket("say hello");
+        ServerboundChatCommandPacket nmsPacket = new ServerboundChatCommandPacket("cmd");
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundChatCommandPacket wrapper = new WrappedServerboundChatCommandPacket(container);
 
-        wrapper.setCommand("gamemode creative");
+        assertEquals("cmd", wrapper.getCommand());
 
-        assertEquals("gamemode creative", wrapper.getCommand());
+        wrapper.setCommand("tp 0 64 0");
+
+        assertEquals("tp 0 64 0", nmsPacket.command());
     }
 
     @Test

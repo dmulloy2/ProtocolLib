@@ -20,8 +20,7 @@ public class WrappedClientboundOpenSignEditorPacket extends AbstractPacket {
 
     public WrappedClientboundOpenSignEditorPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundOpenSignEditorPacket(PacketContainer packet) {
         super(packet, TYPE);

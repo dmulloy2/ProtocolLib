@@ -25,8 +25,7 @@ public class WrappedClientboundSetDefaultSpawnPositionPacket extends AbstractPac
 
     public WrappedClientboundSetDefaultSpawnPositionPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetDefaultSpawnPositionPacket(PacketContainer packet) {
         super(packet, TYPE);

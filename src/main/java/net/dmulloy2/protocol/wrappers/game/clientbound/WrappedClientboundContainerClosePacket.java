@@ -20,8 +20,7 @@ public class WrappedClientboundContainerClosePacket extends AbstractPacket {
 
     public WrappedClientboundContainerClosePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundContainerClosePacket(PacketContainer packet) {
         super(packet, TYPE);

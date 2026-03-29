@@ -17,25 +17,25 @@ class WrappedServerboundContainerClosePacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundContainerClosePacket w = new WrappedServerboundContainerClosePacket();
-        w.setContainerId(3);
+    void testAllArgsCreate() {
+        WrappedServerboundContainerClosePacket w = new WrappedServerboundContainerClosePacket(5);
 
         assertEquals(PacketType.Play.Client.CLOSE_WINDOW, w.getHandle().getType());
 
         ServerboundContainerClosePacket p = (ServerboundContainerClosePacket) w.getHandle().getHandle();
 
-        assertEquals(3, p.getContainerId());
+        assertEquals(5, p.getContainerId());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ServerboundContainerClosePacket nmsPacket = new ServerboundContainerClosePacket(5);
+    void testNoArgsCreate() {
+        WrappedServerboundContainerClosePacket w = new WrappedServerboundContainerClosePacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundContainerClosePacket wrapper = new WrappedServerboundContainerClosePacket(container);
+        assertEquals(PacketType.Play.Client.CLOSE_WINDOW, w.getHandle().getType());
 
-        assertEquals(5, wrapper.getContainerId());
+        ServerboundContainerClosePacket p = (ServerboundContainerClosePacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getContainerId());
     }
 
     @Test
@@ -45,9 +45,11 @@ class WrappedServerboundContainerClosePacketTest {
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundContainerClosePacket wrapper = new WrappedServerboundContainerClosePacket(container);
 
-        wrapper.setContainerId(10);
+        assertEquals(5, wrapper.getContainerId());
 
-        assertEquals(10, wrapper.getContainerId());
+        wrapper.setContainerId(12);
+
+        assertEquals(12, nmsPacket.getContainerId());
     }
 
     @Test

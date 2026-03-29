@@ -23,8 +23,7 @@ public class WrappedClientboundSetTimePacket extends AbstractPacket {
 
     public WrappedClientboundSetTimePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetTimePacket(PacketContainer packet) {
         super(packet, TYPE);

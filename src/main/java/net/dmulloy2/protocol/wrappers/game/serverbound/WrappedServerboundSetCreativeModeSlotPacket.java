@@ -2,6 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.inventory.ItemStack;
 
@@ -20,7 +23,10 @@ public class WrappedServerboundSetCreativeModeSlotPacket extends AbstractPacket 
 
     public WrappedServerboundSetCreativeModeSlotPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundSetCreativeModeSlotPacket(short slotNum, ItemStack itemStack) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { short.class, MinecraftReflection.getItemStackClass() }).createPacket(slotNum, BukkitConverters.getItemStackConverter().getGeneric(itemStack)));
     }
 
     public WrappedServerboundSetCreativeModeSlotPacket(PacketContainer packet) {

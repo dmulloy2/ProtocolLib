@@ -20,8 +20,7 @@ public class WrappedClientboundTagQueryPacket extends AbstractPacket {
 
     public WrappedClientboundTagQueryPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundTagQueryPacket(PacketContainer packet) {
         super(packet, TYPE);

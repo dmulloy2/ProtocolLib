@@ -23,8 +23,7 @@ public class WrappedClientboundPlayerCombatKillPacket extends AbstractPacket {
 
     public WrappedClientboundPlayerCombatKillPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundPlayerCombatKillPacket(PacketContainer packet) {
         super(packet, TYPE);

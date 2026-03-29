@@ -4,6 +4,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import net.minecraft.network.protocol.game.ServerboundClientCommandPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -17,33 +18,36 @@ class WrappedServerboundClientCommandPacketTest {
     }
 
     @Test
-    void testCreate() {
-        // NMS constructor takes ServerboundClientCommandPacket$Action; use wrapper-based approach
-        WrappedServerboundClientCommandPacket w = new WrappedServerboundClientCommandPacket();
-        w.setAction(EnumWrappers.ClientCommand.PERFORM_RESPAWN);
+    void testAllArgsCreate() {
+        WrappedServerboundClientCommandPacket w = new WrappedServerboundClientCommandPacket(EnumWrappers.ClientCommand.PERFORM_RESPAWN);
 
         assertEquals(PacketType.Play.Client.CLIENT_COMMAND, w.getHandle().getType());
+
         assertEquals(EnumWrappers.ClientCommand.PERFORM_RESPAWN, w.getAction());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        WrappedServerboundClientCommandPacket src = new WrappedServerboundClientCommandPacket();
-        src.setAction(EnumWrappers.ClientCommand.REQUEST_STATS);
+    void testNoArgsCreate() {
+        WrappedServerboundClientCommandPacket w = new WrappedServerboundClientCommandPacket();
 
-        WrappedServerboundClientCommandPacket wrapper = new WrappedServerboundClientCommandPacket(src.getHandle());
+        assertEquals(PacketType.Play.Client.CLIENT_COMMAND, w.getHandle().getType());
 
-        assertEquals(EnumWrappers.ClientCommand.REQUEST_STATS, wrapper.getAction());
+        assertNotNull(w.getAction());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundClientCommandPacket w = new WrappedServerboundClientCommandPacket();
-        w.setAction(EnumWrappers.ClientCommand.PERFORM_RESPAWN);
+        WrappedServerboundClientCommandPacket src = new WrappedServerboundClientCommandPacket(EnumWrappers.ClientCommand.PERFORM_RESPAWN);
+        ServerboundClientCommandPacket nmsPacket = (ServerboundClientCommandPacket) src.getHandle().getHandle();
 
-        w.setAction(EnumWrappers.ClientCommand.REQUEST_STATS);
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedServerboundClientCommandPacket wrapper = new WrappedServerboundClientCommandPacket(container);
 
-        assertEquals(EnumWrappers.ClientCommand.REQUEST_STATS, w.getAction());
+        assertEquals(EnumWrappers.ClientCommand.PERFORM_RESPAWN, wrapper.getAction());
+
+        wrapper.setAction(EnumWrappers.ClientCommand.REQUEST_GAMERULE_VALUES);
+
+        assertEquals(EnumWrappers.ClientCommand.REQUEST_GAMERULE_VALUES, wrapper.getAction());
     }
 
     @Test

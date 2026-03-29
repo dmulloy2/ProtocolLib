@@ -19,8 +19,7 @@ public class WrappedClientboundDisconnectPacket extends AbstractPacket {
 
     public WrappedClientboundDisconnectPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundDisconnectPacket(PacketContainer packet) {
         super(packet, TYPE);

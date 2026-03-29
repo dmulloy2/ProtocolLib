@@ -24,8 +24,7 @@ public class WrappedClientboundEntityEventPacket extends AbstractPacket {
 
     public WrappedClientboundEntityEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundEntityEventPacket(PacketContainer packet) {
         super(packet, TYPE);

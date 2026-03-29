@@ -19,8 +19,7 @@ public class WrappedServerboundAcceptTeleportationPacket extends AbstractPacket 
 
     public WrappedServerboundAcceptTeleportationPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedServerboundAcceptTeleportationPacket(int id) {
         this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class }).createPacket(id));

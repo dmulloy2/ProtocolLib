@@ -19,8 +19,7 @@ public class WrappedClientboundSetBorderWarningDistancePacket extends AbstractPa
 
     public WrappedClientboundSetBorderWarningDistancePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetBorderWarningDistancePacket(PacketContainer packet) {
         super(packet, TYPE);

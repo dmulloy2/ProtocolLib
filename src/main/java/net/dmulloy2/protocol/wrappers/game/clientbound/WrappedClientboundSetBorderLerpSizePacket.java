@@ -20,8 +20,7 @@ public class WrappedClientboundSetBorderLerpSizePacket extends AbstractPacket {
 
     public WrappedClientboundSetBorderLerpSizePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetBorderLerpSizePacket(PacketContainer packet) {
         super(packet, TYPE);

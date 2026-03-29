@@ -36,8 +36,7 @@ public class WrappedClientboundGameEventPacket extends AbstractPacket {
 
     public WrappedClientboundGameEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundGameEventPacket(PacketContainer packet) {
         super(packet, TYPE);

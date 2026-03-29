@@ -21,7 +21,13 @@ public class WrappedServerboundPlayerCommandPacket extends AbstractPacket {
 
     public WrappedServerboundPlayerCommandPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundPlayerCommandPacket(int entityId, EnumWrappers.PlayerAction action, int data) {
+        this();
+        setEntityId(entityId);
+        setAction(action);
+        setData(data);
     }
 
     public WrappedServerboundPlayerCommandPacket(PacketContainer packet) {

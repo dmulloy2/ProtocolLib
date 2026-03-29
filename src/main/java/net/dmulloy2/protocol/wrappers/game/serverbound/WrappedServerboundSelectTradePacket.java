@@ -19,7 +19,10 @@ public class WrappedServerboundSelectTradePacket extends AbstractPacket {
 
     public WrappedServerboundSelectTradePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundSelectTradePacket(int item) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class }).createPacket(item));
     }
 
     public WrappedServerboundSelectTradePacket(PacketContainer packet) {

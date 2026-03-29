@@ -31,8 +31,7 @@ public class WrappedClientboundAddEntityPacket extends AbstractPacket {
 
     public WrappedClientboundAddEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundAddEntityPacket(PacketContainer packet) {
         super(packet, TYPE);

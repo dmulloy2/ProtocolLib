@@ -20,8 +20,7 @@ public class WrappedClientboundRemoveEntitiesPacket extends AbstractPacket {
 
     public WrappedClientboundRemoveEntitiesPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundRemoveEntitiesPacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -24,8 +24,7 @@ public class WrappedClientboundStopSoundPacket extends AbstractPacket {
 
     public WrappedClientboundStopSoundPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundStopSoundPacket(PacketContainer packet) {
         super(packet, TYPE);

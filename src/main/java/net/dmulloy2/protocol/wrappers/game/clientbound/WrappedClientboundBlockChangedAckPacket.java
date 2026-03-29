@@ -18,8 +18,7 @@ public class WrappedClientboundBlockChangedAckPacket extends AbstractPacket {
 
     public WrappedClientboundBlockChangedAckPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundBlockChangedAckPacket(PacketContainer packet) {
         super(packet, TYPE);

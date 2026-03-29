@@ -20,8 +20,7 @@ public class WrappedClientboundTakeItemEntityPacket extends AbstractPacket {
 
     public WrappedClientboundTakeItemEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundTakeItemEntityPacket(PacketContainer packet) {
         super(packet, TYPE);

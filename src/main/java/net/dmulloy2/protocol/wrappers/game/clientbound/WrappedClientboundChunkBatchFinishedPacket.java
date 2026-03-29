@@ -18,8 +18,7 @@ public class WrappedClientboundChunkBatchFinishedPacket extends AbstractPacket {
 
     public WrappedClientboundChunkBatchFinishedPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundChunkBatchFinishedPacket(PacketContainer packet) {
         super(packet, TYPE);

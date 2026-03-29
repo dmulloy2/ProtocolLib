@@ -22,8 +22,7 @@ public class WrappedClientboundSystemChatPacket extends AbstractPacket {
 
     public WrappedClientboundSystemChatPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSystemChatPacket(PacketContainer packet) {
         super(packet, TYPE);

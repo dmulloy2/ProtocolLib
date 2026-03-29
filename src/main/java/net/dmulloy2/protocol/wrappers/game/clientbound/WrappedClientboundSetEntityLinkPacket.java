@@ -19,8 +19,7 @@ public class WrappedClientboundSetEntityLinkPacket extends AbstractPacket {
 
     public WrappedClientboundSetEntityLinkPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetEntityLinkPacket(PacketContainer packet) {
         super(packet, TYPE);

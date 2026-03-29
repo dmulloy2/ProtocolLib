@@ -20,8 +20,7 @@ public class WrappedClientboundSetDisplayObjectivePacket extends AbstractPacket 
 
     public WrappedClientboundSetDisplayObjectivePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetDisplayObjectivePacket(PacketContainer packet) {
         super(packet, TYPE);

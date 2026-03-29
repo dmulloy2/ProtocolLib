@@ -21,8 +21,7 @@ public class WrappedClientboundKeepAlivePacket extends AbstractPacket {
 
     public WrappedClientboundKeepAlivePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundKeepAlivePacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -19,8 +19,7 @@ public class WrappedClientboundSetPassengersPacket extends AbstractPacket {
 
     public WrappedClientboundSetPassengersPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetPassengersPacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -19,7 +19,10 @@ public class WrappedServerboundAttackPacket extends AbstractPacket {
 
     public WrappedServerboundAttackPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundAttackPacket(int entityId) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class }).createPacket(entityId));
     }
 
     public WrappedServerboundAttackPacket(PacketContainer packet) {
