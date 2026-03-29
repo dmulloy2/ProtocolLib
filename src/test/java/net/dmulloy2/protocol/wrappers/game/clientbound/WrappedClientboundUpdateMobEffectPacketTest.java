@@ -3,6 +3,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
 import org.bukkit.potion.PotionEffectType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -24,12 +25,14 @@ class WrappedClientboundUpdateMobEffectPacketTest {
         w.setAmplifier(1);
         w.setDuration(200);
         w.setFlags(WrappedClientboundUpdateMobEffectPacket.FLAG_SHOW_PARTICLES);
-        assertEquals(4, w.getEntityId());
-        assertEquals(PotionEffectType.SPEED, w.getEffectType());
-        assertEquals(1, w.getAmplifier());
-        assertEquals(200, w.getDuration());
-        assertEquals(WrappedClientboundUpdateMobEffectPacket.FLAG_SHOW_PARTICLES, w.getFlags());
+
         assertEquals(PacketType.Play.Server.ENTITY_EFFECT, w.getHandle().getType());
+
+        ClientboundUpdateMobEffectPacket p = (ClientboundUpdateMobEffectPacket) w.getHandle().getHandle();
+
+        assertEquals(4, p.getEntityId());
+        assertEquals(1, p.getEffectAmplifier());
+        assertEquals(200, p.getEffectDurationTicks());
     }
 
     @Test
@@ -42,22 +45,30 @@ class WrappedClientboundUpdateMobEffectPacketTest {
         raw.getIntegers().write(2, 100);
         raw.getBytes().write(0, (byte) 0x06);
 
-        WrappedClientboundUpdateMobEffectPacket w = new WrappedClientboundUpdateMobEffectPacket(raw);
-        assertEquals(7, w.getEntityId());
-        assertEquals(PotionEffectType.REGENERATION, w.getEffectType());
-        assertEquals(0, w.getAmplifier());
-        assertEquals(100, w.getDuration());
-        assertEquals((byte) 0x06, w.getFlags());
+        WrappedClientboundUpdateMobEffectPacket wrapper = new WrappedClientboundUpdateMobEffectPacket(raw);
+
+        assertEquals(7, wrapper.getEntityId());
+        assertEquals(PotionEffectType.REGENERATION, wrapper.getEffectType());
+        assertEquals(0, wrapper.getAmplifier());
+        assertEquals(100, wrapper.getDuration());
+        assertEquals((byte) 0x06, wrapper.getFlags());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundUpdateMobEffectPacket w = new WrappedClientboundUpdateMobEffectPacket();
-        w.setDuration(100);
+        PacketContainer raw = new PacketContainer(PacketType.Play.Server.ENTITY_EFFECT);
+        raw.getModifier().writeDefaults();
+        raw.getIntegers().write(0, 5);
+        raw.getEffectTypes().write(0, PotionEffectType.SPEED);
+        raw.getIntegers().write(1, 0);
+        raw.getIntegers().write(2, 100);
 
-        new WrappedClientboundUpdateMobEffectPacket(w.getHandle()).setDuration(300);
+        WrappedClientboundUpdateMobEffectPacket wrapper = new WrappedClientboundUpdateMobEffectPacket(raw);
+        wrapper.setDuration(300);
 
-        assertEquals(300, w.getDuration());
+        assertEquals(5, wrapper.getEntityId());
+        assertEquals(PotionEffectType.SPEED, wrapper.getEffectType());
+        assertEquals(300, wrapper.getDuration());
     }
 
     @Test

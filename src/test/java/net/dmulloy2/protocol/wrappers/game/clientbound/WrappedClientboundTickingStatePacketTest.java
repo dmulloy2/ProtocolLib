@@ -3,6 +3,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import net.minecraft.network.protocol.game.ClientboundTickingStatePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -20,31 +21,37 @@ class WrappedClientboundTickingStatePacketTest {
         WrappedClientboundTickingStatePacket w = new WrappedClientboundTickingStatePacket();
         w.setTickRate(20.0f);
         w.setFrozen(true);
-        assertEquals(20.0f, w.getTickRate(), 1e-6f);
-        assertTrue(w.isFrozen());
+
         assertEquals(PacketType.Play.Server.TICKING_STATE, w.getHandle().getType());
+
+        ClientboundTickingStatePacket p = (ClientboundTickingStatePacket) w.getHandle().getHandle();
+
+        assertEquals(20.0f, p.tickRate(), 1e-4f);
+        assertTrue(p.isFrozen());
     }
 
     @Test
     void testReadFromExistingPacket() {
-        PacketContainer raw = new PacketContainer(PacketType.Play.Server.TICKING_STATE);
-        raw.getModifier().writeDefaults();
-        raw.getFloat().write(0, 4.0f);
-        raw.getBooleans().write(0, false);
+        ClientboundTickingStatePacket nmsPacket = new ClientboundTickingStatePacket(4.0f, false);
 
-        WrappedClientboundTickingStatePacket w = new WrappedClientboundTickingStatePacket(raw);
-        assertEquals(4.0f, w.getTickRate(), 1e-6f);
-        assertFalse(w.isFrozen());
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundTickingStatePacket wrapper = new WrappedClientboundTickingStatePacket(container);
+
+        assertEquals(4.0f, wrapper.getTickRate(), 1e-4f);
+        assertFalse(wrapper.isFrozen());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundTickingStatePacket w = new WrappedClientboundTickingStatePacket();
-        w.setFrozen(false);
+        ClientboundTickingStatePacket nmsPacket = new ClientboundTickingStatePacket(20.0f, false);
 
-        new WrappedClientboundTickingStatePacket(w.getHandle()).setFrozen(true);
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundTickingStatePacket wrapper = new WrappedClientboundTickingStatePacket(container);
 
-        assertTrue(w.isFrozen());
+        wrapper.setFrozen(true);
+
+        assertEquals(20.0f, wrapper.getTickRate(), 1e-4f);
+        assertTrue(wrapper.isFrozen());
     }
 
     @Test

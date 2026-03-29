@@ -4,6 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -20,29 +22,39 @@ class WrappedClientboundSetTitleTextPacketTest {
     void testCreate() {
         WrappedClientboundSetTitleTextPacket w = new WrappedClientboundSetTitleTextPacket();
         w.setTitle(WrappedChatComponent.fromText("My Title"));
-        assertTrue(w.getTitle().getJson().contains("My Title"));
+
         assertEquals(PacketType.Play.Server.SET_TITLE_TEXT, w.getHandle().getType());
+
+        ClientboundSetTitleTextPacket p = (ClientboundSetTitleTextPacket) w.getHandle().getHandle();
+
+        assertNotNull(p.text());
+        assertTrue(w.getTitle().getJson().contains("My Title"));
     }
 
     @Test
     void testReadFromExistingPacket() {
-        PacketContainer raw = new PacketContainer(PacketType.Play.Server.SET_TITLE_TEXT);
-        raw.getModifier().writeDefaults();
-        raw.getChatComponents().write(0, WrappedChatComponent.fromText("Hello Title"));
+        ClientboundSetTitleTextPacket nmsPacket = new ClientboundSetTitleTextPacket(
+                Component.literal("Hello Title")
+        );
 
-        WrappedClientboundSetTitleTextPacket w = new WrappedClientboundSetTitleTextPacket(raw);
-        assertTrue(w.getTitle().getJson().contains("Hello Title"));
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundSetTitleTextPacket wrapper = new WrappedClientboundSetTitleTextPacket(container);
+
+        assertTrue(wrapper.getTitle().getJson().contains("Hello Title"));
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundSetTitleTextPacket w = new WrappedClientboundSetTitleTextPacket();
-        w.setTitle(WrappedChatComponent.fromText("old"));
+        ClientboundSetTitleTextPacket nmsPacket = new ClientboundSetTitleTextPacket(
+                Component.literal("original")
+        );
 
-        new WrappedClientboundSetTitleTextPacket(w.getHandle())
-                .setTitle(WrappedChatComponent.fromText("updated title"));
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundSetTitleTextPacket wrapper = new WrappedClientboundSetTitleTextPacket(container);
 
-        assertTrue(w.getTitle().getJson().contains("updated title"));
+        wrapper.setTitle(WrappedChatComponent.fromText("updated title"));
+
+        assertTrue(wrapper.getTitle().getJson().contains("updated title"));
     }
 
     @Test

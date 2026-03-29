@@ -3,6 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundTagQueryPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -19,28 +21,34 @@ class WrappedClientboundTagQueryPacketTest {
     void testCreate() {
         WrappedClientboundTagQueryPacket w = new WrappedClientboundTagQueryPacket();
         w.setTransactionId(42);
-        assertEquals(42, w.getTransactionId());
+
         assertEquals(PacketType.Play.Server.NBT_QUERY, w.getHandle().getType());
+
+        ClientboundTagQueryPacket p = (ClientboundTagQueryPacket) w.getHandle().getHandle();
+
+        assertEquals(42, p.getTransactionId());
     }
 
     @Test
     void testReadFromExistingPacket() {
-        PacketContainer raw = new PacketContainer(PacketType.Play.Server.NBT_QUERY);
-        raw.getModifier().writeDefaults();
-        raw.getIntegers().write(0, 99);
+        ClientboundTagQueryPacket nmsPacket = new ClientboundTagQueryPacket(99, new CompoundTag());
 
-        WrappedClientboundTagQueryPacket w = new WrappedClientboundTagQueryPacket(raw);
-        assertEquals(99, w.getTransactionId());
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundTagQueryPacket wrapper = new WrappedClientboundTagQueryPacket(container);
+
+        assertEquals(99, wrapper.getTransactionId());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundTagQueryPacket w = new WrappedClientboundTagQueryPacket();
-        w.setTransactionId(1);
+        ClientboundTagQueryPacket nmsPacket = new ClientboundTagQueryPacket(1, new CompoundTag());
 
-        new WrappedClientboundTagQueryPacket(w.getHandle()).setTransactionId(7);
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundTagQueryPacket wrapper = new WrappedClientboundTagQueryPacket(container);
 
-        assertEquals(7, w.getTransactionId());
+        wrapper.setTransactionId(7);
+
+        assertEquals(7, wrapper.getTransactionId());
     }
 
     @Test

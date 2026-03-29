@@ -3,6 +3,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -18,12 +19,16 @@ class WrappedClientboundSetPassengersPacketTest {
     @Test
     void testCreate() {
         WrappedClientboundSetPassengersPacket w = new WrappedClientboundSetPassengersPacket();
-        int[] passengers = new int[]{5, 6, 7};
+        int[] passengers = {5, 6, 7};
         w.setVehicleId(1);
         w.setPassengerIds(passengers);
-        assertEquals(1, w.getVehicleId());
-        assertArrayEquals(passengers, w.getPassengerIds());
+
         assertEquals(PacketType.Play.Server.MOUNT, w.getHandle().getType());
+
+        ClientboundSetPassengersPacket p = (ClientboundSetPassengersPacket) w.getHandle().getHandle();
+
+        assertEquals(1, p.getVehicle());
+        assertArrayEquals(passengers, p.getPassengers());
     }
 
     @Test
@@ -33,19 +38,24 @@ class WrappedClientboundSetPassengersPacketTest {
         raw.getIntegers().write(0, 99);
         raw.getIntegerArrays().write(0, new int[]{10, 20});
 
-        WrappedClientboundSetPassengersPacket w = new WrappedClientboundSetPassengersPacket(raw);
-        assertEquals(99, w.getVehicleId());
-        assertArrayEquals(new int[]{10, 20}, w.getPassengerIds());
+        WrappedClientboundSetPassengersPacket wrapper = new WrappedClientboundSetPassengersPacket(raw);
+
+        assertEquals(99, wrapper.getVehicleId());
+        assertArrayEquals(new int[]{10, 20}, wrapper.getPassengerIds());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundSetPassengersPacket w = new WrappedClientboundSetPassengersPacket();
-        w.setVehicleId(1);
+        PacketContainer raw = new PacketContainer(PacketType.Play.Server.MOUNT);
+        raw.getModifier().writeDefaults();
+        raw.getIntegers().write(0, 1);
+        raw.getIntegerArrays().write(0, new int[]{3});
 
-        new WrappedClientboundSetPassengersPacket(w.getHandle()).setVehicleId(42);
+        WrappedClientboundSetPassengersPacket wrapper = new WrappedClientboundSetPassengersPacket(raw);
+        wrapper.setVehicleId(42);
 
-        assertEquals(42, w.getVehicleId());
+        assertEquals(42, wrapper.getVehicleId());
+        assertArrayEquals(new int[]{3}, wrapper.getPassengerIds());
     }
 
     @Test
