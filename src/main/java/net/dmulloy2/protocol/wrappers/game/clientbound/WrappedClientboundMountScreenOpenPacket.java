@@ -5,7 +5,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
- * Wrapper for {@code ClientboundHorseScreenOpenPacket} (Play phase, clientbound).
+ * Wrapper for {@code ClientboundMountScreenOpenPacket} (Play phase, clientbound).
  *
  * <p>Packet structure:
  * <ul>
@@ -14,16 +14,16 @@ import net.dmulloy2.protocol.AbstractPacket;
  *   <li>{@code int entityId} – entity ID of the horse</li>
  * </ul>
  */
-public class WrappedClientboundHorseScreenOpenPacket extends AbstractPacket {
+public class WrappedClientboundMountScreenOpenPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.OPEN_WINDOW_HORSE;
 
-    public WrappedClientboundHorseScreenOpenPacket() {
+    public WrappedClientboundMountScreenOpenPacket() {
         super(new PacketContainer(TYPE), TYPE);
         handle.getModifier().writeDefaults();
     }
 
-    public WrappedClientboundHorseScreenOpenPacket(PacketContainer packet) {
+    public WrappedClientboundMountScreenOpenPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
 
