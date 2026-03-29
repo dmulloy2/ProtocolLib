@@ -6,6 +6,8 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MinecraftKey;
 import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
+import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundSource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -35,8 +37,8 @@ class WrappedClientboundStopSoundPacketTest {
     @Test
     void testReadFromExistingPacket() {
         ClientboundStopSoundPacket nmsPacket = new ClientboundStopSoundPacket(
-                new net.minecraft.resources.Identifier("minecraft", "block.note_block.bass"),
-                net.minecraft.sounds.SoundSource.MUSIC
+                Identifier.fromNamespaceAndPath("minecraft", "block.note_block.bass"),
+                SoundSource.MUSIC
         );
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
@@ -49,8 +51,8 @@ class WrappedClientboundStopSoundPacketTest {
     @Test
     void testModifyExistingPacket() {
         ClientboundStopSoundPacket nmsPacket = new ClientboundStopSoundPacket(
-                new net.minecraft.resources.Identifier("minecraft", "entity.player.hurt"),
-                net.minecraft.sounds.SoundSource.PLAYERS
+                Identifier.fromNamespaceAndPath("minecraft", "entity.player.hurt"),
+                SoundSource.PLAYERS
         );
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);

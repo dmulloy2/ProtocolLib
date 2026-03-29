@@ -35,25 +35,38 @@ New NMS types that are reusable across multiple packets belong in the core Proto
 
 ---
 
-## AbstractPacket
+## Class Structure
 
-Every wrapper extends `AbstractPacket`:
+* Every wrapper extends `AbstractPacket`
+* There should be 3 constructors: no-args (create new packet with default values), all-args (create new packet with specified values), and from-container (wrap existing packet)
+* Then create getters and setters for each field in the packet, using the appropriate `StructureModifier` methods from `AbstractStructure`.
 
 ```java
-public class WrappedClientboundTeleportEntityPacket extends AbstractPacket {
+package net.dmulloy2.protocol.wrappers.game.serverbound;
 
-    public static final PacketType TYPE = PacketType.Play.Server.ENTITY_TELEPORT;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.PacketConstructor;
+import net.dmulloy2.protocol.AbstractPacket;
 
-    /** Create a fresh outgoing packet. */
-    public WrappedClientboundTeleportEntityPacket() {
+public class WrappedServerboundAcceptTeleportationPacket extends AbstractPacket {
+
+    public static final PacketType TYPE = PacketType.Play.Client.TELEPORT_ACCEPT;
+
+    public WrappedServerboundAcceptTeleportationPacket() {
         super(new PacketContainer(TYPE), TYPE);
         handle.getModifier().writeDefaults();
     }
 
-    /** Wrap a packet received from ProtocolLib. */
-    public WrappedClientboundTeleportEntityPacket(PacketContainer packet) {
+    public WrappedServerboundAcceptTeleportationPacket(int id) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class }).createPacket(id));
+    }
+
+    public WrappedServerboundAcceptTeleportationPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // getters and setters for packet fields
 }
 ```
 
@@ -243,14 +256,27 @@ Each wrapper class gets its own test file named `<WrapperClassName>Test.java`, c
 
 Every test class must call `BukkitInitialization.initializeAll()` in a `@BeforeAll` method — this bootstraps the Minecraft registry and mocked Bukkit server required for `PacketContainer` and NMS reflection to work.
 
-Cover three scenarios for each wrapper:
+Cover these scenarios for each wrapper:
 
-| Scenario | What to assert                                                                                                                                 |
-|---|------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Creation** | Construct a fresh wrapper, set **every** field to a known value, read back and verify against known value                                      |
-| **Reading** | Construct the raw NMS packet with known values, construct a wrapper from it, and verify that the reads from the wrapper equal the known values |
-| **Modification** | Wrap an existing NMS packet, change fields through a wrapper sharing the same handle, verify the actual packet sees the change                 |
-| **Different Packet** | Assert that passing a packet with the wrong `PacketType` to the wrapping constructor throws `IllegalArgumentException`. |
+* testAllArgsCreate
+  * Construct a fresh wrapper using the all-args constructor with known test values
+  * Get the NMS handle packet via `getHandle()`
+  * Assert that all fields in the NMS handle match the known test values
+* testNoArgsCreate
+    * Construct a fresh wrapper using the no-args constructor
+    * Get the NMS handle packet via `getHandle()`
+    * Assert that all fields in the NMS handle are default/empty values (e.g. 0, null, empty list)
+* testModifyExistingPacket
+  * Create the NMS handle packet directly from its constructor, passing known test values
+  * Create a packet container from the NMS handle via `PacketContainer.fromPacket()`
+  * Construct the wrapper using the packet container
+  * Assert that all fields in the wrapper match the known test values
+  * Change all fields in the wrapper to new test values
+  * Verify that the NMS handle packet reflects the new test values
+* testWrongPacketTypeThrows
+  * Create a packet container for a different packet type
+  * Attempt to construct the wrapper using this incorrect packet container
+  * Assert that an appropriate exception is thrown (e.g. IllegalArgumentException)
 
 Here's a good example of a complete test class for `WrappedClientboundSetExperiencePacket`:
 
@@ -263,11 +289,8 @@ class WrappedClientboundSetExperiencePacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedClientboundSetExperiencePacket w = new WrappedClientboundSetExperiencePacket();
-        w.setExperienceProgress(0.75f);
-        w.setTotalExperience(350);
-        w.setExperienceLevel(12);
+    void testAllArgsCreate() {
+        WrappedClientboundSetExperiencePacket w = new WrappedClientboundSetExperiencePacket(0.75f, 350, 12);
 
         assertEquals(PacketType.Play.Server.EXPERIENCE, w.getHandle().getType());
 
@@ -277,9 +300,22 @@ class WrappedClientboundSetExperiencePacketTest {
         assertEquals(350,   p.getTotalExperience());
         assertEquals(12,    p.getExperienceLevel());
     }
+    
+    @Test
+    void testNoArgsCreate() {
+        WrappedClientboundSetExperiencePacket w = new WrappedClientboundSetExperiencePacket();
+
+        assertEquals(PacketType.Play.Server.EXPERIENCE, w.getHandle().getType());
+
+        ClientboundSetExperiencePacket p = (ClientboundSetExperiencePacket) w.getHandle().getHandle();
+
+        assertEquals(0.0f, p.getExperienceProgress(), 1e-4f);
+        assertEquals(0,    p.getTotalExperience());
+        assertEquals(0,    p.getExperienceLevel());
+    }
 
     @Test
-    void testReadFromExistingPacket() {
+    void testModifyExistingPacket() {
         ClientboundSetExperiencePacket nmsPacket = new ClientboundSetExperiencePacket(
                 0.5f, 100, 5
         );
@@ -290,6 +326,14 @@ class WrappedClientboundSetExperiencePacketTest {
         assertEquals(0.5f, wrapper.getExperienceProgress(), 1e-4f);
         assertEquals(100, wrapper.getTotalExperience());
         assertEquals(5,   wrapper.getExperienceLevel());
+        
+        wrapper.setExperienceProgress(0.25f);
+        wrapper.setTotalExperience(200);
+        wrapper.setExperienceLevel(10);
+        
+        assertEquals(0.25f, nmsPacket.getExperienceProgress(), 1e-4f);
+        assertEquals(200, nmsPacket.getTotalExperience());
+        assertEquals(10, nmsPacket.getExperienceLevel());
     }
 
     @Test
