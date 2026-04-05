@@ -4,10 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundBlockDestructionPacketTest {
@@ -17,55 +15,54 @@ class WrappedClientboundBlockDestructionPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundBlockDestructionPacket w = new WrappedClientboundBlockDestructionPacket();
-        w.setId(1);
-        w.setPos(new BlockPosition(10, 64, -20));
-        w.setDestroyStage(5);
+    void testAllArgsCreate() {
+        WrappedClientboundBlockDestructionPacket w = new WrappedClientboundBlockDestructionPacket(3, new BlockPosition(4, 5, 6), 5);
 
         assertEquals(PacketType.Play.Server.BLOCK_BREAK_ANIMATION, w.getHandle().getType());
 
-        ClientboundBlockDestructionPacket p = (ClientboundBlockDestructionPacket) w.getHandle().getHandle();
-
-        assertEquals(1, p.getId());
-        assertEquals(5, p.getProgress());
+        assertEquals(3, w.getId());
+        assertEquals(new BlockPosition(4, 5, 6), w.getPos());
+        assertEquals(5, w.getDestroyStage());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundBlockDestructionPacket nmsPacket = new ClientboundBlockDestructionPacket(
-                7, new net.minecraft.core.BlockPos(0, 100, 0), 9
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundBlockDestructionPacket w = new WrappedClientboundBlockDestructionPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundBlockDestructionPacket wrapper = new WrappedClientboundBlockDestructionPacket(container);
-
-        assertEquals(7, wrapper.getId());
-        assertEquals(new BlockPosition(0, 100, 0), wrapper.getPos());
-        assertEquals(9, wrapper.getDestroyStage());
+        assertEquals(PacketType.Play.Server.BLOCK_BREAK_ANIMATION, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundBlockDestructionPacket nmsPacket = new ClientboundBlockDestructionPacket(
-                7, new net.minecraft.core.BlockPos(0, 100, 0), 9
-        );
-
+        WrappedClientboundBlockDestructionPacket source = new WrappedClientboundBlockDestructionPacket(3, new BlockPosition(4, 5, 6), 5);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundBlockDestructionPacket wrapper = new WrappedClientboundBlockDestructionPacket(container);
 
-        wrapper.setDestroyStage(3);
+        assertEquals(3, wrapper.getId());
+        assertEquals(new BlockPosition(4, 5, 6), wrapper.getPos());
+        assertEquals(5, wrapper.getDestroyStage());
 
-        assertEquals(7, wrapper.getId());
-        assertEquals(new BlockPosition(0, 100, 0), wrapper.getPos());
-        assertEquals(3, wrapper.getDestroyStage());
+        wrapper.setId(9);
+        wrapper.setPos(new BlockPosition(10, 20, 30));
+        wrapper.setDestroyStage(0);
+
+        assertEquals(9, wrapper.getId());
+        assertEquals(new BlockPosition(10, 20, 30), wrapper.getPos());
+        assertEquals(0, wrapper.getDestroyStage());
+
+        assertEquals(9, source.getId());
+        assertEquals(new BlockPosition(10, 20, 30), source.getPos());
+        assertEquals(0, source.getDestroyStage());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundBlockDestructionPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

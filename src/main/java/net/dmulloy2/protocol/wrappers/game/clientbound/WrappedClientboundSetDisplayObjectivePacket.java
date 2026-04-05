@@ -20,7 +20,13 @@ public class WrappedClientboundSetDisplayObjectivePacket extends AbstractPacket 
 
     public WrappedClientboundSetDisplayObjectivePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetDisplayObjectivePacket(EnumWrappers.DisplaySlot slot, String objectiveName) {
+        this();
+        setSlot(slot);
+        setObjectiveName(objectiveName);
+    }
 
     public WrappedClientboundSetDisplayObjectivePacket(PacketContainer packet) {
         super(packet, TYPE);

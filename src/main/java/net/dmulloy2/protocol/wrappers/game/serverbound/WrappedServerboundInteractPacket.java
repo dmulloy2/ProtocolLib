@@ -2,8 +2,12 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import net.dmulloy2.protocol.AbstractPacket;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import org.bukkit.util.Vector;
 
 /**
@@ -20,16 +24,18 @@ import org.bukkit.util.Vector;
 public class WrappedServerboundInteractPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.USE_ENTITY;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(EnumWrappers.getHandClass(), EnumWrappers.getHandConverter())
+            .withParam(MinecraftReflection.getVec3DClass(), BukkitConverters.getVectorConverter())
+            .withParam(boolean.class);
 
     public WrappedServerboundInteractPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
-    public WrappedServerboundInteractPacket(int entityId, boolean usingSecondaryAction, EnumWrappers.Hand hand) {
-        this();
-        setEntityId(entityId);
-        setUsingSecondaryAction(usingSecondaryAction);
-        setHand(hand);
+    public WrappedServerboundInteractPacket(int entityId, EnumWrappers.Hand hand, Vector location, boolean usingSecondaryAction) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(entityId, hand, location, usingSecondaryAction)));
     }
 
     public WrappedServerboundInteractPacket(PacketContainer packet) {

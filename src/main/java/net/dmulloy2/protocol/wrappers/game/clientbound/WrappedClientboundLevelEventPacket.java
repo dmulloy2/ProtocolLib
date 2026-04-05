@@ -2,6 +2,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -19,10 +21,19 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundLevelEventPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.WORLD_EVENT;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(MinecraftReflection.getBlockPositionClass(), BlockPosition.getConverter())
+            .withParam(int.class)
+            .withParam(boolean.class);
 
     public WrappedClientboundLevelEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundLevelEventPacket(int type, BlockPosition pos, int data, boolean broadcastToAll) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(type, pos, data, broadcastToAll)));
+    }
 
     public WrappedClientboundLevelEventPacket(PacketContainer packet) {
         super(packet, TYPE);

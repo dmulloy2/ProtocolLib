@@ -3,11 +3,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.game.ClientboundTagQueryPacket;
+import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundTagQueryPacketTest {
@@ -17,44 +15,49 @@ class WrappedClientboundTagQueryPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundTagQueryPacket w = new WrappedClientboundTagQueryPacket();
-        w.setTransactionId(42);
+    void testAllArgsCreate() {
+        WrappedClientboundTagQueryPacket w = new WrappedClientboundTagQueryPacket(3, null);
 
         assertEquals(PacketType.Play.Server.NBT_QUERY, w.getHandle().getType());
 
-        ClientboundTagQueryPacket p = (ClientboundTagQueryPacket) w.getHandle().getHandle();
-
-        assertEquals(42, p.getTransactionId());
+        assertEquals(3, w.getTransactionId());
+        assertEquals(null, w.getTag());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundTagQueryPacket nmsPacket = new ClientboundTagQueryPacket(99, new CompoundTag());
+    void testNoArgsCreate() {
+        WrappedClientboundTagQueryPacket w = new WrappedClientboundTagQueryPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundTagQueryPacket wrapper = new WrappedClientboundTagQueryPacket(container);
-
-        assertEquals(99, wrapper.getTransactionId());
+        assertEquals(PacketType.Play.Server.NBT_QUERY, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundTagQueryPacket nmsPacket = new ClientboundTagQueryPacket(1, new CompoundTag());
-
+        WrappedClientboundTagQueryPacket source = new WrappedClientboundTagQueryPacket(3, null);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundTagQueryPacket wrapper = new WrappedClientboundTagQueryPacket(container);
 
-        wrapper.setTransactionId(7);
+        assertEquals(3, wrapper.getTransactionId());
+        assertEquals(null, wrapper.getTag());
 
-        assertEquals(7, wrapper.getTransactionId());
+        wrapper.setTransactionId(9);
+        wrapper.setTag(null);
+
+        assertEquals(9, wrapper.getTransactionId());
+        assertEquals(null, wrapper.getTag());
+
+        assertEquals(9, source.getTransactionId());
+        assertEquals(null, source.getTag());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundTagQueryPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

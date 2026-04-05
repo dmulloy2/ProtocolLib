@@ -3,16 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.Pair;
-import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetEquipmentPacketTest {
@@ -22,57 +14,44 @@ class WrappedClientboundSetEquipmentPacketTest {
         BukkitInitialization.initializeAll();
     }
 
-    @Test
-    void testCreate() {
-        List<Pair<EnumWrappers.ItemSlot, ItemStack>> slots = List.of(
-                new Pair<>(EnumWrappers.ItemSlot.MAINHAND, new ItemStack(Material.DIAMOND_SWORD)),
-                new Pair<>(EnumWrappers.ItemSlot.HEAD,     new ItemStack(Material.DIAMOND_HELMET))
-        );
 
-        WrappedClientboundSetEquipmentPacket w = new WrappedClientboundSetEquipmentPacket();
-        w.setEntityId(123);
-        w.setSlots(slots);
+
+    @Test
+    void testAllArgsCreate() {
+        WrappedClientboundSetEquipmentPacket w = new WrappedClientboundSetEquipmentPacket(3);
 
         assertEquals(PacketType.Play.Server.ENTITY_EQUIPMENT, w.getHandle().getType());
 
-        ClientboundSetEquipmentPacket p = (ClientboundSetEquipmentPacket) w.getHandle().getHandle();
-
-        assertEquals(123, p.getEntity());
-        assertNotNull(p.getSlots());
+        assertEquals(3, w.getEntityId());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        List<Pair<EnumWrappers.ItemSlot, ItemStack>> slots = List.of(
-                new Pair<>(EnumWrappers.ItemSlot.OFFHAND, new ItemStack(Material.SHIELD))
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundSetEquipmentPacket w = new WrappedClientboundSetEquipmentPacket();
 
-        WrappedClientboundSetEquipmentPacket src = new WrappedClientboundSetEquipmentPacket();
-        src.setEntityId(77);
-        src.setSlots(slots);
-
-        PacketContainer container = src.getHandle();
-        WrappedClientboundSetEquipmentPacket wrapper = new WrappedClientboundSetEquipmentPacket(container);
-
-        assertEquals(77, wrapper.getEntityId());
-        assertNotNull(wrapper.getSlots());
+        assertEquals(PacketType.Play.Server.ENTITY_EQUIPMENT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundSetEquipmentPacket w = new WrappedClientboundSetEquipmentPacket();
-        w.setEntityId(10);
-        w.setSlots(List.of());
+        WrappedClientboundSetEquipmentPacket source = new WrappedClientboundSetEquipmentPacket(3);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundSetEquipmentPacket wrapper = new WrappedClientboundSetEquipmentPacket(container);
 
-        w.setEntityId(999);
+        assertEquals(3, wrapper.getEntityId());
 
-        assertEquals(999, w.getEntityId());
+        wrapper.setEntityId(9);
+
+        assertEquals(9, wrapper.getEntityId());
+
+        assertEquals(9, source.getEntityId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetEquipmentPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

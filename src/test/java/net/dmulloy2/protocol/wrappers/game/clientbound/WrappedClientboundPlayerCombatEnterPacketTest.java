@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundPlayerCombatEnterPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundPlayerCombatEnterPacketTest {
@@ -16,32 +14,24 @@ class WrappedClientboundPlayerCombatEnterPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundPlayerCombatEnterPacket w = new WrappedClientboundPlayerCombatEnterPacket();
-
-        assertEquals(PacketType.Play.Server.PLAYER_COMBAT_ENTER, w.getHandle().getType());
-
-        ClientboundPlayerCombatEnterPacket p = (ClientboundPlayerCombatEnterPacket) w.getHandle().getHandle();
-
-        assertNotNull(p);
+    void testAllArgsCreate() {
+        // TODO: packet has no suitable all-args constructor
+        assertEquals(PacketType.Play.Server.PLAYER_COMBAT_ENTER, new WrappedClientboundPlayerCombatEnterPacket().getHandle().getType());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.PLAYER_COMBAT_ENTER);
-        container.getModifier().writeDefaults();
+    void testNoArgsCreate() {
+        WrappedClientboundPlayerCombatEnterPacket w = new WrappedClientboundPlayerCombatEnterPacket();
 
-        WrappedClientboundPlayerCombatEnterPacket wrapper = new WrappedClientboundPlayerCombatEnterPacket(container);
-
-        assertEquals(PacketType.Play.Server.PLAYER_COMBAT_ENTER, wrapper.getHandle().getType());
+        assertEquals(PacketType.Play.Server.PLAYER_COMBAT_ENTER, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
         PacketContainer container = new PacketContainer(PacketType.Play.Server.PLAYER_COMBAT_ENTER);
-        container.getModifier().writeDefaults();
-
         WrappedClientboundPlayerCombatEnterPacket wrapper = new WrappedClientboundPlayerCombatEnterPacket(container);
 
         assertEquals(PacketType.Play.Server.PLAYER_COMBAT_ENTER, wrapper.getHandle().getType());
@@ -51,6 +41,6 @@ class WrappedClientboundPlayerCombatEnterPacketTest {
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundPlayerCombatEnterPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

@@ -3,12 +3,10 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ServerboundChatPacket;
+import com.comphenix.protocol.wrappers.WrappedMessageSignature;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.time.Instant;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundChatPacketTest {
@@ -18,16 +16,18 @@ class WrappedServerboundChatPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        Instant ts = Instant.ofEpochSecond(1_700_000_000L);
-        WrappedServerboundChatPacket w = new WrappedServerboundChatPacket("hello world", ts, 42L);
+        WrappedServerboundChatPacket w = new WrappedServerboundChatPacket("hello", Instant.ofEpochSecond(2000), -1L, null);
 
         assertEquals(PacketType.Play.Client.CHAT, w.getHandle().getType());
 
-        assertEquals("hello world", w.getMessage());
-        assertEquals(ts, w.getTimeStamp());
-        assertEquals(42L, w.getSalt());
+        assertEquals("hello", w.getMessage());
+        assertEquals(Instant.ofEpochSecond(2000), w.getTimeStamp());
+        assertEquals(-1L, w.getSalt());
+        assertEquals(null, w.getSignature());
     }
 
     @Test
@@ -35,41 +35,40 @@ class WrappedServerboundChatPacketTest {
         WrappedServerboundChatPacket w = new WrappedServerboundChatPacket();
 
         assertEquals(PacketType.Play.Client.CHAT, w.getHandle().getType());
-
-        assertEquals("", w.getMessage());
-        // TODO: should this be null, or the epoch?
-        // assertEquals(Instant.EPOCH, w.getTimeStamp());
-        assertEquals(0L, w.getSalt());
     }
 
     @Test
     void testModifyExistingPacket() {
-        Instant ts1 = Instant.ofEpochSecond(1_000_000L);
-        Instant ts2 = Instant.ofEpochSecond(2_000_000L);
-
-        WrappedServerboundChatPacket src = new WrappedServerboundChatPacket("original", ts1, 1L);
-        ServerboundChatPacket nmsPacket = (ServerboundChatPacket) src.getHandle().getHandle();
-
+        WrappedServerboundChatPacket source = new WrappedServerboundChatPacket("hello", Instant.ofEpochSecond(2000), -1L, null);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundChatPacket wrapper = new WrappedServerboundChatPacket(container);
 
-        assertEquals("original", wrapper.getMessage());
-        assertEquals(ts1, wrapper.getTimeStamp());
-        assertEquals(1L, wrapper.getSalt());
+        assertEquals("hello", wrapper.getMessage());
+        assertEquals(Instant.ofEpochSecond(2000), wrapper.getTimeStamp());
+        assertEquals(-1L, wrapper.getSalt());
+        assertEquals(null, wrapper.getSignature());
 
         wrapper.setMessage("modified");
-        wrapper.setTimeStamp(ts2);
-        wrapper.setSalt(99L);
+        wrapper.setTimeStamp(Instant.ofEpochSecond(9999));
+        wrapper.setSalt(0L);
+        wrapper.setSignature(null);
 
         assertEquals("modified", wrapper.getMessage());
-        assertEquals(ts2, wrapper.getTimeStamp());
-        assertEquals(99L, wrapper.getSalt());
+        assertEquals(Instant.ofEpochSecond(9999), wrapper.getTimeStamp());
+        assertEquals(0L, wrapper.getSalt());
+        assertEquals(null, wrapper.getSignature());
+
+        assertEquals("modified", source.getMessage());
+        assertEquals(Instant.ofEpochSecond(9999), source.getTimeStamp());
+        assertEquals(0L, source.getSalt());
+        assertEquals(null, source.getSignature());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundChatPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT_COMMAND)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

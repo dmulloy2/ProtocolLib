@@ -4,10 +4,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.Pair;
+import java.util.List;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.List;
 
 /**
  * Wrapper for {@code ClientboundSetEquipmentPacket} (Play phase, clientbound).
@@ -24,7 +23,12 @@ public class WrappedClientboundSetEquipmentPacket extends AbstractPacket {
 
     public WrappedClientboundSetEquipmentPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetEquipmentPacket(int entityId) {
+        this();
+        setEntityId(entityId);
+    }
 
     public WrappedClientboundSetEquipmentPacket(PacketContainer packet) {
         super(packet, TYPE);

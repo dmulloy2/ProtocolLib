@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundSetSimulationDistancePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetSimulationDistancePacketTest {
@@ -16,44 +15,47 @@ class WrappedClientboundSetSimulationDistancePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetSimulationDistancePacket w = new WrappedClientboundSetSimulationDistancePacket();
-        w.setSimulationDistance(8);
+    void testAllArgsCreate() {
+        WrappedClientboundSetSimulationDistancePacket w = new WrappedClientboundSetSimulationDistancePacket(3);
 
         assertEquals(PacketType.Play.Server.UPDATE_SIMULATION_DISTANCE, w.getHandle().getType());
 
         ClientboundSetSimulationDistancePacket p = (ClientboundSetSimulationDistancePacket) w.getHandle().getHandle();
 
-        assertEquals(8, p.simulationDistance());
+        assertEquals(3, p.simulationDistance());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetSimulationDistancePacket nmsPacket = new ClientboundSetSimulationDistancePacket(6);
+    void testNoArgsCreate() {
+        WrappedClientboundSetSimulationDistancePacket w = new WrappedClientboundSetSimulationDistancePacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetSimulationDistancePacket wrapper = new WrappedClientboundSetSimulationDistancePacket(container);
+        assertEquals(PacketType.Play.Server.UPDATE_SIMULATION_DISTANCE, w.getHandle().getType());
 
-        assertEquals(6, wrapper.getSimulationDistance());
+        ClientboundSetSimulationDistancePacket p = (ClientboundSetSimulationDistancePacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.simulationDistance());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundSetSimulationDistancePacket nmsPacket = new ClientboundSetSimulationDistancePacket(4);
-
+        ClientboundSetSimulationDistancePacket nmsPacket = new ClientboundSetSimulationDistancePacket(3);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetSimulationDistancePacket wrapper = new WrappedClientboundSetSimulationDistancePacket(container);
 
-        wrapper.setSimulationDistance(12);
+        assertEquals(3, wrapper.getSimulationDistance());
 
-        assertEquals(12, wrapper.getSimulationDistance());
+        wrapper.setSimulationDistance(9);
+
+        assertEquals(9, nmsPacket.simulationDistance());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetSimulationDistancePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

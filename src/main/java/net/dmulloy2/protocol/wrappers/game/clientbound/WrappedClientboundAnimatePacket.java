@@ -28,7 +28,13 @@ public class WrappedClientboundAnimatePacket extends AbstractPacket {
 
     public WrappedClientboundAnimatePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundAnimatePacket(int entityId, int animationId) {
+        this();
+        setEntityId(entityId);
+        setAnimationId(animationId);
+    }
 
     public WrappedClientboundAnimatePacket(PacketContainer packet) {
         super(packet, TYPE);

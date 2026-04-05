@@ -8,7 +8,6 @@ import net.minecraft.network.protocol.game.ClientboundOpenBookPacket;
 import net.minecraft.world.InteractionHand;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundOpenBookPacketTest {
@@ -18,44 +17,47 @@ class WrappedClientboundOpenBookPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundOpenBookPacket w = new WrappedClientboundOpenBookPacket();
-        w.setHand(EnumWrappers.Hand.MAIN_HAND);
+    void testAllArgsCreate() {
+        WrappedClientboundOpenBookPacket w = new WrappedClientboundOpenBookPacket(EnumWrappers.Hand.OFF_HAND);
 
         assertEquals(PacketType.Play.Server.OPEN_BOOK, w.getHandle().getType());
 
         ClientboundOpenBookPacket p = (ClientboundOpenBookPacket) w.getHandle().getHandle();
 
-        assertEquals(InteractionHand.MAIN_HAND, p.getHand());
+        assertEquals(InteractionHand.OFF_HAND, p.getHand());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundOpenBookPacket nmsPacket = new ClientboundOpenBookPacket(InteractionHand.OFF_HAND);
+    void testNoArgsCreate() {
+        WrappedClientboundOpenBookPacket w = new WrappedClientboundOpenBookPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundOpenBookPacket wrapper = new WrappedClientboundOpenBookPacket(container);
+        assertEquals(PacketType.Play.Server.OPEN_BOOK, w.getHandle().getType());
 
-        assertEquals(EnumWrappers.Hand.OFF_HAND, wrapper.getHand());
+        ClientboundOpenBookPacket p = (ClientboundOpenBookPacket) w.getHandle().getHandle();
+
+
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundOpenBookPacket nmsPacket = new ClientboundOpenBookPacket(InteractionHand.MAIN_HAND);
-
+        ClientboundOpenBookPacket nmsPacket = new ClientboundOpenBookPacket(InteractionHand.OFF_HAND);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundOpenBookPacket wrapper = new WrappedClientboundOpenBookPacket(container);
 
-        wrapper.setHand(EnumWrappers.Hand.OFF_HAND);
-
         assertEquals(EnumWrappers.Hand.OFF_HAND, wrapper.getHand());
+
+        wrapper.setHand(EnumWrappers.Hand.MAIN_HAND);
+
+        assertEquals(InteractionHand.MAIN_HAND, nmsPacket.getHand());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundOpenBookPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

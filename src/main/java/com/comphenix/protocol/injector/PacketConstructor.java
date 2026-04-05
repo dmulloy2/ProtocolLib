@@ -21,6 +21,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.error.RethrowErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.google.common.collect.ImmutableList;
@@ -29,7 +30,10 @@ import com.google.common.primitives.Primitives;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A packet constructor that uses an internal Minecraft.

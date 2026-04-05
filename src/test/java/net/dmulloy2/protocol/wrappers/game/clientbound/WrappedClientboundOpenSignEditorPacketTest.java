@@ -4,10 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import net.minecraft.network.protocol.game.ClientboundOpenSignEditorPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundOpenSignEditorPacketTest {
@@ -17,51 +15,49 @@ class WrappedClientboundOpenSignEditorPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundOpenSignEditorPacket w = new WrappedClientboundOpenSignEditorPacket();
-        w.setPos(new BlockPosition(3, 70, -3));
-        w.setFrontText(true);
+    void testAllArgsCreate() {
+        WrappedClientboundOpenSignEditorPacket w = new WrappedClientboundOpenSignEditorPacket(new BlockPosition(1, 2, 3), false);
 
         assertEquals(PacketType.Play.Server.OPEN_SIGN_EDITOR, w.getHandle().getType());
 
-        ClientboundOpenSignEditorPacket p = (ClientboundOpenSignEditorPacket) w.getHandle().getHandle();
-
-        assertTrue(p.isFrontText());
+        assertEquals(new BlockPosition(1, 2, 3), w.getPos());
+        assertFalse(w.isFrontText());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundOpenSignEditorPacket nmsPacket = new ClientboundOpenSignEditorPacket(
-                new net.minecraft.core.BlockPos(10, 64, 10), false
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundOpenSignEditorPacket w = new WrappedClientboundOpenSignEditorPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundOpenSignEditorPacket wrapper = new WrappedClientboundOpenSignEditorPacket(container);
-
-        assertEquals(new BlockPosition(10, 64, 10), wrapper.getPos());
-        assertFalse(wrapper.isFrontText());
+        assertEquals(PacketType.Play.Server.OPEN_SIGN_EDITOR, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundOpenSignEditorPacket nmsPacket = new ClientboundOpenSignEditorPacket(
-                new net.minecraft.core.BlockPos(10, 64, 10), false
-        );
-
+        WrappedClientboundOpenSignEditorPacket source = new WrappedClientboundOpenSignEditorPacket(new BlockPosition(1, 2, 3), false);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundOpenSignEditorPacket wrapper = new WrappedClientboundOpenSignEditorPacket(container);
 
+        assertEquals(new BlockPosition(1, 2, 3), wrapper.getPos());
+        assertFalse(wrapper.isFrontText());
+
+        wrapper.setPos(new BlockPosition(10, 20, 30));
         wrapper.setFrontText(true);
 
-        assertEquals(new BlockPosition(10, 64, 10), wrapper.getPos());
+        assertEquals(new BlockPosition(10, 20, 30), wrapper.getPos());
         assertTrue(wrapper.isFrontText());
+
+        assertEquals(new BlockPosition(10, 20, 30), source.getPos());
+        assertTrue(source.isFrontText());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundOpenSignEditorPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

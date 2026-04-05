@@ -23,7 +23,15 @@ public class WrappedClientboundBlockEventPacket extends AbstractPacket {
 
     public WrappedClientboundBlockEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundBlockEventPacket(BlockPosition pos, int actionId, int actionParam, Material blockType) {
+        this();
+        setPos(pos);
+        setActionId(actionId);
+        setActionParam(actionParam);
+        setBlockType(blockType);
+    }
 
     public WrappedClientboundBlockEventPacket(PacketContainer packet) {
         super(packet, TYPE);

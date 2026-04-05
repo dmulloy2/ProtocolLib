@@ -2,7 +2,6 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
@@ -25,20 +24,14 @@ public class WrappedServerboundPlayerActionPacket extends AbstractPacket {
 
     public WrappedServerboundPlayerActionPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedServerboundPlayerActionPacket(BlockPosition pos, EnumWrappers.Direction direction, EnumWrappers.PlayerDigType action, int sequence) {
-        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] {
-                EnumWrappers.getPlayerDigTypeClass(),
-                MinecraftReflection.getBlockPositionClass(),
-                EnumWrappers.getDirectionClass(),
-                int.class
-        }).createPacket(
-                EnumWrappers.getPlayerDiggingActionConverter().getGeneric(action),
-                BlockPosition.getConverter().getGeneric(pos),
-                EnumWrappers.getDirectionConverter().getGeneric(direction),
-                sequence
-        ));
+        this();
+        setPos(pos);
+        setDirection(direction);
+        setAction(action);
+        setSequence(sequence);
     }
 
     public WrappedServerboundPlayerActionPacket(PacketContainer packet) {

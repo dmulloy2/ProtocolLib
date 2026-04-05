@@ -19,7 +19,13 @@ public class WrappedClientboundSetPassengersPacket extends AbstractPacket {
 
     public WrappedClientboundSetPassengersPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetPassengersPacket(int vehicleId, int[] passengerIds) {
+        this();
+        setVehicleId(vehicleId);
+        setPassengerIds(passengerIds);
+    }
 
     public WrappedClientboundSetPassengersPacket(PacketContainer packet) {
         super(packet, TYPE);

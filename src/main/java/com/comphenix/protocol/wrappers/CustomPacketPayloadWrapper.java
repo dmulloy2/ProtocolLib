@@ -48,6 +48,9 @@ public final class CustomPacketPayloadWrapper {
     private static final MethodAccessor GET_ID_PAYLOAD_METHOD;
     private static final MethodAccessor SERIALIZE_PAYLOAD_METHOD;
 
+    /** True when running on MC 1.21.5+ where DiscardedPayload is used instead of the ByteBuddy proxy. */
+    private static final boolean USE_DISCARDED_PAYLOAD;
+
     private static final EquivalentConverter<CustomPacketPayloadWrapper> CONVERTER;
 
     static {
@@ -55,22 +58,51 @@ public final class CustomPacketPayloadWrapper {
             MINECRAFT_KEY_CLASS = MinecraftReflection.getMinecraftKeyClass();
             CUSTOM_PACKET_PAYLOAD_CLASS = MinecraftReflection.getMinecraftClass("network.protocol.common.custom.CustomPacketPayload");
 
-            Method getPayloadId = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
-                    .banModifier(Modifier.STATIC)
-                    .returnTypeExact(MINECRAFT_KEY_CLASS)
-                    .parameterCount(0)
-                    .build());
+            // MC 1.21.5+: CustomPacketPayload no longer has id(); DiscardedPayload is the fallback payload
+            // MC < 1.21.5: CustomPacketPayload.id() returns Identifier directly
+            Method getPayloadId = null;
+            boolean useDiscardedPayload = false;
+            try {
+                getPayloadId = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
+                        .banModifier(Modifier.STATIC)
+                        .returnTypeExact(MINECRAFT_KEY_CLASS)
+                        .parameterCount(0)
+                        .build());
+            } catch (IllegalArgumentException ignored) {
+                // New API: id() lives on DiscardedPayload, not on CustomPacketPayload
+                Class<?> discardedPayloadClass = MinecraftReflection.getMinecraftClass(
+                        "network.protocol.common.custom.DiscardedPayload");
+                getPayloadId = discardedPayloadClass.getMethod("id");
+                useDiscardedPayload = true;
+            }
             GET_ID_PAYLOAD_METHOD = Accessors.getMethodAccessor(getPayloadId);
+            USE_DISCARDED_PAYLOAD = useDiscardedPayload;
 
-            Method serializePayloadData = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
-                    .banModifier(Modifier.STATIC)
-                    .returnTypeVoid()
-                    .parameterCount(1)
-                    .parameterDerivedOf(ByteBuf.class, 0)
-                    .build());
-            SERIALIZE_PAYLOAD_METHOD = Accessors.getMethodAccessor(serializePayloadData);
+            // serialize method may not exist in new API
+            Method serializePayloadData = null;
+            try {
+                serializePayloadData = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
+                        .banModifier(Modifier.STATIC)
+                        .returnTypeVoid()
+                        .parameterCount(1)
+                        .parameterDerivedOf(ByteBuf.class, 0)
+                        .build());
+            } catch (IllegalArgumentException ignored) {
+                // Not present in new API
+            }
+            SERIALIZE_PAYLOAD_METHOD = serializePayloadData != null
+                    ? Accessors.getMethodAccessor(serializePayloadData) : null;
 
-            Constructor<?> payloadWrapperConstructor = makePayloadWrapper();
+            Constructor<?> payloadWrapperConstructor;
+            if (useDiscardedPayload) {
+                // New API: use DiscardedPayload(Identifier, ByteBuf) as the payload handle
+                Class<?> discardedPayloadClass = MinecraftReflection.getMinecraftClass(
+                        "network.protocol.common.custom.DiscardedPayload");
+                payloadWrapperConstructor = discardedPayloadClass.getConstructor(
+                        MINECRAFT_KEY_CLASS, ByteBuf.class);
+            } else {
+                payloadWrapperConstructor = makePayloadWrapper();
+            }
             PAYLOAD_WRAPPER_CONSTRUCTOR = Accessors.getConstructorAccessor(payloadWrapperConstructor);
 
             CONVERTER = new EquivalentConverter<CustomPacketPayloadWrapper>() {
@@ -185,6 +217,9 @@ public final class CustomPacketPayloadWrapper {
                     return data;
                 })
                 .orElseGet(() -> {
+                    if (SERIALIZE_PAYLOAD_METHOD == null) {
+                        return new byte[0];
+                    }
                     ByteBuf buffer = Unpooled.buffer();
                     Object serializer = MinecraftReflection.getPacketDataSerializer(buffer);
                     SERIALIZE_PAYLOAD_METHOD.invoke(payload, serializer);
@@ -230,6 +265,11 @@ public final class CustomPacketPayloadWrapper {
      * @return a new payload wrapper instance using the provided message id and payload.
      */
     public Object newHandle() {
+        if (USE_DISCARDED_PAYLOAD) {
+            // New API: DiscardedPayload(Identifier, ByteBuf)
+            ByteBuf buf = Unpooled.copiedBuffer(this.payload);
+            return PAYLOAD_WRAPPER_CONSTRUCTOR.invoke(this.getGenericId(), buf);
+        }
         return PAYLOAD_WRAPPER_CONSTRUCTOR.invoke(this.getGenericId(), this.payload);
     }
 

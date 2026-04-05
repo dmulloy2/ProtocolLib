@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetBorderWarningDistancePacketTest {
@@ -16,45 +14,44 @@ class WrappedClientboundSetBorderWarningDistancePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetBorderWarningDistancePacket w = new WrappedClientboundSetBorderWarningDistancePacket();
-        w.setWarningDistance(5);
+    void testAllArgsCreate() {
+        WrappedClientboundSetBorderWarningDistancePacket w = new WrappedClientboundSetBorderWarningDistancePacket(3);
 
         assertEquals(PacketType.Play.Server.SET_BORDER_WARNING_DISTANCE, w.getHandle().getType());
 
-        ClientboundSetBorderWarningDistancePacket p = (ClientboundSetBorderWarningDistancePacket) w.getHandle().getHandle();
-
-        assertEquals(5, p.getWarningBlocks());
+        assertEquals(3, w.getWarningDistance());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_WARNING_DISTANCE);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 20);
+    void testNoArgsCreate() {
+        WrappedClientboundSetBorderWarningDistancePacket w = new WrappedClientboundSetBorderWarningDistancePacket();
 
-        WrappedClientboundSetBorderWarningDistancePacket wrapper = new WrappedClientboundSetBorderWarningDistancePacket(container);
-
-        assertEquals(20, wrapper.getWarningDistance());
+        assertEquals(PacketType.Play.Server.SET_BORDER_WARNING_DISTANCE, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_WARNING_DISTANCE);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 20);
-
+        WrappedClientboundSetBorderWarningDistancePacket source = new WrappedClientboundSetBorderWarningDistancePacket(3);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetBorderWarningDistancePacket wrapper = new WrappedClientboundSetBorderWarningDistancePacket(container);
-        wrapper.setWarningDistance(50);
 
-        assertEquals(50, wrapper.getWarningDistance());
+        assertEquals(3, wrapper.getWarningDistance());
+
+        wrapper.setWarningDistance(9);
+
+        assertEquals(9, wrapper.getWarningDistance());
+
+        assertEquals(9, source.getWarningDistance());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetBorderWarningDistancePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

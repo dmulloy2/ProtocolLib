@@ -4,11 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSystemChatPacketTest {
@@ -18,53 +15,49 @@ class WrappedClientboundSystemChatPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSystemChatPacket w = new WrappedClientboundSystemChatPacket();
-        w.setContent(WrappedChatComponent.fromText("System message"));
-        w.setOverlay(false);
+    void testAllArgsCreate() {
+        WrappedClientboundSystemChatPacket w = new WrappedClientboundSystemChatPacket(WrappedChatComponent.fromText("Hello, world!"), false);
 
         assertEquals(PacketType.Play.Server.SYSTEM_CHAT, w.getHandle().getType());
 
-        ClientboundSystemChatPacket p = (ClientboundSystemChatPacket) w.getHandle().getHandle();
-
-        assertNotNull(p.content());
-        assertFalse(p.overlay());
-        assertTrue(w.getContent().getJson().contains("System message"));
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), w.getContent());
+        assertFalse(w.isOverlay());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSystemChatPacket nmsPacket = new ClientboundSystemChatPacket(
-                Component.literal("Test"), true
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundSystemChatPacket w = new WrappedClientboundSystemChatPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSystemChatPacket wrapper = new WrappedClientboundSystemChatPacket(container);
-
-        assertTrue(wrapper.getContent().getJson().contains("Test"));
-        assertTrue(wrapper.isOverlay());
+        assertEquals(PacketType.Play.Server.SYSTEM_CHAT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundSystemChatPacket nmsPacket = new ClientboundSystemChatPacket(
-                Component.literal("original"), false
-        );
-
+        WrappedClientboundSystemChatPacket source = new WrappedClientboundSystemChatPacket(WrappedChatComponent.fromText("Hello, world!"), false);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSystemChatPacket wrapper = new WrappedClientboundSystemChatPacket(container);
 
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), wrapper.getContent());
+        assertFalse(wrapper.isOverlay());
+
+        wrapper.setContent(WrappedChatComponent.fromText("Modified"));
         wrapper.setOverlay(true);
 
-        assertTrue(wrapper.getContent().getJson().contains("original"));
+        assertEquals(WrappedChatComponent.fromText("Modified"), wrapper.getContent());
         assertTrue(wrapper.isOverlay());
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), source.getContent());
+        assertTrue(source.isOverlay());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSystemChatPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ServerboundSelectTradePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundSelectTradePacketTest {
@@ -16,15 +15,17 @@ class WrappedServerboundSelectTradePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundSelectTradePacket w = new WrappedServerboundSelectTradePacket(4);
+        WrappedServerboundSelectTradePacket w = new WrappedServerboundSelectTradePacket(3);
 
         assertEquals(PacketType.Play.Client.TR_SEL, w.getHandle().getType());
 
         ServerboundSelectTradePacket p = (ServerboundSelectTradePacket) w.getHandle().getHandle();
 
-        assertEquals(4, p.getItem());
+        assertEquals(3, p.getItem());
     }
 
     @Test
@@ -40,12 +41,11 @@ class WrappedServerboundSelectTradePacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundSelectTradePacket nmsPacket = new ServerboundSelectTradePacket(4);
-
+        ServerboundSelectTradePacket nmsPacket = new ServerboundSelectTradePacket(3);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSelectTradePacket wrapper = new WrappedServerboundSelectTradePacket(container);
 
-        assertEquals(4, wrapper.getItem());
+        assertEquals(3, wrapper.getItem());
 
         wrapper.setItem(9);
 
@@ -56,6 +56,6 @@ class WrappedServerboundSelectTradePacketTest {
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundSelectTradePacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

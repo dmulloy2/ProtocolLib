@@ -2,6 +2,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -17,10 +19,17 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundOpenSignEditorPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.OPEN_SIGN_EDITOR;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getBlockPositionClass(), BlockPosition.getConverter())
+            .withParam(boolean.class);
 
     public WrappedClientboundOpenSignEditorPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundOpenSignEditorPacket(BlockPosition pos, boolean frontText) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(pos, frontText)));
+    }
 
     public WrappedClientboundOpenSignEditorPacket(PacketContainer packet) {
         super(packet, TYPE);

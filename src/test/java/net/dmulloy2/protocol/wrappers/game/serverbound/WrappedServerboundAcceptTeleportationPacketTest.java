@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundAcceptTeleportationPacketTest {
@@ -16,15 +15,17 @@ class WrappedServerboundAcceptTeleportationPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundAcceptTeleportationPacket w = new WrappedServerboundAcceptTeleportationPacket(7);
+        WrappedServerboundAcceptTeleportationPacket w = new WrappedServerboundAcceptTeleportationPacket(3);
 
         assertEquals(PacketType.Play.Client.TELEPORT_ACCEPT, w.getHandle().getType());
 
         ServerboundAcceptTeleportationPacket p = (ServerboundAcceptTeleportationPacket) w.getHandle().getHandle();
 
-        assertEquals(7, p.getId());
+        assertEquals(3, p.getId());
     }
 
     @Test
@@ -40,22 +41,21 @@ class WrappedServerboundAcceptTeleportationPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundAcceptTeleportationPacket nmsPacket = new ServerboundAcceptTeleportationPacket(7);
-
+        ServerboundAcceptTeleportationPacket nmsPacket = new ServerboundAcceptTeleportationPacket(3);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundAcceptTeleportationPacket wrapper = new WrappedServerboundAcceptTeleportationPacket(container);
 
-        assertEquals(7, wrapper.getId());
+        assertEquals(3, wrapper.getId());
 
-        wrapper.setId(99);
+        wrapper.setId(9);
 
-        assertEquals(99, nmsPacket.getId());
+        assertEquals(9, nmsPacket.getId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundAcceptTeleportationPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

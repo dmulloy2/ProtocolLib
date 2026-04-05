@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundTakeItemEntityPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundTakeItemEntityPacketTest {
@@ -16,52 +15,57 @@ class WrappedClientboundTakeItemEntityPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundTakeItemEntityPacket w = new WrappedClientboundTakeItemEntityPacket();
-        w.setCollectedEntityId(10);
-        w.setCollectorEntityId(20);
-        w.setPickupItemCount(5);
+    void testAllArgsCreate() {
+        WrappedClientboundTakeItemEntityPacket w = new WrappedClientboundTakeItemEntityPacket(3, 7, 5);
 
         assertEquals(PacketType.Play.Server.COLLECT, w.getHandle().getType());
 
         ClientboundTakeItemEntityPacket p = (ClientboundTakeItemEntityPacket) w.getHandle().getHandle();
 
-        assertEquals(10, p.getItemId());
-        assertEquals(20, p.getPlayerId());
+        assertEquals(3, p.getItemId());
+        assertEquals(7, p.getPlayerId());
         assertEquals(5, p.getAmount());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundTakeItemEntityPacket nmsPacket = new ClientboundTakeItemEntityPacket(100, 200, 3);
+    void testNoArgsCreate() {
+        WrappedClientboundTakeItemEntityPacket w = new WrappedClientboundTakeItemEntityPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundTakeItemEntityPacket wrapper = new WrappedClientboundTakeItemEntityPacket(container);
+        assertEquals(PacketType.Play.Server.COLLECT, w.getHandle().getType());
 
-        assertEquals(100, wrapper.getCollectedEntityId());
-        assertEquals(200, wrapper.getCollectorEntityId());
-        assertEquals(3, wrapper.getPickupItemCount());
+        ClientboundTakeItemEntityPacket p = (ClientboundTakeItemEntityPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getItemId());
+        assertEquals(0, p.getPlayerId());
+        assertEquals(0, p.getAmount());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundTakeItemEntityPacket nmsPacket = new ClientboundTakeItemEntityPacket(10, 20, 1);
-
+        ClientboundTakeItemEntityPacket nmsPacket = new ClientboundTakeItemEntityPacket(3, 7, 5);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundTakeItemEntityPacket wrapper = new WrappedClientboundTakeItemEntityPacket(container);
 
-        wrapper.setPickupItemCount(64);
+        assertEquals(3, wrapper.getCollectedEntityId());
+        assertEquals(7, wrapper.getCollectorEntityId());
+        assertEquals(5, wrapper.getPickupItemCount());
 
-        assertEquals(10, wrapper.getCollectedEntityId());
-        assertEquals(20, wrapper.getCollectorEntityId());
-        assertEquals(64, wrapper.getPickupItemCount());
+        wrapper.setCollectedEntityId(9);
+        wrapper.setCollectorEntityId(-5);
+        wrapper.setPickupItemCount(0);
+
+        assertEquals(9, nmsPacket.getItemId());
+        assertEquals(-5, nmsPacket.getPlayerId());
+        assertEquals(0, nmsPacket.getAmount());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundTakeItemEntityPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

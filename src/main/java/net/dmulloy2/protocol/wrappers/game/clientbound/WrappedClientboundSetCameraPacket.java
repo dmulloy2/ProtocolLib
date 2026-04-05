@@ -18,7 +18,12 @@ public class WrappedClientboundSetCameraPacket extends AbstractPacket {
 
     public WrappedClientboundSetCameraPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetCameraPacket(int cameraEntityId) {
+        this();
+        setCameraEntityId(cameraEntityId);
+    }
 
     public WrappedClientboundSetCameraPacket(PacketContainer packet) {
         super(packet, TYPE);

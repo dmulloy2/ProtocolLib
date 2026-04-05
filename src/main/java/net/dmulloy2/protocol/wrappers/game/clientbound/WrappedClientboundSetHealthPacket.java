@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -17,10 +18,18 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundSetHealthPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.UPDATE_HEALTH;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(float.class)
+            .withParam(int.class)
+            .withParam(float.class);
 
     public WrappedClientboundSetHealthPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetHealthPacket(float health, int food, float saturation) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(health, food, saturation)));
+    }
 
     public WrappedClientboundSetHealthPacket(PacketContainer packet) {
         super(packet, TYPE);

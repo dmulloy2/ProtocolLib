@@ -2,6 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -16,10 +19,16 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundSetSubtitleTextPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.SET_SUBTITLE_TEXT;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
 
     public WrappedClientboundSetSubtitleTextPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetSubtitleTextPacket(WrappedChatComponent subtitle) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(subtitle)));
+    }
 
     public WrappedClientboundSetSubtitleTextPacket(PacketContainer packet) {
         super(packet, TYPE);

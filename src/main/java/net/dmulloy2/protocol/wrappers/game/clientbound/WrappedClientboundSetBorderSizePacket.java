@@ -18,7 +18,12 @@ public class WrappedClientboundSetBorderSizePacket extends AbstractPacket {
 
     public WrappedClientboundSetBorderSizePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetBorderSizePacket(double diameter) {
+        this();
+        setDiameter(diameter);
+    }
 
     public WrappedClientboundSetBorderSizePacket(PacketContainer packet) {
         super(packet, TYPE);

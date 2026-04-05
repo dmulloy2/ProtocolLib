@@ -2,6 +2,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -20,7 +22,13 @@ public class WrappedClientboundTagQueryPacket extends AbstractPacket {
 
     public WrappedClientboundTagQueryPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundTagQueryPacket(int transactionId, NbtBase tag) {
+        this();
+        setTransactionId(transactionId);
+        setTag(tag);
+    }
 
     public WrappedClientboundTagQueryPacket(PacketContainer packet) {
         super(packet, TYPE);

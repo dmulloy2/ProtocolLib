@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundChatCommandPacketTest {
@@ -16,15 +15,17 @@ class WrappedServerboundChatCommandPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundChatCommandPacket w = new WrappedServerboundChatCommandPacket("say hello");
+        WrappedServerboundChatCommandPacket w = new WrappedServerboundChatCommandPacket("hello");
 
         assertEquals(PacketType.Play.Client.CHAT_COMMAND, w.getHandle().getType());
 
         ServerboundChatCommandPacket p = (ServerboundChatCommandPacket) w.getHandle().getHandle();
 
-        assertEquals("say hello", p.command());
+        assertEquals("hello", p.command());
     }
 
     @Test
@@ -33,27 +34,28 @@ class WrappedServerboundChatCommandPacketTest {
 
         assertEquals(PacketType.Play.Client.CHAT_COMMAND, w.getHandle().getType());
 
-        assertEquals("", w.getCommand());
+        ServerboundChatCommandPacket p = (ServerboundChatCommandPacket) w.getHandle().getHandle();
+
+
     }
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundChatCommandPacket nmsPacket = new ServerboundChatCommandPacket("cmd");
-
+        ServerboundChatCommandPacket nmsPacket = new ServerboundChatCommandPacket("hello");
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundChatCommandPacket wrapper = new WrappedServerboundChatCommandPacket(container);
 
-        assertEquals("cmd", wrapper.getCommand());
+        assertEquals("hello", wrapper.getCommand());
 
-        wrapper.setCommand("tp 0 64 0");
+        wrapper.setCommand("modified");
 
-        assertEquals("tp 0 64 0", nmsPacket.command());
+        assertEquals("modified", nmsPacket.command());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundChatCommandPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

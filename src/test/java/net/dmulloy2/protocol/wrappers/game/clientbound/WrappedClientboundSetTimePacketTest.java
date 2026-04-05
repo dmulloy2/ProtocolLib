@@ -3,12 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetTimePacketTest {
@@ -18,40 +14,44 @@ class WrappedClientboundSetTimePacketTest {
         BukkitInitialization.initializeAll();
     }
 
-    @Test
-    void testCreate() {
-        WrappedClientboundSetTimePacket w = new WrappedClientboundSetTimePacket();
-        w.setWorldAge(100000L);
 
-        ClientboundSetTimePacket nmsPacket = (ClientboundSetTimePacket) w.getHandle().getHandle();
+
+    @Test
+    void testAllArgsCreate() {
+        WrappedClientboundSetTimePacket w = new WrappedClientboundSetTimePacket(123456789L);
+
         assertEquals(PacketType.Play.Server.UPDATE_TIME, w.getHandle().getType());
-        assertEquals(100000L, nmsPacket.gameTime());
+
+        assertEquals(123456789L, w.getWorldAge());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetTimePacket nmsPacket = new ClientboundSetTimePacket(999L, Map.of());
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetTimePacket wrapper = new WrappedClientboundSetTimePacket(container);
+    void testNoArgsCreate() {
+        WrappedClientboundSetTimePacket w = new WrappedClientboundSetTimePacket();
 
-        assertEquals(999L, wrapper.getWorldAge());
+        assertEquals(PacketType.Play.Server.UPDATE_TIME, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundSetTimePacket nmsPacket = new ClientboundSetTimePacket(100L, Map.of());
+        WrappedClientboundSetTimePacket source = new WrappedClientboundSetTimePacket(123456789L);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetTimePacket wrapper = new WrappedClientboundSetTimePacket(container);
 
-        wrapper.setWorldAge(50000L);
+        assertEquals(123456789L, wrapper.getWorldAge());
 
-        assertEquals(50000L, wrapper.getWorldAge());
+        wrapper.setWorldAge(987654321L);
+
+        assertEquals(987654321L, wrapper.getWorldAge());
+
+        assertEquals(987654321L, source.getWorldAge());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetTimePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.common.ClientboundPingPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundPingPacketTest {
@@ -16,44 +15,47 @@ class WrappedClientboundPingPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundPingPacket w = new WrappedClientboundPingPacket();
-        w.setId(42);
+    void testAllArgsCreate() {
+        WrappedClientboundPingPacket w = new WrappedClientboundPingPacket(3);
 
         assertEquals(PacketType.Play.Server.PING, w.getHandle().getType());
 
         ClientboundPingPacket p = (ClientboundPingPacket) w.getHandle().getHandle();
 
-        assertEquals(42, p.getId());
+        assertEquals(3, p.getId());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundPingPacket nmsPacket = new ClientboundPingPacket(99);
+    void testNoArgsCreate() {
+        WrappedClientboundPingPacket w = new WrappedClientboundPingPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundPingPacket wrapper = new WrappedClientboundPingPacket(container);
+        assertEquals(PacketType.Play.Server.PING, w.getHandle().getType());
 
-        assertEquals(99, wrapper.getId());
+        ClientboundPingPacket p = (ClientboundPingPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getId());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundPingPacket nmsPacket = new ClientboundPingPacket(99);
-
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        ClientboundPingPacket nmsPacket = new ClientboundPingPacket(3);
+        PacketContainer container = new PacketContainer(WrappedClientboundPingPacket.TYPE, nmsPacket);
         WrappedClientboundPingPacket wrapper = new WrappedClientboundPingPacket(container);
 
-        wrapper.setId(2);
+        assertEquals(3, wrapper.getId());
 
-        assertEquals(2, wrapper.getId());
+        wrapper.setId(9);
+
+        assertEquals(9, nmsPacket.getId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundPingPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

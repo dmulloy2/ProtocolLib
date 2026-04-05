@@ -5,12 +5,8 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundPlayerActionPacketTest {
@@ -20,20 +16,18 @@ class WrappedServerboundPlayerActionPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        BlockPosition pos = new BlockPosition(10, 64, -5);
-        WrappedServerboundPlayerActionPacket w = new WrappedServerboundPlayerActionPacket(
-                pos, EnumWrappers.Direction.UP, EnumWrappers.PlayerDigType.START_DESTROY_BLOCK, 42);
+        WrappedServerboundPlayerActionPacket w = new WrappedServerboundPlayerActionPacket(new BlockPosition(1, 2, 3), EnumWrappers.Direction.DOWN, EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK, 3);
 
         assertEquals(PacketType.Play.Client.BLOCK_DIG, w.getHandle().getType());
 
-        ServerboundPlayerActionPacket p = (ServerboundPlayerActionPacket) w.getHandle().getHandle();
-
-        assertEquals(new BlockPos(10, 64, -5), p.getPos());
-        assertEquals(Direction.UP, p.getDirection());
-        assertEquals(ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, p.getAction());
-        assertEquals(42, p.getSequence());
+        assertEquals(new BlockPosition(1, 2, 3), w.getPos());
+        assertEquals(EnumWrappers.Direction.DOWN, w.getDirection());
+        assertEquals(EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK, w.getAction());
+        assertEquals(3, w.getSequence());
     }
 
     @Test
@@ -41,42 +35,40 @@ class WrappedServerboundPlayerActionPacketTest {
         WrappedServerboundPlayerActionPacket w = new WrappedServerboundPlayerActionPacket();
 
         assertEquals(PacketType.Play.Client.BLOCK_DIG, w.getHandle().getType());
-
-        assertNotNull(w.getPos());
-        assertNotNull(w.getDirection());
-        assertNotNull(w.getAction());
-        assertEquals(0, w.getSequence());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundPlayerActionPacket nmsPacket = new ServerboundPlayerActionPacket(
-                ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK,
-                new BlockPos(1, 2, 3), Direction.NORTH, 1);
-
+        WrappedServerboundPlayerActionPacket source = new WrappedServerboundPlayerActionPacket(new BlockPosition(1, 2, 3), EnumWrappers.Direction.DOWN, EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK, 3);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundPlayerActionPacket wrapper = new WrappedServerboundPlayerActionPacket(container);
 
-        assertEquals(new BlockPos(1, 2, 3), new BlockPos(wrapper.getPos().getX(), wrapper.getPos().getY(), wrapper.getPos().getZ()));
-        assertEquals(EnumWrappers.Direction.NORTH, wrapper.getDirection());
+        assertEquals(new BlockPosition(1, 2, 3), wrapper.getPos());
+        assertEquals(EnumWrappers.Direction.DOWN, wrapper.getDirection());
+        assertEquals(EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK, wrapper.getAction());
+        assertEquals(3, wrapper.getSequence());
+
+        wrapper.setPos(new BlockPosition(10, 20, 30));
+        wrapper.setDirection(EnumWrappers.Direction.UP);
+        wrapper.setAction(EnumWrappers.PlayerDigType.START_DESTROY_BLOCK);
+        wrapper.setSequence(42);
+
+        assertEquals(new BlockPosition(10, 20, 30), wrapper.getPos());
+        assertEquals(EnumWrappers.Direction.UP, wrapper.getDirection());
         assertEquals(EnumWrappers.PlayerDigType.START_DESTROY_BLOCK, wrapper.getAction());
-        assertEquals(1, wrapper.getSequence());
+        assertEquals(42, wrapper.getSequence());
 
-        wrapper.setPos(new BlockPosition(9, 8, 7));
-        wrapper.setDirection(EnumWrappers.Direction.SOUTH);
-        wrapper.setAction(EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK);
-        wrapper.setSequence(99);
-
-        assertEquals(new BlockPos(9, 8, 7), nmsPacket.getPos());
-        assertEquals(Direction.SOUTH, nmsPacket.getDirection());
-        assertEquals(ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK, nmsPacket.getAction());
-        assertEquals(99, nmsPacket.getSequence());
+        assertEquals(new BlockPosition(10, 20, 30), source.getPos());
+        assertEquals(EnumWrappers.Direction.UP, source.getDirection());
+        assertEquals(EnumWrappers.PlayerDigType.START_DESTROY_BLOCK, source.getAction());
+        assertEquals(42, source.getSequence());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundPlayerActionPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

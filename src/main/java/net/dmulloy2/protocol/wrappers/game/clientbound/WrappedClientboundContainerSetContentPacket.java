@@ -2,10 +2,11 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import java.util.List;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.List;
 
 /**
  * Wrapper for {@code ClientboundContainerSetContentPacket} (Play phase, clientbound).
@@ -24,7 +25,15 @@ public class WrappedClientboundContainerSetContentPacket extends AbstractPacket 
 
     public WrappedClientboundContainerSetContentPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundContainerSetContentPacket(int containerId, int stateId, List<ItemStack> items, ItemStack carriedItem) {
+        this();
+        setContainerId(containerId);
+        setStateId(stateId);
+        setItems(items);
+        setCarriedItem(carriedItem);
+    }
 
     public WrappedClientboundContainerSetContentPacket(PacketContainer packet) {
         super(packet, TYPE);

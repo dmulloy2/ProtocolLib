@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundContainerSetDataPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundContainerSetDataPacketTest {
@@ -16,52 +15,57 @@ class WrappedClientboundContainerSetDataPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundContainerSetDataPacket w = new WrappedClientboundContainerSetDataPacket();
-        w.setWindowId(1);
-        w.setProperty(4);
-        w.setValue(100);
+    void testAllArgsCreate() {
+        WrappedClientboundContainerSetDataPacket w = new WrappedClientboundContainerSetDataPacket(3, 7, 5);
 
         assertEquals(PacketType.Play.Server.WINDOW_DATA, w.getHandle().getType());
 
         ClientboundContainerSetDataPacket p = (ClientboundContainerSetDataPacket) w.getHandle().getHandle();
 
-        assertEquals(1, p.getContainerId());
-        assertEquals(4, p.getId());
-        assertEquals(100, p.getValue());
+        assertEquals(3, p.getContainerId());
+        assertEquals(7, p.getId());
+        assertEquals(5, p.getValue());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundContainerSetDataPacket nmsPacket = new ClientboundContainerSetDataPacket(2, 0, 50);
+    void testNoArgsCreate() {
+        WrappedClientboundContainerSetDataPacket w = new WrappedClientboundContainerSetDataPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundContainerSetDataPacket wrapper = new WrappedClientboundContainerSetDataPacket(container);
+        assertEquals(PacketType.Play.Server.WINDOW_DATA, w.getHandle().getType());
 
-        assertEquals(2, wrapper.getWindowId());
-        assertEquals(0, wrapper.getProperty());
-        assertEquals(50, wrapper.getValue());
+        ClientboundContainerSetDataPacket p = (ClientboundContainerSetDataPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getContainerId());
+        assertEquals(0, p.getId());
+        assertEquals(0, p.getValue());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundContainerSetDataPacket nmsPacket = new ClientboundContainerSetDataPacket(2, 0, 50);
-
+        ClientboundContainerSetDataPacket nmsPacket = new ClientboundContainerSetDataPacket(3, 7, 5);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundContainerSetDataPacket wrapper = new WrappedClientboundContainerSetDataPacket(container);
 
-        wrapper.setValue(200);
+        assertEquals(3, wrapper.getWindowId());
+        assertEquals(7, wrapper.getProperty());
+        assertEquals(5, wrapper.getValue());
 
-        assertEquals(2, wrapper.getWindowId());
-        assertEquals(0, wrapper.getProperty());
-        assertEquals(200, wrapper.getValue());
+        wrapper.setWindowId(9);
+        wrapper.setProperty(-5);
+        wrapper.setValue(0);
+
+        assertEquals(9, nmsPacket.getContainerId());
+        assertEquals(-5, nmsPacket.getId());
+        assertEquals(0, nmsPacket.getValue());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundContainerSetDataPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

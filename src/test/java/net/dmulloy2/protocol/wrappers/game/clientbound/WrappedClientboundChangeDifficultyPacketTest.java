@@ -5,9 +5,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import net.minecraft.network.protocol.game.ClientboundChangeDifficultyPacket;
+import net.minecraft.world.Difficulty;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundChangeDifficultyPacketTest {
@@ -17,52 +17,51 @@ class WrappedClientboundChangeDifficultyPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundChangeDifficultyPacket w = new WrappedClientboundChangeDifficultyPacket();
-        w.setDifficulty(EnumWrappers.Difficulty.HARD);
-        w.setLocked(true);
+    void testAllArgsCreate() {
+        WrappedClientboundChangeDifficultyPacket w = new WrappedClientboundChangeDifficultyPacket(EnumWrappers.Difficulty.EASY, false);
 
         assertEquals(PacketType.Play.Server.SERVER_DIFFICULTY, w.getHandle().getType());
 
         ClientboundChangeDifficultyPacket p = (ClientboundChangeDifficultyPacket) w.getHandle().getHandle();
 
-        assertEquals(net.minecraft.world.Difficulty.HARD, p.difficulty());
-        assertTrue(p.locked());
+        assertEquals(Difficulty.EASY, p.difficulty());
+        assertFalse(p.locked());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundChangeDifficultyPacket nmsPacket = new ClientboundChangeDifficultyPacket(
-                net.minecraft.world.Difficulty.NORMAL, false
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundChangeDifficultyPacket w = new WrappedClientboundChangeDifficultyPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundChangeDifficultyPacket wrapper = new WrappedClientboundChangeDifficultyPacket(container);
+        assertEquals(PacketType.Play.Server.SERVER_DIFFICULTY, w.getHandle().getType());
 
-        assertEquals(EnumWrappers.Difficulty.NORMAL, wrapper.getDifficulty());
-        assertFalse(wrapper.isLocked());
+        ClientboundChangeDifficultyPacket p = (ClientboundChangeDifficultyPacket) w.getHandle().getHandle();
+
+        assertFalse(p.locked());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundChangeDifficultyPacket nmsPacket = new ClientboundChangeDifficultyPacket(
-                net.minecraft.world.Difficulty.NORMAL, false
-        );
-
+        ClientboundChangeDifficultyPacket nmsPacket = new ClientboundChangeDifficultyPacket(Difficulty.EASY, false);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundChangeDifficultyPacket wrapper = new WrappedClientboundChangeDifficultyPacket(container);
 
-        wrapper.setDifficulty(EnumWrappers.Difficulty.PEACEFUL);
-
-        assertEquals(EnumWrappers.Difficulty.PEACEFUL, wrapper.getDifficulty());
+        assertEquals(EnumWrappers.Difficulty.EASY, wrapper.getDifficulty());
         assertFalse(wrapper.isLocked());
+
+        wrapper.setDifficulty(EnumWrappers.Difficulty.PEACEFUL);
+        wrapper.setLocked(true);
+
+        assertEquals(Difficulty.PEACEFUL, nmsPacket.difficulty());
+        assertTrue(nmsPacket.locked());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundChangeDifficultyPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

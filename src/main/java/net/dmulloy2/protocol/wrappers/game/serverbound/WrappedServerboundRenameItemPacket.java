@@ -2,7 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -16,13 +16,15 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedServerboundRenameItemPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.ITEM_NAME;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(String.class);
 
     public WrappedServerboundRenameItemPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedServerboundRenameItemPacket(String name) {
-        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { String.class }).createPacket(name));
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(name)));
     }
 
     public WrappedServerboundRenameItemPacket(PacketContainer packet) {

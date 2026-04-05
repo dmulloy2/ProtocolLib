@@ -3,15 +3,11 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
+import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.Arrays;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundContainerSetContentPacketTest {
@@ -21,73 +17,59 @@ class WrappedClientboundContainerSetContentPacketTest {
         BukkitInitialization.initializeAll();
     }
 
-    @Test
-    void testCreate() {
-        List<ItemStack> items = Arrays.asList(
-                new ItemStack(Material.STONE, 1),
-                new ItemStack(Material.DIRT, 2)
-        );
-        ItemStack carried = new ItemStack(Material.DIAMOND, 1);
 
-        WrappedClientboundContainerSetContentPacket w = new WrappedClientboundContainerSetContentPacket();
-        w.setContainerId(5);
-        w.setStateId(3);
-        w.setItems(items);
-        w.setCarriedItem(carried);
+
+    @Test
+    void testAllArgsCreate() {
+        WrappedClientboundContainerSetContentPacket w = new WrappedClientboundContainerSetContentPacket(3, 7, List.of(new ItemStack(Material.STONE)), new ItemStack(Material.STONE));
 
         assertEquals(PacketType.Play.Server.WINDOW_ITEMS, w.getHandle().getType());
 
-        ClientboundContainerSetContentPacket p = (ClientboundContainerSetContentPacket) w.getHandle().getHandle();
-
-        assertEquals(5, p.containerId());
-        assertEquals(3, p.stateId());
-        assertNotNull(p.items());
-        assertNotNull(p.carriedItem());
+        assertEquals(3, w.getContainerId());
+        assertEquals(7, w.getStateId());
+        assertEquals(List.of(new ItemStack(Material.STONE)), w.getItems());
+        assertEquals(new ItemStack(Material.STONE), w.getCarriedItem());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        List<ItemStack> items = Arrays.asList(
-                new ItemStack(Material.OAK_LOG, 5),
-                new ItemStack(Material.COBBLESTONE, 10)
-        );
-        ItemStack carried = new ItemStack(Material.AIR);
+    void testNoArgsCreate() {
+        WrappedClientboundContainerSetContentPacket w = new WrappedClientboundContainerSetContentPacket();
 
-        WrappedClientboundContainerSetContentPacket src = new WrappedClientboundContainerSetContentPacket();
-        src.setContainerId(2);
-        src.setStateId(1);
-        src.setItems(items);
-        src.setCarriedItem(carried);
-
-        PacketContainer container = src.getHandle();
-        WrappedClientboundContainerSetContentPacket wrapper =
-                new WrappedClientboundContainerSetContentPacket(container);
-
-        assertEquals(2, wrapper.getContainerId());
-        assertEquals(1, wrapper.getStateId());
-        assertNotNull(wrapper.getItems());
-        assertNotNull(wrapper.getCarriedItem());
+        assertEquals(PacketType.Play.Server.WINDOW_ITEMS, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundContainerSetContentPacket w = new WrappedClientboundContainerSetContentPacket();
-        w.setContainerId(1);
-        w.setStateId(0);
-        w.setItems(List.of());
-        w.setCarriedItem(new ItemStack(Material.AIR));
+        WrappedClientboundContainerSetContentPacket source = new WrappedClientboundContainerSetContentPacket(3, 7, List.of(new ItemStack(Material.STONE)), new ItemStack(Material.STONE));
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundContainerSetContentPacket wrapper = new WrappedClientboundContainerSetContentPacket(container);
 
-        w.setContainerId(10);
-        w.setStateId(7);
+        assertEquals(3, wrapper.getContainerId());
+        assertEquals(7, wrapper.getStateId());
+        assertEquals(List.of(new ItemStack(Material.STONE)), wrapper.getItems());
+        assertEquals(new ItemStack(Material.STONE), wrapper.getCarriedItem());
 
-        assertEquals(10, w.getContainerId());
-        assertEquals(7,  w.getStateId());
+        wrapper.setContainerId(9);
+        wrapper.setStateId(-5);
+        wrapper.setItems(List.of(new ItemStack(Material.DIRT)));
+        wrapper.setCarriedItem(new ItemStack(Material.DIRT));
+
+        assertEquals(9, wrapper.getContainerId());
+        assertEquals(-5, wrapper.getStateId());
+        assertEquals(List.of(new ItemStack(Material.DIRT)), wrapper.getItems());
+        assertEquals(new ItemStack(Material.DIRT), wrapper.getCarriedItem());
+
+        assertEquals(9, source.getContainerId());
+        assertEquals(-5, source.getStateId());
+        assertEquals(List.of(new ItemStack(Material.DIRT)), source.getItems());
+        assertEquals(new ItemStack(Material.DIRT), source.getCarriedItem());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundContainerSetContentPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

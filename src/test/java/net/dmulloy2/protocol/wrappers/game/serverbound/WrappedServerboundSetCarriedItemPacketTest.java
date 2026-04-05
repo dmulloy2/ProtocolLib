@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundSetCarriedItemPacketTest {
@@ -15,6 +14,8 @@ class WrappedServerboundSetCarriedItemPacketTest {
     static void beforeAll() {
         BukkitInitialization.initializeAll();
     }
+
+
 
     @Test
     void testAllArgsCreate() {
@@ -41,21 +42,20 @@ class WrappedServerboundSetCarriedItemPacketTest {
     @Test
     void testModifyExistingPacket() {
         ServerboundSetCarriedItemPacket nmsPacket = new ServerboundSetCarriedItemPacket(3);
-
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSetCarriedItemPacket wrapper = new WrappedServerboundSetCarriedItemPacket(container);
 
         assertEquals(3, wrapper.getSlot());
 
-        wrapper.setSlot(7);
+        wrapper.setSlot(9);
 
-        assertEquals(7, nmsPacket.getSlot());
+        assertEquals(9, nmsPacket.getSlot());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundSetCarriedItemPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

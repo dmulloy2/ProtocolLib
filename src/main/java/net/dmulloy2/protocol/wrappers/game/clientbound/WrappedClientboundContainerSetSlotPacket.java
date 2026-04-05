@@ -2,6 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.inventory.ItemStack;
 
@@ -20,10 +23,19 @@ import org.bukkit.inventory.ItemStack;
 public class WrappedClientboundContainerSetSlotPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.SET_SLOT;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(int.class)
+            .withParam(int.class)
+            .withParam(MinecraftReflection.getItemStackClass(), BukkitConverters.getItemStackConverter());
 
     public WrappedClientboundContainerSetSlotPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundContainerSetSlotPacket(int windowId, int stateId, int slot, ItemStack item) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(windowId, stateId, slot, item)));
+    }
 
     public WrappedClientboundContainerSetSlotPacket(PacketContainer packet) {
         super(packet, TYPE);

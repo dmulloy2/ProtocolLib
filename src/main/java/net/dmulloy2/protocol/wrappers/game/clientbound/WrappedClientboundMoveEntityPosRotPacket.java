@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -21,10 +22,22 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundMoveEntityPosRotPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.REL_ENTITY_MOVE_LOOK;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(short.class)
+            .withParam(short.class)
+            .withParam(short.class)
+            .withParam(byte.class)
+            .withParam(byte.class)
+            .withParam(boolean.class);
 
     public WrappedClientboundMoveEntityPosRotPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundMoveEntityPosRotPacket(int entityId, short dx, short dy, short dz, byte yaw, byte pitch, boolean onGround) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(entityId, dx, dy, dz, yaw, pitch, onGround)));
+    }
 
     public WrappedClientboundMoveEntityPosRotPacket(PacketContainer packet) {
         super(packet, TYPE);

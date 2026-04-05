@@ -2,7 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -16,13 +16,15 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedServerboundSelectTradePacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.TR_SEL;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class);
 
     public WrappedServerboundSelectTradePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedServerboundSelectTradePacket(int item) {
-        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class }).createPacket(item));
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(item)));
     }
 
     public WrappedServerboundSelectTradePacket(PacketContainer packet) {

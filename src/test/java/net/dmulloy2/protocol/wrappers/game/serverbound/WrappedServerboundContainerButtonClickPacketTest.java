@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ServerboundContainerButtonClickPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundContainerButtonClickPacketTest {
@@ -16,16 +15,18 @@ class WrappedServerboundContainerButtonClickPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundContainerButtonClickPacket w = new WrappedServerboundContainerButtonClickPacket(3, 1);
+        WrappedServerboundContainerButtonClickPacket w = new WrappedServerboundContainerButtonClickPacket(3, 7);
 
         assertEquals(PacketType.Play.Client.ENCHANT_ITEM, w.getHandle().getType());
 
         ServerboundContainerButtonClickPacket p = (ServerboundContainerButtonClickPacket) w.getHandle().getHandle();
 
         assertEquals(3, p.containerId());
-        assertEquals(1, p.buttonId());
+        assertEquals(7, p.buttonId());
     }
 
     @Test
@@ -42,25 +43,24 @@ class WrappedServerboundContainerButtonClickPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundContainerButtonClickPacket nmsPacket = new ServerboundContainerButtonClickPacket(5, 2);
-
+        ServerboundContainerButtonClickPacket nmsPacket = new ServerboundContainerButtonClickPacket(3, 7);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundContainerButtonClickPacket wrapper = new WrappedServerboundContainerButtonClickPacket(container);
 
-        assertEquals(5, wrapper.getContainerId());
-        assertEquals(2, wrapper.getButtonId());
+        assertEquals(3, wrapper.getContainerId());
+        assertEquals(7, wrapper.getButtonId());
 
         wrapper.setContainerId(9);
-        wrapper.setButtonId(7);
+        wrapper.setButtonId(-5);
 
         assertEquals(9, nmsPacket.containerId());
-        assertEquals(7, nmsPacket.buttonId());
+        assertEquals(-5, nmsPacket.buttonId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundContainerButtonClickPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

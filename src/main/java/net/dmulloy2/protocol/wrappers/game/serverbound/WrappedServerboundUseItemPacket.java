@@ -2,7 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -20,13 +20,18 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedServerboundUseItemPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.USE_ITEM;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(EnumWrappers.getHandClass(), EnumWrappers.getHandConverter())
+            .withParam(int.class)
+            .withParam(float.class)
+            .withParam(float.class);
 
     public WrappedServerboundUseItemPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedServerboundUseItemPacket(EnumWrappers.Hand hand, int sequence, float yRot, float xRot) {
-        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { EnumWrappers.getHandClass(), int.class, float.class, float.class }).createPacket(EnumWrappers.getHandConverter().getGeneric(hand), sequence, yRot, xRot));
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(hand, sequence, yRot, xRot)));
     }
 
     public WrappedServerboundUseItemPacket(PacketContainer packet) {

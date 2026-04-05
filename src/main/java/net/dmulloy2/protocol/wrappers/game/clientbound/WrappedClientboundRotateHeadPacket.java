@@ -27,7 +27,13 @@ public class WrappedClientboundRotateHeadPacket extends AbstractPacket {
 
     public WrappedClientboundRotateHeadPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundRotateHeadPacket(int entityId, byte yHeadRot) {
+        this();
+        setEntityId(entityId);
+        setYHeadRot(yHeadRot);
+    }
 
     public WrappedClientboundRotateHeadPacket(PacketContainer packet) {
         super(packet, TYPE);
