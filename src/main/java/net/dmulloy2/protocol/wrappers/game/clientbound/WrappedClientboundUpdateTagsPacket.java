@@ -18,4 +18,8 @@ public class WrappedClientboundUpdateTagsPacket extends AbstractPacket {
     public WrappedClientboundUpdateTagsPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'tags' (NMS type: Map<ResourceKey<? extends Registry<?>>, TagNetworkSerialization.NetworkPayload>)
+    //   No ProtocolLib accessor exists for this tag-payload map.
+    //   Use handle.getModifier().read(0) to get the raw Map, or add a dedicated getMaps() call.
 }

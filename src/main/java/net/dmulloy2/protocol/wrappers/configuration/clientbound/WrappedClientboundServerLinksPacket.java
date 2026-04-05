@@ -18,4 +18,8 @@ public class WrappedClientboundServerLinksPacket extends AbstractPacket {
     public WrappedClientboundServerLinksPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'links' (NMS type: List<ServerLinks.UntrustedEntry>)
+    //   Same as the game-phase ServerLinks packet. No ProtocolLib accessor exists.
+    //   Use handle.getModifier().read(0) for the raw List.
 }

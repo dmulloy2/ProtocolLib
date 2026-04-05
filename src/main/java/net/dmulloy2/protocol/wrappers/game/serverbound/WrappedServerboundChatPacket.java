@@ -93,4 +93,8 @@ public class WrappedServerboundChatPacket extends AbstractPacket {
     public void setSignature(WrappedMessageSignature signature) {
         handle.getMessageSignatures().write(0, signature);
     }
+
+    // TODO: missing field 'lastSeenMessages' (NMS type: LastSeenMessages.Update)
+    //   Holds a sequence int and a BitSet of acknowledged message IDs.
+    //   No dedicated ProtocolLib accessor exists; use handle.getModifier().read(N) for the raw Update object.
 }

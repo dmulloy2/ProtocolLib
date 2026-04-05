@@ -19,4 +19,8 @@ public class WrappedServerboundSelectKnownPacksPacket extends AbstractPacket {
     public WrappedServerboundSelectKnownPacksPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'knownPacks' (NMS type: List<KnownPack> — record with namespace, id, version Strings)
+    //   Use AutoWrapper or a dedicated WrappedKnownPack class.
+    //   Alternatively, handle.getModifier().read(0) returns the raw List<KnownPack>.
 }

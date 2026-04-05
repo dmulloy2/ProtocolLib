@@ -40,4 +40,11 @@ public class WrappedClientboundUpdateAdvancementsPacket extends AbstractPacket {
     public void setShouldShowAdvancements(boolean shouldShowAdvancements) {
         handle.getBooleans().write(1, shouldShowAdvancements);
     }
+
+    // TODO: missing field 'added' (NMS type: List<AdvancementHolder>)
+    //   No ProtocolLib accessor exists for AdvancementHolder. Use handle.getModifier().read(1) for the raw List.
+    // TODO: missing field 'removed' (NMS type: Set<Identifier>)
+    //   Use getMinecraftKeys() once a dedicated Set accessor is added, or handle.getModifier().read(2) for the raw Set.
+    // TODO: missing field 'progress' (NMS type: Map<Identifier, AdvancementProgress>)
+    //   No ProtocolLib accessor exists for AdvancementProgress. Use handle.getModifier().read(3) for the raw Map.
 }

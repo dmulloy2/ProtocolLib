@@ -19,4 +19,8 @@ public class WrappedServerboundSetGameRulePacket extends AbstractPacket {
     public WrappedServerboundSetGameRulePacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'entries' (NMS type: List<ServerboundSetGameRulePacket.Entry> where Entry = (ResourceKey<GameRule<?>>, String))
+    //   No ProtocolLib accessor exists for this list of game-rule key/value pairs.
+    //   Use handle.getModifier().read(0) to access the raw List<Entry>, or add a dedicated wrapper.
 }

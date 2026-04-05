@@ -19,4 +19,8 @@ public class WrappedClientboundRecipeBookRemovePacket extends AbstractPacket {
     public WrappedClientboundRecipeBookRemovePacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'recipes' (NMS type: List<RecipeDisplayId> — list of integer-backed recipe IDs)
+    //   RecipeDisplayId wraps an int; use getLists(Converters.passthrough(Integer.class)).read(0)
+    //   or getSpecificModifier(List.class).read(0) to access the raw list.
 }

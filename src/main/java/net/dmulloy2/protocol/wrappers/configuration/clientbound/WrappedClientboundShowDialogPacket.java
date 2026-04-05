@@ -19,4 +19,7 @@ public class WrappedClientboundShowDialogPacket extends AbstractPacket {
     public WrappedClientboundShowDialogPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'dialog' (NMS type: Holder<Dialog> — registry-backed dialog definition)
+    //   Same as the game-phase ShowDialog packet. Use handle.getModifier().read(0) for the raw Holder<Dialog>.
 }

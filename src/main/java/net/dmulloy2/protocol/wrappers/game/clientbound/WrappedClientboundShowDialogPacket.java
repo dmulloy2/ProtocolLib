@@ -19,4 +19,8 @@ public class WrappedClientboundShowDialogPacket extends AbstractPacket {
     public WrappedClientboundShowDialogPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'dialog' (NMS type: Holder<Dialog> — registry-backed dialog definition)
+    //   Dialog is a complex type. Use Converters.holder() once a Dialog converter exists,
+    //   or access handle.getModifier().read(0) for the raw Holder<Dialog>.
 }

@@ -31,4 +31,8 @@ public class WrappedClientboundPlaceGhostRecipePacket extends AbstractPacket {
     public void setContainerId(int containerId) {
         handle.getIntegers().write(0, containerId);
     }
+
+    // TODO: missing field 'recipeDisplay' (NMS type: RecipeDisplay — sealed interface with multiple subtypes)
+    //   RecipeDisplay covers crafting table, furnace, stonecutter, smithing-transform, and smithing-trim layouts.
+    //   No ProtocolLib accessor exists; use handle.getModifier().read(1) for the raw RecipeDisplay object.
 }

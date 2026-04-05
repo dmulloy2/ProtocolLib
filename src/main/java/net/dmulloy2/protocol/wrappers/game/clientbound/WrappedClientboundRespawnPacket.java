@@ -32,4 +32,8 @@ public class WrappedClientboundRespawnPacket extends AbstractPacket {
     public void setDataToKeep(byte dataToKeep) {
         handle.getBytes().write(0, dataToKeep);
     }
+
+    // TODO: missing field 'commonPlayerSpawnInfo' (NMS type: CommonPlayerSpawnInfo)
+    //   Same as the Login packet's commonPlayerSpawnInfo. Add a WrappedCommonPlayerSpawnInfo wrapper
+    //   and getCommonPlayerSpawnInfos() in AbstractStructure, then use it here.
 }

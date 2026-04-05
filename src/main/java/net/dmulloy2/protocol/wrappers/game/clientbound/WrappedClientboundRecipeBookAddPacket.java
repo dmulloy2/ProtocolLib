@@ -32,4 +32,9 @@ public class WrappedClientboundRecipeBookAddPacket extends AbstractPacket {
     public void setReplace(boolean replace) {
         handle.getBooleans().write(0, replace);
     }
+
+    // TODO: missing field 'entries' (NMS type: List<ClientboundRecipeBookAddPacket.Entry>)
+    //   Each Entry holds a RecipeDisplayEntry (id, display, group, filteringCraftingCategory)
+    //   and a boolean 'notification'.
+    //   No ProtocolLib accessor exists; use handle.getModifier().read(0) for the raw List.
 }

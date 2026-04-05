@@ -14,12 +14,22 @@ class WrappedServerboundPlayerInputPacketTest {
         BukkitInitialization.initializeAll();
     }
 
-
+    private static WrappedServerboundPlayerInputPacket.WrappedInput makeInput(boolean forward, boolean sprint) {
+        WrappedServerboundPlayerInputPacket.WrappedInput i = new WrappedServerboundPlayerInputPacket.WrappedInput();
+        i.forward = forward;
+        i.sprint = sprint;
+        return i;
+    }
 
     @Test
     void testAllArgsCreate() {
-        // TODO: packet has no suitable all-args constructor
-        assertEquals(PacketType.Play.Client.STEER_VEHICLE, new WrappedServerboundPlayerInputPacket().getHandle().getType());
+        WrappedServerboundPlayerInputPacket w = new WrappedServerboundPlayerInputPacket(makeInput(true, true));
+
+        assertEquals(PacketType.Play.Client.STEER_VEHICLE, w.getHandle().getType());
+
+        assertTrue(w.getInput().forward);
+        assertTrue(w.getInput().sprint);
+        assertFalse(w.getInput().backward);
     }
 
     @Test
@@ -31,10 +41,21 @@ class WrappedServerboundPlayerInputPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Client.STEER_VEHICLE);
+        WrappedServerboundPlayerInputPacket source = new WrappedServerboundPlayerInputPacket(makeInput(true, false));
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundPlayerInputPacket wrapper = new WrappedServerboundPlayerInputPacket(container);
 
-        assertEquals(PacketType.Play.Client.STEER_VEHICLE, wrapper.getHandle().getType());
+        assertTrue(wrapper.getInput().forward);
+        assertFalse(wrapper.getInput().sprint);
+
+        wrapper.setInput(makeInput(false, true));
+
+        assertFalse(wrapper.getInput().forward);
+        assertTrue(wrapper.getInput().sprint);
+
+        assertFalse(source.getInput().forward);
+        assertTrue(source.getInput().sprint);
     }
 
     @Test

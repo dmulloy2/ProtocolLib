@@ -33,4 +33,7 @@ public class WrappedClientboundTestInstanceBlockStatusPacket extends AbstractPac
     public void setStatus(WrappedChatComponent status) {
         handle.getChatComponents().write(0, status);
     }
+
+    // TODO: missing field 'size' (NMS type: Optional<Vec3i>)
+    //   Vec3i is not directly wrapped by ProtocolLib. Use handle.getModifier().read(1) for the raw Optional<Vec3i>.
 }

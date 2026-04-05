@@ -70,4 +70,14 @@ public class WrappedClientboundPlayerChatPacket extends AbstractPacket {
     public void setSignature(WrappedMessageSignature signature) {
         handle.getMessageSignatures().write(0, signature);
     }
+
+    // TODO: missing field 'body' (NMS type: SignedMessageBody.Packed)
+    //   Holds the plain text content, timestamp, salt, and a lastSeen acknowledgement array.
+    //   Use handle.getSignatures() for the lastSeen portion, or handle.getModifier().read(N) for the raw Packed body.
+    // TODO: missing field 'filterMask' (NMS type: FilterMask)
+    //   Encodes which message characters are filtered. No dedicated ProtocolLib accessor exists.
+    //   Use handle.getModifier().read(N) for the raw FilterMask object.
+    // TODO: missing field 'chatType' (NMS type: ChatType.Bound)
+    //   Holds a ResourceKey<ChatType> and two Component parameters (name, targetName).
+    //   No dedicated ProtocolLib accessor exists; use handle.getModifier().read(N).
 }

@@ -25,6 +25,10 @@ public class WrappedClientboundDisguisedChatPacket extends AbstractPacket {
         super(packet, TYPE);
     }
 
+    // TODO: missing field 'chatType' (NMS type: ChatType.Bound — holds ResourceKey<ChatType> + Component name + optional Component targetName)
+    //   No dedicated ProtocolLib accessor exists for ChatType.Bound.
+    //   Use handle.getModifier().read(1) for the raw ChatType.Bound object.
+
     public WrappedChatComponent getMessage() {
         return handle.getChatComponents().read(0);
     }
