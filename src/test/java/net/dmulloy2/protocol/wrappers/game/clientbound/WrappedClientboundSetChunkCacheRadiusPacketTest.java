@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundSetChunkCacheRadiusPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetChunkCacheRadiusPacketTest {
@@ -16,44 +15,47 @@ class WrappedClientboundSetChunkCacheRadiusPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetChunkCacheRadiusPacket w = new WrappedClientboundSetChunkCacheRadiusPacket();
-        w.setViewDistance(10);
+    void testAllArgsCreate() {
+        WrappedClientboundSetChunkCacheRadiusPacket w = new WrappedClientboundSetChunkCacheRadiusPacket(3);
 
         assertEquals(PacketType.Play.Server.VIEW_DISTANCE, w.getHandle().getType());
 
         ClientboundSetChunkCacheRadiusPacket p = (ClientboundSetChunkCacheRadiusPacket) w.getHandle().getHandle();
 
-        assertEquals(10, p.getRadius());
+        assertEquals(3, p.getRadius());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetChunkCacheRadiusPacket nmsPacket = new ClientboundSetChunkCacheRadiusPacket(12);
+    void testNoArgsCreate() {
+        WrappedClientboundSetChunkCacheRadiusPacket w = new WrappedClientboundSetChunkCacheRadiusPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetChunkCacheRadiusPacket wrapper = new WrappedClientboundSetChunkCacheRadiusPacket(container);
+        assertEquals(PacketType.Play.Server.VIEW_DISTANCE, w.getHandle().getType());
 
-        assertEquals(12, wrapper.getViewDistance());
+        ClientboundSetChunkCacheRadiusPacket p = (ClientboundSetChunkCacheRadiusPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getRadius());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundSetChunkCacheRadiusPacket nmsPacket = new ClientboundSetChunkCacheRadiusPacket(8);
-
+        ClientboundSetChunkCacheRadiusPacket nmsPacket = new ClientboundSetChunkCacheRadiusPacket(3);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetChunkCacheRadiusPacket wrapper = new WrappedClientboundSetChunkCacheRadiusPacket(container);
 
-        wrapper.setViewDistance(16);
+        assertEquals(3, wrapper.getViewDistance());
 
-        assertEquals(16, wrapper.getViewDistance());
+        wrapper.setViewDistance(9);
+
+        assertEquals(9, nmsPacket.getRadius());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetChunkCacheRadiusPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

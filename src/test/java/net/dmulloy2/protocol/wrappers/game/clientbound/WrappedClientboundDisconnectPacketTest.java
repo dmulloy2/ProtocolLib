@@ -4,11 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import net.minecraft.network.protocol.common.ClientboundDisconnectPacket;
-import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundDisconnectPacketTest {
@@ -18,48 +15,44 @@ class WrappedClientboundDisconnectPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundDisconnectPacket w = new WrappedClientboundDisconnectPacket();
-        w.setReason(WrappedChatComponent.fromText("You were kicked"));
+    void testAllArgsCreate() {
+        WrappedClientboundDisconnectPacket w = new WrappedClientboundDisconnectPacket(WrappedChatComponent.fromText("Hello, world!"));
 
         assertEquals(PacketType.Play.Server.KICK_DISCONNECT, w.getHandle().getType());
 
-        ClientboundDisconnectPacket p = (ClientboundDisconnectPacket) w.getHandle().getHandle();
-
-        assertNotNull(p.reason());
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), w.getReason());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundDisconnectPacket nmsPacket = new ClientboundDisconnectPacket(
-                Component.literal("Banned")
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundDisconnectPacket w = new WrappedClientboundDisconnectPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundDisconnectPacket wrapper = new WrappedClientboundDisconnectPacket(container);
-
-        assertTrue(wrapper.getReason().getJson().contains("Banned"));
+        assertEquals(PacketType.Play.Server.KICK_DISCONNECT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundDisconnectPacket nmsPacket = new ClientboundDisconnectPacket(
-                Component.literal("old")
-        );
-
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundDisconnectPacket source = new WrappedClientboundDisconnectPacket(WrappedChatComponent.fromText("Hello, world!"));
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = new PacketContainer(WrappedClientboundDisconnectPacket.TYPE, nmsPacket);
         WrappedClientboundDisconnectPacket wrapper = new WrappedClientboundDisconnectPacket(container);
 
-        wrapper.setReason(WrappedChatComponent.fromText("new reason"));
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), wrapper.getReason());
 
-        assertTrue(wrapper.getReason().getJson().contains("new reason"));
+        wrapper.setReason(WrappedChatComponent.fromText("Modified"));
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), wrapper.getReason());
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), source.getReason());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundDisconnectPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

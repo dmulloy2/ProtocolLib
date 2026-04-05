@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -16,10 +17,17 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundTickingStatePacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.TICKING_STATE;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(float.class)
+            .withParam(boolean.class);
 
     public WrappedClientboundTickingStatePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundTickingStatePacket(float tickRate, boolean frozen) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(tickRate, frozen)));
+    }
 
     public WrappedClientboundTickingStatePacket(PacketContainer packet) {
         super(packet, TYPE);

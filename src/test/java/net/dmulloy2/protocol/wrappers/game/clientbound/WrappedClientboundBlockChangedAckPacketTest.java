@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundBlockChangedAckPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundBlockChangedAckPacketTest {
@@ -16,44 +15,47 @@ class WrappedClientboundBlockChangedAckPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundBlockChangedAckPacket w = new WrappedClientboundBlockChangedAckPacket();
-        w.setSequence(17);
+    void testAllArgsCreate() {
+        WrappedClientboundBlockChangedAckPacket w = new WrappedClientboundBlockChangedAckPacket(3);
 
         assertEquals(PacketType.Play.Server.BLOCK_CHANGED_ACK, w.getHandle().getType());
 
         ClientboundBlockChangedAckPacket p = (ClientboundBlockChangedAckPacket) w.getHandle().getHandle();
 
-        assertEquals(17, p.sequence());
+        assertEquals(3, p.sequence());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundBlockChangedAckPacket nmsPacket = new ClientboundBlockChangedAckPacket(33);
+    void testNoArgsCreate() {
+        WrappedClientboundBlockChangedAckPacket w = new WrappedClientboundBlockChangedAckPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundBlockChangedAckPacket wrapper = new WrappedClientboundBlockChangedAckPacket(container);
+        assertEquals(PacketType.Play.Server.BLOCK_CHANGED_ACK, w.getHandle().getType());
 
-        assertEquals(33, wrapper.getSequence());
+        ClientboundBlockChangedAckPacket p = (ClientboundBlockChangedAckPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.sequence());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundBlockChangedAckPacket nmsPacket = new ClientboundBlockChangedAckPacket(33);
-
+        ClientboundBlockChangedAckPacket nmsPacket = new ClientboundBlockChangedAckPacket(3);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundBlockChangedAckPacket wrapper = new WrappedClientboundBlockChangedAckPacket(container);
 
-        wrapper.setSequence(99);
+        assertEquals(3, wrapper.getSequence());
 
-        assertEquals(99, wrapper.getSequence());
+        wrapper.setSequence(9);
+
+        assertEquals(9, nmsPacket.sequence());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundBlockChangedAckPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

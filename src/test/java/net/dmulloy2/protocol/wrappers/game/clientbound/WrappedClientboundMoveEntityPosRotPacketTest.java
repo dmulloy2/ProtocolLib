@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundMoveEntityPosRotPacketTest {
@@ -16,62 +14,74 @@ class WrappedClientboundMoveEntityPosRotPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundMoveEntityPosRotPacket w = new WrappedClientboundMoveEntityPosRotPacket();
-        w.setEntityId(20);
-        w.setDx((short) 64);
-        w.setDy((short) 0);
-        w.setDz((short) -64);
-        w.setYaw((byte) 32);
-        w.setPitch((byte) 8);
-        w.setOnGround(false);
+    void testAllArgsCreate() {
+        WrappedClientboundMoveEntityPosRotPacket w = new WrappedClientboundMoveEntityPosRotPacket(3, (short) 7, (short) -1, (short) 12, (byte) 1, (byte) 7, true);
 
         assertEquals(PacketType.Play.Server.REL_ENTITY_MOVE_LOOK, w.getHandle().getType());
 
-        ClientboundMoveEntityPacket.PosRot p = (ClientboundMoveEntityPacket.PosRot) w.getHandle().getHandle();
-
-        assertEquals((short) 64, p.getXa());
-        assertEquals((byte) 32, (byte) Math.round(p.getYRot() / 360.0f * 256.0f));
-        assertFalse(p.isOnGround());
+        assertEquals(3, w.getEntityId());
+        assertEquals((short) 7, w.getDx());
+        assertEquals((short) -1, w.getDy());
+        assertEquals((short) 12, w.getDz());
+        assertEquals((byte) 1, w.getYaw());
+        assertEquals((byte) 7, w.getPitch());
+        assertTrue(w.isOnGround());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundMoveEntityPacket.PosRot nmsPacket = new ClientboundMoveEntityPacket.PosRot(
-                5, (short) 200, (short) 100, (short) 50, (byte) 32, (byte) 8, true
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundMoveEntityPosRotPacket w = new WrappedClientboundMoveEntityPosRotPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundMoveEntityPosRotPacket wrapper = new WrappedClientboundMoveEntityPosRotPacket(container);
-
-        assertEquals(5, wrapper.getEntityId());
-        assertEquals((short) 200, wrapper.getDx());
-        assertEquals((byte) 32, wrapper.getYaw());
-        assertTrue(wrapper.isOnGround());
+        assertEquals(PacketType.Play.Server.REL_ENTITY_MOVE_LOOK, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundMoveEntityPacket.PosRot nmsPacket = new ClientboundMoveEntityPacket.PosRot(
-                5, (short) 200, (short) 100, (short) 50, (byte) 32, (byte) 8, false
-        );
-
+        WrappedClientboundMoveEntityPosRotPacket source = new WrappedClientboundMoveEntityPosRotPacket(3, (short) 7, (short) -1, (short) 12, (byte) 1, (byte) 7, true);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundMoveEntityPosRotPacket wrapper = new WrappedClientboundMoveEntityPosRotPacket(container);
 
-        wrapper.setOnGround(true);
-
-        assertEquals(5, wrapper.getEntityId());
-        assertEquals((short) 200, wrapper.getDx());
-        assertEquals((byte) 32, wrapper.getYaw());
+        assertEquals(3, wrapper.getEntityId());
+        assertEquals((short) 7, wrapper.getDx());
+        assertEquals((short) -1, wrapper.getDy());
+        assertEquals((short) 12, wrapper.getDz());
+        assertEquals((byte) 1, wrapper.getYaw());
+        assertEquals((byte) 7, wrapper.getPitch());
         assertTrue(wrapper.isOnGround());
+
+        wrapper.setEntityId(9);
+        wrapper.setDx((short) -1);
+        wrapper.setDy((short) 0);
+        wrapper.setDz((short) 5);
+        wrapper.setYaw((byte) -1);
+        wrapper.setPitch((byte) 0);
+        wrapper.setOnGround(false);
+
+        assertEquals(9, wrapper.getEntityId());
+        assertEquals((short) -1, wrapper.getDx());
+        assertEquals((short) 0, wrapper.getDy());
+        assertEquals((short) 5, wrapper.getDz());
+        assertEquals((byte) -1, wrapper.getYaw());
+        assertEquals((byte) 0, wrapper.getPitch());
+        assertFalse(wrapper.isOnGround());
+
+        assertEquals(9, source.getEntityId());
+        assertEquals((short) -1, source.getDx());
+        assertEquals((short) 0, source.getDy());
+        assertEquals((short) 5, source.getDz());
+        assertEquals((byte) -1, source.getYaw());
+        assertEquals((byte) 0, source.getPitch());
+        assertFalse(source.isOnGround());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundMoveEntityPosRotPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

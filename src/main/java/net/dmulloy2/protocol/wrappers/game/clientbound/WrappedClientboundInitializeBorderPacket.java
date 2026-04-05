@@ -25,7 +25,19 @@ public class WrappedClientboundInitializeBorderPacket extends AbstractPacket {
 
     public WrappedClientboundInitializeBorderPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundInitializeBorderPacket(double newCenterX, double newCenterZ, double oldSize, double newSize, long lerpTime, int newAbsoluteMaxSize, int warningBlocks, int warningTime) {
+        this();
+        setNewCenterX(newCenterX);
+        setNewCenterZ(newCenterZ);
+        setOldSize(oldSize);
+        setNewSize(newSize);
+        setLerpTime(lerpTime);
+        setNewAbsoluteMaxSize(newAbsoluteMaxSize);
+        setWarningBlocks(warningBlocks);
+        setWarningTime(warningTime);
+    }
 
     public WrappedClientboundInitializeBorderPacket(PacketContainer packet) {
         super(packet, TYPE);

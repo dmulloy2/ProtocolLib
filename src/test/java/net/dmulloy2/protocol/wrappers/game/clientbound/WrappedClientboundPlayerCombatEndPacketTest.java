@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundPlayerCombatEndPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundPlayerCombatEndPacketTest {
@@ -16,44 +14,44 @@ class WrappedClientboundPlayerCombatEndPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundPlayerCombatEndPacket w = new WrappedClientboundPlayerCombatEndPacket();
-        w.setDuration(40);
+    void testAllArgsCreate() {
+        WrappedClientboundPlayerCombatEndPacket w = new WrappedClientboundPlayerCombatEndPacket(3);
 
         assertEquals(PacketType.Play.Server.PLAYER_COMBAT_END, w.getHandle().getType());
 
-        ClientboundPlayerCombatEndPacket p = (ClientboundPlayerCombatEndPacket) w.getHandle().getHandle();
-
-        assertNotNull(p);
+        assertEquals(3, w.getDuration());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundPlayerCombatEndPacket nmsPacket = new ClientboundPlayerCombatEndPacket(100);
+    void testNoArgsCreate() {
+        WrappedClientboundPlayerCombatEndPacket w = new WrappedClientboundPlayerCombatEndPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundPlayerCombatEndPacket wrapper = new WrappedClientboundPlayerCombatEndPacket(container);
-
-        assertEquals(100, wrapper.getDuration());
+        assertEquals(PacketType.Play.Server.PLAYER_COMBAT_END, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundPlayerCombatEndPacket nmsPacket = new ClientboundPlayerCombatEndPacket(100);
-
+        WrappedClientboundPlayerCombatEndPacket source = new WrappedClientboundPlayerCombatEndPacket(3);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundPlayerCombatEndPacket wrapper = new WrappedClientboundPlayerCombatEndPacket(container);
 
-        wrapper.setDuration(200);
+        assertEquals(3, wrapper.getDuration());
 
-        assertEquals(200, wrapper.getDuration());
+        wrapper.setDuration(9);
+
+        assertEquals(9, wrapper.getDuration());
+
+        assertEquals(9, source.getDuration());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundPlayerCombatEndPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

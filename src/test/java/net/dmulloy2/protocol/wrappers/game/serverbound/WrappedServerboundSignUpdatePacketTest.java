@@ -4,11 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundSignUpdatePacketTest {
@@ -18,19 +15,17 @@ class WrappedServerboundSignUpdatePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        BlockPosition pos = new BlockPosition(3, 64, -7);
-        String[] lines = {"Hello", "World", "", ""};
-        WrappedServerboundSignUpdatePacket w = new WrappedServerboundSignUpdatePacket(pos, true, lines);
+        WrappedServerboundSignUpdatePacket w = new WrappedServerboundSignUpdatePacket(new BlockPosition(1, 2, 3), false, new String[] { "line1", "line2", "line3", "line4" });
 
         assertEquals(PacketType.Play.Client.UPDATE_SIGN, w.getHandle().getType());
 
-        ServerboundSignUpdatePacket p = (ServerboundSignUpdatePacket) w.getHandle().getHandle();
-
-        assertEquals(new BlockPos(3, 64, -7), p.getPos());
-        assertTrue(p.isFrontText());
-        assertArrayEquals(lines, p.getLines());
+        assertEquals(new BlockPosition(1, 2, 3), w.getPos());
+        assertFalse(w.isFrontText());
+        assertArrayEquals(new String[] { "line1", "line2", "line3", "line4" }, w.getLines());
     }
 
     @Test
@@ -38,37 +33,36 @@ class WrappedServerboundSignUpdatePacketTest {
         WrappedServerboundSignUpdatePacket w = new WrappedServerboundSignUpdatePacket();
 
         assertEquals(PacketType.Play.Client.UPDATE_SIGN, w.getHandle().getType());
-
-        assertNotNull(w.getPos());
-        assertFalse(w.isFrontText());
-        assertNotNull(w.getLines());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundSignUpdatePacket nmsPacket = new ServerboundSignUpdatePacket(
-                new BlockPos(1, 2, 3), true, "A", "B", "C", "D");
-
+        WrappedServerboundSignUpdatePacket source = new WrappedServerboundSignUpdatePacket(new BlockPosition(1, 2, 3), false, new String[] { "line1", "line2", "line3", "line4" });
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSignUpdatePacket wrapper = new WrappedServerboundSignUpdatePacket(container);
 
-        assertEquals(new BlockPos(1, 2, 3), new BlockPos(wrapper.getPos().getX(), wrapper.getPos().getY(), wrapper.getPos().getZ()));
+        assertEquals(new BlockPosition(1, 2, 3), wrapper.getPos());
+        assertFalse(wrapper.isFrontText());
+        assertArrayEquals(new String[] { "line1", "line2", "line3", "line4" }, wrapper.getLines());
+
+        wrapper.setPos(new BlockPosition(10, 20, 30));
+        wrapper.setFrontText(true);
+        wrapper.setLines(new String[] { "x", "y", "z", "w" });
+
+        assertEquals(new BlockPosition(10, 20, 30), wrapper.getPos());
         assertTrue(wrapper.isFrontText());
-        assertArrayEquals(new String[]{"A", "B", "C", "D"}, wrapper.getLines());
+        assertArrayEquals(new String[] { "x", "y", "z", "w" }, wrapper.getLines());
 
-        wrapper.setPos(new BlockPosition(5, 10, 15));
-        wrapper.setFrontText(false);
-        wrapper.setLines(new String[]{"W", "X", "Y", "Z"});
-
-        assertEquals(new BlockPos(5, 10, 15), nmsPacket.getPos());
-        assertFalse(nmsPacket.isFrontText());
-        assertArrayEquals(new String[]{"W", "X", "Y", "Z"}, nmsPacket.getLines());
+        assertEquals(new BlockPosition(10, 20, 30), source.getPos());
+        assertTrue(source.isFrontText());
+        assertArrayEquals(new String[] { "x", "y", "z", "w" }, source.getLines());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundSignUpdatePacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

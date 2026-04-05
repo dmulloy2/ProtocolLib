@@ -2,13 +2,14 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
+import java.util.Set;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
-
-import java.util.Set;
 
 /**
  * Wrapper for {@code ClientboundTeleportEntityPacket} (Play phase, clientbound).
@@ -27,7 +28,15 @@ public class WrappedClientboundTeleportEntityPacket extends AbstractPacket {
 
     public WrappedClientboundTeleportEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundTeleportEntityPacket(int entityId, WrappedPositionMoveRotation change, Set<EnumWrappers.RelativeArgument> relatives, boolean onGround) {
+        this();
+        setEntityId(entityId);
+        setChange(change);
+        setRelatives(relatives);
+        setOnGround(onGround);
+    }
 
     public WrappedClientboundTeleportEntityPacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -66,6 +66,7 @@ import com.comphenix.protocol.wrappers.WrappedStatistic;
 import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
 import com.comphenix.protocol.wrappers.WrappedTeamParameters;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.comphenix.protocol.wrappers.WrappedWeightedList;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
@@ -813,6 +814,20 @@ public abstract class AbstractStructure {
                 MinecraftReflection.getParticleParam(),
                 BukkitConverters.getParticleConverter()
         );
+    }
+
+    /**
+     * Retrieve a read/write structure for WeightedList fields.
+     *
+     * @param elementConverter converter for the element type inside each weighted entry
+     * @param <T> the Bukkit-side element type
+     * @return A modifier for WeightedList fields.
+     */
+    public <T> StructureModifier<WrappedWeightedList<T>> getWeightedLists(
+            EquivalentConverter<T> elementConverter) {
+        return structureModifier.withType(
+                WrappedWeightedList.getNmsClass(),
+                WrappedWeightedList.getConverter(elementConverter));
     }
 
     /**

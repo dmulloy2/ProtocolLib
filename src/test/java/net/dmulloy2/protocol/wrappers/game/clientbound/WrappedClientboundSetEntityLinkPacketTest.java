@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetEntityLinkPacketTest {
@@ -16,51 +14,49 @@ class WrappedClientboundSetEntityLinkPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetEntityLinkPacket w = new WrappedClientboundSetEntityLinkPacket();
-        w.setAttachedEntityId(5);
-        w.setHoldingEntityId(10);
+    void testAllArgsCreate() {
+        WrappedClientboundSetEntityLinkPacket w = new WrappedClientboundSetEntityLinkPacket(3, 7);
 
         assertEquals(PacketType.Play.Server.ATTACH_ENTITY, w.getHandle().getType());
 
-        ClientboundSetEntityLinkPacket p = (ClientboundSetEntityLinkPacket) w.getHandle().getHandle();
-
-        assertEquals(5, p.getSourceId());
-        assertEquals(10, p.getDestId());
+        assertEquals(3, w.getAttachedEntityId());
+        assertEquals(7, w.getHoldingEntityId());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.ATTACH_ENTITY);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 11);
-        container.getIntegers().write(1, 22);
+    void testNoArgsCreate() {
+        WrappedClientboundSetEntityLinkPacket w = new WrappedClientboundSetEntityLinkPacket();
 
-        WrappedClientboundSetEntityLinkPacket wrapper = new WrappedClientboundSetEntityLinkPacket(container);
-
-        assertEquals(11, wrapper.getAttachedEntityId());
-        assertEquals(22, wrapper.getHoldingEntityId());
+        assertEquals(PacketType.Play.Server.ATTACH_ENTITY, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.ATTACH_ENTITY);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 1);
-        container.getIntegers().write(1, 2);
-
+        WrappedClientboundSetEntityLinkPacket source = new WrappedClientboundSetEntityLinkPacket(3, 7);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetEntityLinkPacket wrapper = new WrappedClientboundSetEntityLinkPacket(container);
-        wrapper.setAttachedEntityId(99);
 
-        assertEquals(99, wrapper.getAttachedEntityId());
-        assertEquals(2, wrapper.getHoldingEntityId());
+        assertEquals(3, wrapper.getAttachedEntityId());
+        assertEquals(7, wrapper.getHoldingEntityId());
+
+        wrapper.setAttachedEntityId(9);
+        wrapper.setHoldingEntityId(-5);
+
+        assertEquals(9, wrapper.getAttachedEntityId());
+        assertEquals(-5, wrapper.getHoldingEntityId());
+
+        assertEquals(9, source.getAttachedEntityId());
+        assertEquals(-5, source.getHoldingEntityId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetEntityLinkPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

@@ -4,10 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-import net.minecraft.network.protocol.game.ClientboundSetDisplayObjectivePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetDisplayObjectivePacketTest {
@@ -17,51 +15,49 @@ class WrappedClientboundSetDisplayObjectivePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetDisplayObjectivePacket w = new WrappedClientboundSetDisplayObjectivePacket();
-        w.setSlot(EnumWrappers.DisplaySlot.BELOW_NAME);
-        w.setObjectiveName("myObjective");
+    void testAllArgsCreate() {
+        WrappedClientboundSetDisplayObjectivePacket w = new WrappedClientboundSetDisplayObjectivePacket(EnumWrappers.DisplaySlot.SIDEBAR, "world");
 
         assertEquals(PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE, w.getHandle().getType());
 
-        ClientboundSetDisplayObjectivePacket p = (ClientboundSetDisplayObjectivePacket) w.getHandle().getHandle();
-
-        assertEquals("myObjective", p.getObjectiveName());
-        assertEquals(EnumWrappers.DisplaySlot.BELOW_NAME, w.getSlot());
+        assertEquals(EnumWrappers.DisplaySlot.SIDEBAR, w.getSlot());
+        assertEquals("world", w.getObjectiveName());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE);
-        container.getModifier().writeDefaults();
-        container.getDisplaySlots().write(0, EnumWrappers.DisplaySlot.SIDEBAR);
-        container.getStrings().write(0, "testObj");
+    void testNoArgsCreate() {
+        WrappedClientboundSetDisplayObjectivePacket w = new WrappedClientboundSetDisplayObjectivePacket();
 
-        WrappedClientboundSetDisplayObjectivePacket wrapper = new WrappedClientboundSetDisplayObjectivePacket(container);
-
-        assertEquals(EnumWrappers.DisplaySlot.SIDEBAR, wrapper.getSlot());
-        assertEquals("testObj", wrapper.getObjectiveName());
+        assertEquals(PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE);
-        container.getModifier().writeDefaults();
-        container.getDisplaySlots().write(0, EnumWrappers.DisplaySlot.SIDEBAR);
-        container.getStrings().write(0, "old");
-
+        WrappedClientboundSetDisplayObjectivePacket source = new WrappedClientboundSetDisplayObjectivePacket(EnumWrappers.DisplaySlot.SIDEBAR, "world");
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetDisplayObjectivePacket wrapper = new WrappedClientboundSetDisplayObjectivePacket(container);
-        wrapper.setObjectiveName("new");
 
         assertEquals(EnumWrappers.DisplaySlot.SIDEBAR, wrapper.getSlot());
-        assertEquals("new", wrapper.getObjectiveName());
+        assertEquals("world", wrapper.getObjectiveName());
+
+        wrapper.setSlot(EnumWrappers.DisplaySlot.LIST);
+        wrapper.setObjectiveName("hello");
+
+        assertEquals(EnumWrappers.DisplaySlot.LIST, wrapper.getSlot());
+        assertEquals("hello", wrapper.getObjectiveName());
+
+        assertEquals(EnumWrappers.DisplaySlot.LIST, source.getSlot());
+        assertEquals("hello", source.getObjectiveName());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetDisplayObjectivePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

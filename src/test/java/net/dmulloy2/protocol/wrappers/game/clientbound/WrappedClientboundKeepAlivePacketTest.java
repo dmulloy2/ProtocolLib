@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.common.ClientboundKeepAlivePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundKeepAlivePacketTest {
@@ -16,10 +15,11 @@ class WrappedClientboundKeepAlivePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundKeepAlivePacket w = new WrappedClientboundKeepAlivePacket();
-        w.setId(123456789L);
+    void testAllArgsCreate() {
+        WrappedClientboundKeepAlivePacket w = new WrappedClientboundKeepAlivePacket(123456789L);
 
         assertEquals(PacketType.Play.Server.KEEP_ALIVE, w.getHandle().getType());
 
@@ -29,31 +29,33 @@ class WrappedClientboundKeepAlivePacketTest {
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundKeepAlivePacket nmsPacket = new ClientboundKeepAlivePacket(987654321L);
+    void testNoArgsCreate() {
+        WrappedClientboundKeepAlivePacket w = new WrappedClientboundKeepAlivePacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundKeepAlivePacket wrapper = new WrappedClientboundKeepAlivePacket(container);
+        assertEquals(PacketType.Play.Server.KEEP_ALIVE, w.getHandle().getType());
 
-        assertEquals(987654321L, wrapper.getId());
+        ClientboundKeepAlivePacket p = (ClientboundKeepAlivePacket) w.getHandle().getHandle();
+
+        assertEquals(0L, p.getId());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundKeepAlivePacket nmsPacket = new ClientboundKeepAlivePacket(987654321L);
-
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        ClientboundKeepAlivePacket nmsPacket = new ClientboundKeepAlivePacket(123456789L);
+        PacketContainer container = new PacketContainer(WrappedClientboundKeepAlivePacket.TYPE, nmsPacket);
         WrappedClientboundKeepAlivePacket wrapper = new WrappedClientboundKeepAlivePacket(container);
 
-        wrapper.setId(42L);
+        assertEquals(123456789L, wrapper.getId());
 
-        assertEquals(42L, wrapper.getId());
+        wrapper.setId(987654321L);
+
+        assertEquals(987654321L, nmsPacket.getId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundKeepAlivePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

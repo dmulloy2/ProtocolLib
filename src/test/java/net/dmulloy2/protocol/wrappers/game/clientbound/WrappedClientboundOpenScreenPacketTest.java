@@ -4,10 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundOpenScreenPacketTest {
@@ -17,50 +15,49 @@ class WrappedClientboundOpenScreenPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundOpenScreenPacket w = new WrappedClientboundOpenScreenPacket();
-        w.setContainerId(3);
-        w.setTitle(WrappedChatComponent.fromText("My Chest"));
+    void testAllArgsCreate() {
+        WrappedClientboundOpenScreenPacket w = new WrappedClientboundOpenScreenPacket(3, WrappedChatComponent.fromText("Testing"));
 
         assertEquals(PacketType.Play.Server.OPEN_WINDOW, w.getHandle().getType());
 
-        ClientboundOpenScreenPacket p = (ClientboundOpenScreenPacket) w.getHandle().getHandle();
-
-        assertEquals(3, p.getContainerId());
-        assertNotNull(p.getTitle());
+        assertEquals(3, w.getContainerId());
+        assertEquals(WrappedChatComponent.fromText("Testing"), w.getTitle());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        WrappedClientboundOpenScreenPacket src = new WrappedClientboundOpenScreenPacket();
-        src.setContainerId(7);
-        src.setTitle(WrappedChatComponent.fromText("Shop"));
+    void testNoArgsCreate() {
+        WrappedClientboundOpenScreenPacket w = new WrappedClientboundOpenScreenPacket();
 
-        PacketContainer container = src.getHandle();
-        WrappedClientboundOpenScreenPacket wrapper = new WrappedClientboundOpenScreenPacket(container);
-
-        assertEquals(7, wrapper.getContainerId());
-        assertNotNull(wrapper.getTitle());
+        assertEquals(PacketType.Play.Server.OPEN_WINDOW, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundOpenScreenPacket w = new WrappedClientboundOpenScreenPacket();
-        w.setContainerId(1);
-        w.setTitle(WrappedChatComponent.fromText("Old Title"));
+        WrappedClientboundOpenScreenPacket source = new WrappedClientboundOpenScreenPacket(3, WrappedChatComponent.fromText("Testing"));
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundOpenScreenPacket wrapper = new WrappedClientboundOpenScreenPacket(container);
 
-        w.setContainerId(10);
-        w.setTitle(WrappedChatComponent.fromText("New Title"));
+        assertEquals(3, wrapper.getContainerId());
+        assertEquals(WrappedChatComponent.fromText("Testing"), wrapper.getTitle());
 
-        assertEquals(10, w.getContainerId());
-        assertNotNull(w.getTitle());
+        wrapper.setContainerId(9);
+        wrapper.setTitle(WrappedChatComponent.fromText("Modified"));
+
+        assertEquals(9, wrapper.getContainerId());
+        assertEquals(WrappedChatComponent.fromText("Modified"), wrapper.getTitle());
+
+        assertEquals(9, source.getContainerId());
+        assertEquals(WrappedChatComponent.fromText("Modified"), source.getTitle());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundOpenScreenPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

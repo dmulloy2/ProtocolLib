@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetBorderSizePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetBorderSizePacketTest {
@@ -16,45 +14,44 @@ class WrappedClientboundSetBorderSizePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetBorderSizePacket w = new WrappedClientboundSetBorderSizePacket();
-        w.setDiameter(1024.0);
+    void testAllArgsCreate() {
+        WrappedClientboundSetBorderSizePacket w = new WrappedClientboundSetBorderSizePacket(3.14);
 
         assertEquals(PacketType.Play.Server.SET_BORDER_SIZE, w.getHandle().getType());
 
-        ClientboundSetBorderSizePacket p = (ClientboundSetBorderSizePacket) w.getHandle().getHandle();
-
-        assertEquals(1024.0, p.getSize(), 1e-6);
+        assertEquals(3.14, w.getDiameter(), 1e-9);
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_SIZE);
-        container.getModifier().writeDefaults();
-        container.getDoubles().write(0, 60000000.0);
+    void testNoArgsCreate() {
+        WrappedClientboundSetBorderSizePacket w = new WrappedClientboundSetBorderSizePacket();
 
-        WrappedClientboundSetBorderSizePacket wrapper = new WrappedClientboundSetBorderSizePacket(container);
-
-        assertEquals(60000000.0, wrapper.getDiameter(), 1e-6);
+        assertEquals(PacketType.Play.Server.SET_BORDER_SIZE, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_SIZE);
-        container.getModifier().writeDefaults();
-        container.getDoubles().write(0, 100.0);
-
+        WrappedClientboundSetBorderSizePacket source = new WrappedClientboundSetBorderSizePacket(3.14);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetBorderSizePacket wrapper = new WrappedClientboundSetBorderSizePacket(container);
-        wrapper.setDiameter(200.0);
 
-        assertEquals(200.0, wrapper.getDiameter(), 1e-6);
+        assertEquals(3.14, wrapper.getDiameter(), 1e-9);
+
+        wrapper.setDiameter(2.71);
+
+        assertEquals(2.71, wrapper.getDiameter(), 1e-9);
+
+        assertEquals(2.71, source.getDiameter(), 1e-9);
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetBorderSizePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

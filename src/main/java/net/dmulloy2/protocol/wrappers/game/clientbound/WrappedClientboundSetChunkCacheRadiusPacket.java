@@ -2,7 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
+import net.minecraft.network.protocol.game.ClientboundSetChunkCacheRadiusPacket;
 
 /**
  * Wrapper for {@code ClientboundSetChunkCacheRadiusPacket} (Play phase, clientbound).
@@ -15,10 +17,16 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundSetChunkCacheRadiusPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.VIEW_DISTANCE;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class);
 
     public WrappedClientboundSetChunkCacheRadiusPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetChunkCacheRadiusPacket(int viewDistance) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(viewDistance)));
+    }
 
     public WrappedClientboundSetChunkCacheRadiusPacket(PacketContainer packet) {
         super(packet, TYPE);

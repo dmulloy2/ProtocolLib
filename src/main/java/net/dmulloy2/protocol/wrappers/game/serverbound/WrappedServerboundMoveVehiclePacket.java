@@ -2,6 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.util.Vector;
 
@@ -19,17 +22,18 @@ import org.bukkit.util.Vector;
 public class WrappedServerboundMoveVehiclePacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.VEHICLE_MOVE;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getVec3DClass(), BukkitConverters.getVectorConverter())
+            .withParam(float.class)
+            .withParam(float.class)
+            .withParam(boolean.class);
 
     public WrappedServerboundMoveVehiclePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedServerboundMoveVehiclePacket(Vector position, float yRot, float xRot, boolean onGround) {
-        this();
-        setPosition(position);
-        setYRot(yRot);
-        setXRot(xRot);
-        setOnGround(onGround);
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(position, yRot, xRot, onGround)));
     }
 
     public WrappedServerboundMoveVehiclePacket(PacketContainer packet) {

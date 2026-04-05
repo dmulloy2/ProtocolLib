@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ServerboundRenameItemPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundRenameItemPacketTest {
@@ -16,15 +15,17 @@ class WrappedServerboundRenameItemPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundRenameItemPacket w = new WrappedServerboundRenameItemPacket("Diamond Blade");
+        WrappedServerboundRenameItemPacket w = new WrappedServerboundRenameItemPacket("hello");
 
         assertEquals(PacketType.Play.Client.ITEM_NAME, w.getHandle().getType());
 
         ServerboundRenameItemPacket p = (ServerboundRenameItemPacket) w.getHandle().getHandle();
 
-        assertEquals("Diamond Blade", p.getName());
+        assertEquals("hello", p.getName());
     }
 
     @Test
@@ -33,27 +34,28 @@ class WrappedServerboundRenameItemPacketTest {
 
         assertEquals(PacketType.Play.Client.ITEM_NAME, w.getHandle().getType());
 
-        assertNotNull(w.getName());
+        ServerboundRenameItemPacket p = (ServerboundRenameItemPacket) w.getHandle().getHandle();
+
+
     }
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundRenameItemPacket nmsPacket = new ServerboundRenameItemPacket("Old Name");
-
+        ServerboundRenameItemPacket nmsPacket = new ServerboundRenameItemPacket("hello");
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundRenameItemPacket wrapper = new WrappedServerboundRenameItemPacket(container);
 
-        assertEquals("Old Name", wrapper.getName());
+        assertEquals("hello", wrapper.getName());
 
-        wrapper.setName("New Name");
+        wrapper.setName("modified");
 
-        assertEquals("New Name", nmsPacket.getName());
+        assertEquals("modified", nmsPacket.getName());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundRenameItemPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

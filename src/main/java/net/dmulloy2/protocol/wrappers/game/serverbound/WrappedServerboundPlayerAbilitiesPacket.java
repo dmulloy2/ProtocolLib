@@ -20,11 +20,11 @@ public class WrappedServerboundPlayerAbilitiesPacket extends AbstractPacket {
 
     public WrappedServerboundPlayerAbilitiesPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
-    public WrappedServerboundPlayerAbilitiesPacket(boolean isFlying) {
+    public WrappedServerboundPlayerAbilitiesPacket(boolean flying) {
         this();
-        setFlying(isFlying);
+        setFlying(flying);
     }
 
     public WrappedServerboundPlayerAbilitiesPacket(PacketContainer packet) {

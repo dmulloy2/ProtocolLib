@@ -4,11 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetSubtitleTextPacketTest {
@@ -18,49 +15,44 @@ class WrappedClientboundSetSubtitleTextPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetSubtitleTextPacket w = new WrappedClientboundSetSubtitleTextPacket();
-        w.setSubtitle(WrappedChatComponent.fromText("My Subtitle"));
+    void testAllArgsCreate() {
+        WrappedClientboundSetSubtitleTextPacket w = new WrappedClientboundSetSubtitleTextPacket(WrappedChatComponent.fromText("Hello, world!"));
 
         assertEquals(PacketType.Play.Server.SET_SUBTITLE_TEXT, w.getHandle().getType());
 
-        ClientboundSetSubtitleTextPacket p = (ClientboundSetSubtitleTextPacket) w.getHandle().getHandle();
-
-        assertNotNull(p.text());
-        assertTrue(w.getSubtitle().getJson().contains("My Subtitle"));
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), w.getSubtitle());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetSubtitleTextPacket nmsPacket = new ClientboundSetSubtitleTextPacket(
-                Component.literal("Hello Sub")
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundSetSubtitleTextPacket w = new WrappedClientboundSetSubtitleTextPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetSubtitleTextPacket wrapper = new WrappedClientboundSetSubtitleTextPacket(container);
-
-        assertTrue(wrapper.getSubtitle().getJson().contains("Hello Sub"));
+        assertEquals(PacketType.Play.Server.SET_SUBTITLE_TEXT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundSetSubtitleTextPacket nmsPacket = new ClientboundSetSubtitleTextPacket(
-                Component.literal("original")
-        );
-
+        WrappedClientboundSetSubtitleTextPacket source = new WrappedClientboundSetSubtitleTextPacket(WrappedChatComponent.fromText("Hello, world!"));
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetSubtitleTextPacket wrapper = new WrappedClientboundSetSubtitleTextPacket(container);
 
-        wrapper.setSubtitle(WrappedChatComponent.fromText("updated sub"));
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), wrapper.getSubtitle());
 
-        assertTrue(wrapper.getSubtitle().getJson().contains("updated sub"));
+        wrapper.setSubtitle(WrappedChatComponent.fromText("Modified"));
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), wrapper.getSubtitle());
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), source.getSubtitle());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetSubtitleTextPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

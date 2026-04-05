@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetChunkCacheCenterPacketTest {
@@ -16,48 +15,52 @@ class WrappedClientboundSetChunkCacheCenterPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetChunkCacheCenterPacket w = new WrappedClientboundSetChunkCacheCenterPacket();
-        w.setChunkX(10);
-        w.setChunkZ(-5);
+    void testAllArgsCreate() {
+        WrappedClientboundSetChunkCacheCenterPacket w = new WrappedClientboundSetChunkCacheCenterPacket(3, 7);
 
         assertEquals(PacketType.Play.Server.VIEW_CENTRE, w.getHandle().getType());
 
         ClientboundSetChunkCacheCenterPacket p = (ClientboundSetChunkCacheCenterPacket) w.getHandle().getHandle();
 
-        assertEquals(10, p.getX());
-        assertEquals(-5, p.getZ());
+        assertEquals(3, p.getX());
+        assertEquals(7, p.getZ());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetChunkCacheCenterPacket nmsPacket = new ClientboundSetChunkCacheCenterPacket(3, 7);
+    void testNoArgsCreate() {
+        WrappedClientboundSetChunkCacheCenterPacket w = new WrappedClientboundSetChunkCacheCenterPacket();
 
+        assertEquals(PacketType.Play.Server.VIEW_CENTRE, w.getHandle().getType());
+
+        ClientboundSetChunkCacheCenterPacket p = (ClientboundSetChunkCacheCenterPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getX());
+        assertEquals(0, p.getZ());
+    }
+
+    @Test
+    void testModifyExistingPacket() {
+        ClientboundSetChunkCacheCenterPacket nmsPacket = new ClientboundSetChunkCacheCenterPacket(3, 7);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetChunkCacheCenterPacket wrapper = new WrappedClientboundSetChunkCacheCenterPacket(container);
 
         assertEquals(3, wrapper.getChunkX());
         assertEquals(7, wrapper.getChunkZ());
-    }
 
-    @Test
-    void testModifyExistingPacket() {
-        ClientboundSetChunkCacheCenterPacket nmsPacket = new ClientboundSetChunkCacheCenterPacket(0, 0);
+        wrapper.setChunkX(9);
+        wrapper.setChunkZ(-5);
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetChunkCacheCenterPacket wrapper = new WrappedClientboundSetChunkCacheCenterPacket(container);
-
-        wrapper.setChunkZ(15);
-
-        assertEquals(0, wrapper.getChunkX());
-        assertEquals(15, wrapper.getChunkZ());
+        assertEquals(9, nmsPacket.getX());
+        assertEquals(-5, nmsPacket.getZ());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetChunkCacheCenterPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

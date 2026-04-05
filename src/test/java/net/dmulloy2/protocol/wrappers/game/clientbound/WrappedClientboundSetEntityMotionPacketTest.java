@@ -3,12 +3,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
-import net.minecraft.world.phys.Vec3;
 import org.bukkit.util.Vector;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetEntityMotionPacketTest {
@@ -18,45 +15,49 @@ class WrappedClientboundSetEntityMotionPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetEntityMotionPacket w = new WrappedClientboundSetEntityMotionPacket();
-        w.setEntityId(7);
-        w.setVelocity(new Vector(1.0, 0.5, -0.5));
+    void testAllArgsCreate() {
+        WrappedClientboundSetEntityMotionPacket w = new WrappedClientboundSetEntityMotionPacket(3, new Vector(4.0, 5.0, 6.0));
 
         assertEquals(PacketType.Play.Server.ENTITY_VELOCITY, w.getHandle().getType());
 
-        ClientboundSetEntityMotionPacket p = (ClientboundSetEntityMotionPacket) w.getHandle().getHandle();
-
-        assertEquals(7, p.id());
+        assertEquals(3, w.getEntityId());
+        assertEquals(new Vector(4.0, 5.0, 6.0), w.getVelocity());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetEntityMotionPacket nmsPacket = new ClientboundSetEntityMotionPacket(3, new Vec3(1.0, 0.0, 0.0));
+    void testNoArgsCreate() {
+        WrappedClientboundSetEntityMotionPacket w = new WrappedClientboundSetEntityMotionPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetEntityMotionPacket wrapper = new WrappedClientboundSetEntityMotionPacket(container);
-
-        assertEquals(3, wrapper.getEntityId());
+        assertEquals(PacketType.Play.Server.ENTITY_VELOCITY, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundSetEntityMotionPacket nmsPacket = new ClientboundSetEntityMotionPacket(10, new Vec3(0.0, 0.0, 0.0));
-
+        WrappedClientboundSetEntityMotionPacket source = new WrappedClientboundSetEntityMotionPacket(3, new Vector(4.0, 5.0, 6.0));
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetEntityMotionPacket wrapper = new WrappedClientboundSetEntityMotionPacket(container);
 
-        wrapper.setEntityId(20);
+        assertEquals(3, wrapper.getEntityId());
+        assertEquals(new Vector(4.0, 5.0, 6.0), wrapper.getVelocity());
 
-        assertEquals(20, wrapper.getEntityId());
+        wrapper.setEntityId(9);
+        wrapper.setVelocity(new Vector(10.0, 20.0, 30.0));
+
+        assertEquals(9, wrapper.getEntityId());
+        assertEquals(new Vector(10.0, 20.0, 30.0), wrapper.getVelocity());
+
+        assertEquals(9, source.getEntityId());
+        assertEquals(new Vector(10.0, 20.0, 30.0), source.getVelocity());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetEntityMotionPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

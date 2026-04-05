@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundAttackPacketTest {
@@ -16,15 +15,17 @@ class WrappedServerboundAttackPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundAttackPacket w = new WrappedServerboundAttackPacket(55);
+        WrappedServerboundAttackPacket w = new WrappedServerboundAttackPacket(3);
 
         assertEquals(PacketType.Play.Client.ATTACK, w.getHandle().getType());
 
         ServerboundAttackPacket p = (ServerboundAttackPacket) w.getHandle().getHandle();
 
-        assertEquals(55, p.entityId());
+        assertEquals(3, p.entityId());
     }
 
     @Test
@@ -40,22 +41,21 @@ class WrappedServerboundAttackPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundAttackPacket nmsPacket = new ServerboundAttackPacket(55);
-
+        ServerboundAttackPacket nmsPacket = new ServerboundAttackPacket(3);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundAttackPacket wrapper = new WrappedServerboundAttackPacket(container);
 
-        assertEquals(55, wrapper.getEntityId());
+        assertEquals(3, wrapper.getEntityId());
 
-        wrapper.setEntityId(99);
+        wrapper.setEntityId(9);
 
-        assertEquals(99, nmsPacket.entityId());
+        assertEquals(9, nmsPacket.entityId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundAttackPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

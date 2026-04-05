@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetCameraPacketTest {
@@ -16,45 +14,44 @@ class WrappedClientboundSetCameraPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetCameraPacket w = new WrappedClientboundSetCameraPacket();
-        w.setCameraEntityId(100);
+    void testAllArgsCreate() {
+        WrappedClientboundSetCameraPacket w = new WrappedClientboundSetCameraPacket(3);
 
         assertEquals(PacketType.Play.Server.CAMERA, w.getHandle().getType());
 
-        ClientboundSetCameraPacket p = (ClientboundSetCameraPacket) w.getHandle().getHandle();
-
-        assertNotNull(p);
+        assertEquals(3, w.getCameraEntityId());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.CAMERA);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 42);
+    void testNoArgsCreate() {
+        WrappedClientboundSetCameraPacket w = new WrappedClientboundSetCameraPacket();
 
-        WrappedClientboundSetCameraPacket wrapper = new WrappedClientboundSetCameraPacket(container);
-
-        assertEquals(42, wrapper.getCameraEntityId());
+        assertEquals(PacketType.Play.Server.CAMERA, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.CAMERA);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 42);
-
+        WrappedClientboundSetCameraPacket source = new WrappedClientboundSetCameraPacket(3);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetCameraPacket wrapper = new WrappedClientboundSetCameraPacket(container);
-        wrapper.setCameraEntityId(5);
 
-        assertEquals(5, wrapper.getCameraEntityId());
+        assertEquals(3, wrapper.getCameraEntityId());
+
+        wrapper.setCameraEntityId(9);
+
+        assertEquals(9, wrapper.getCameraEntityId());
+
+        assertEquals(9, source.getCameraEntityId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetCameraPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

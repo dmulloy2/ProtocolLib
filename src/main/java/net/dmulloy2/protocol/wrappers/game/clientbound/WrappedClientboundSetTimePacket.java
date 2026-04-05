@@ -23,7 +23,12 @@ public class WrappedClientboundSetTimePacket extends AbstractPacket {
 
     public WrappedClientboundSetTimePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetTimePacket(long worldAge) {
+        this();
+        setWorldAge(worldAge);
+    }
 
     public WrappedClientboundSetTimePacket(PacketContainer packet) {
         super(packet, TYPE);

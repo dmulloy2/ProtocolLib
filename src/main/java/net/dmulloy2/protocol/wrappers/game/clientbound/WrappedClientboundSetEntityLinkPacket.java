@@ -19,7 +19,13 @@ public class WrappedClientboundSetEntityLinkPacket extends AbstractPacket {
 
     public WrappedClientboundSetEntityLinkPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetEntityLinkPacket(int attachedEntityId, int holdingEntityId) {
+        this();
+        setAttachedEntityId(attachedEntityId);
+        setHoldingEntityId(holdingEntityId);
+    }
 
     public WrappedClientboundSetEntityLinkPacket(PacketContainer packet) {
         super(packet, TYPE);

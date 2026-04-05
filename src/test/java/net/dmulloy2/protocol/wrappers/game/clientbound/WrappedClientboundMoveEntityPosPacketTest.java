@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundMoveEntityPosPacketTest {
@@ -16,63 +14,64 @@ class WrappedClientboundMoveEntityPosPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundMoveEntityPosPacket w = new WrappedClientboundMoveEntityPosPacket();
-        w.setEntityId(12);
-        w.setDx((short) 128);
-        w.setDy((short) 0);
-        w.setDz((short) -256);
-        w.setOnGround(true);
+    void testAllArgsCreate() {
+        WrappedClientboundMoveEntityPosPacket w = new WrappedClientboundMoveEntityPosPacket(3, (short) 7, (short) -1, (short) 12, false);
 
         assertEquals(PacketType.Play.Server.REL_ENTITY_MOVE, w.getHandle().getType());
 
-        ClientboundMoveEntityPacket.Pos p = (ClientboundMoveEntityPacket.Pos) w.getHandle().getHandle();
-
-        assertEquals((short) 128, p.getXa());
-        assertEquals((short) 0, p.getYa());
-        assertEquals((short) -256, p.getZa());
-        assertTrue(p.isOnGround());
+        assertEquals(3, w.getEntityId());
+        assertEquals((short) 7, w.getDx());
+        assertEquals((short) -1, w.getDy());
+        assertEquals((short) 12, w.getDz());
+        assertFalse(w.isOnGround());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundMoveEntityPacket.Pos nmsPacket = new ClientboundMoveEntityPacket.Pos(
-                7, (short) 100, (short) 50, (short) -100, false
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundMoveEntityPosPacket w = new WrappedClientboundMoveEntityPosPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundMoveEntityPosPacket wrapper = new WrappedClientboundMoveEntityPosPacket(container);
-
-        assertEquals(7, wrapper.getEntityId());
-        assertEquals((short) 100, wrapper.getDx());
-        assertEquals((short) 50, wrapper.getDy());
-        assertEquals((short) -100, wrapper.getDz());
-        assertFalse(wrapper.isOnGround());
+        assertEquals(PacketType.Play.Server.REL_ENTITY_MOVE, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundMoveEntityPacket.Pos nmsPacket = new ClientboundMoveEntityPacket.Pos(
-                7, (short) 100, (short) 50, (short) -100, false
-        );
-
+        WrappedClientboundMoveEntityPosPacket source = new WrappedClientboundMoveEntityPosPacket(3, (short) 7, (short) -1, (short) 12, false);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundMoveEntityPosPacket wrapper = new WrappedClientboundMoveEntityPosPacket(container);
 
-        wrapper.setDx((short) 4096);
-
-        assertEquals(7, wrapper.getEntityId());
-        assertEquals((short) 4096, wrapper.getDx());
-        assertEquals((short) 50, wrapper.getDy());
-        assertEquals((short) -100, wrapper.getDz());
+        assertEquals(3, wrapper.getEntityId());
+        assertEquals((short) 7, wrapper.getDx());
+        assertEquals((short) -1, wrapper.getDy());
+        assertEquals((short) 12, wrapper.getDz());
         assertFalse(wrapper.isOnGround());
+
+        wrapper.setEntityId(9);
+        wrapper.setDx((short) -1);
+        wrapper.setDy((short) 0);
+        wrapper.setDz((short) 5);
+        wrapper.setOnGround(true);
+
+        assertEquals(9, wrapper.getEntityId());
+        assertEquals((short) -1, wrapper.getDx());
+        assertEquals((short) 0, wrapper.getDy());
+        assertEquals((short) 5, wrapper.getDz());
+        assertTrue(wrapper.isOnGround());
+
+        assertEquals(9, source.getEntityId());
+        assertEquals((short) -1, source.getDx());
+        assertEquals((short) 0, source.getDy());
+        assertEquals((short) 5, source.getDz());
+        assertTrue(source.isOnGround());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundMoveEntityPosPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

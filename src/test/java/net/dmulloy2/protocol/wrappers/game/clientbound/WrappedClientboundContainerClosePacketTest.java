@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundContainerClosePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundContainerClosePacketTest {
@@ -16,44 +15,47 @@ class WrappedClientboundContainerClosePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundContainerClosePacket w = new WrappedClientboundContainerClosePacket();
-        w.setWindowId(5);
+    void testAllArgsCreate() {
+        WrappedClientboundContainerClosePacket w = new WrappedClientboundContainerClosePacket(3);
 
         assertEquals(PacketType.Play.Server.CLOSE_WINDOW, w.getHandle().getType());
 
         ClientboundContainerClosePacket p = (ClientboundContainerClosePacket) w.getHandle().getHandle();
 
-        assertEquals(5, p.getContainerId());
+        assertEquals(3, p.getContainerId());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundContainerClosePacket nmsPacket = new ClientboundContainerClosePacket(3);
+    void testNoArgsCreate() {
+        WrappedClientboundContainerClosePacket w = new WrappedClientboundContainerClosePacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundContainerClosePacket wrapper = new WrappedClientboundContainerClosePacket(container);
+        assertEquals(PacketType.Play.Server.CLOSE_WINDOW, w.getHandle().getType());
 
-        assertEquals(3, wrapper.getWindowId());
+        ClientboundContainerClosePacket p = (ClientboundContainerClosePacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getContainerId());
     }
 
     @Test
     void testModifyExistingPacket() {
         ClientboundContainerClosePacket nmsPacket = new ClientboundContainerClosePacket(3);
-
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundContainerClosePacket wrapper = new WrappedClientboundContainerClosePacket(container);
 
+        assertEquals(3, wrapper.getWindowId());
+
         wrapper.setWindowId(9);
 
-        assertEquals(9, wrapper.getWindowId());
+        assertEquals(9, nmsPacket.getContainerId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundContainerClosePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

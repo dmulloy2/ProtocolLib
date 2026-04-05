@@ -2,9 +2,10 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.dmulloy2.protocol.AbstractPacket;
-
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.Converters;
 import java.util.List;
+import net.dmulloy2.protocol.AbstractPacket;
 
 /**
  * Wrapper for {@code ClientboundRemoveEntitiesPacket} (Play phase, clientbound).
@@ -20,7 +21,12 @@ public class WrappedClientboundRemoveEntitiesPacket extends AbstractPacket {
 
     public WrappedClientboundRemoveEntitiesPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundRemoveEntitiesPacket(List<Integer> entityIds) {
+        this();
+        setEntityIds(entityIds);
+    }
 
     public WrappedClientboundRemoveEntitiesPacket(PacketContainer packet) {
         super(packet, TYPE);

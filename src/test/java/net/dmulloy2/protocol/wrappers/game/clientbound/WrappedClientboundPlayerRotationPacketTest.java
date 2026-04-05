@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundPlayerRotationPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundPlayerRotationPacketTest {
@@ -16,48 +15,62 @@ class WrappedClientboundPlayerRotationPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundPlayerRotationPacket w = new WrappedClientboundPlayerRotationPacket();
-        w.setYaw(90.0f);
-        w.setPitch(-30.0f);
+    void testAllArgsCreate() {
+        WrappedClientboundPlayerRotationPacket w = new WrappedClientboundPlayerRotationPacket(0.75f, false, -3.0f, true);
 
         assertEquals(PacketType.Play.Server.PLAYER_ROTATION, w.getHandle().getType());
 
         ClientboundPlayerRotationPacket p = (ClientboundPlayerRotationPacket) w.getHandle().getHandle();
 
-        assertEquals(90.0f, p.yRot(), 1e-4f);
-        assertEquals(-30.0f, p.xRot(), 1e-4f);
+        assertEquals(0.75f, p.yRot(), 1e-4f);
+        assertFalse(p.relativeY());
+        assertEquals(-3.0f, p.xRot(), 1e-4f);
+        assertTrue(p.relativeX());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundPlayerRotationPacket nmsPacket = new ClientboundPlayerRotationPacket(45.0f, false, 10.0f, false);
+    void testNoArgsCreate() {
+        WrappedClientboundPlayerRotationPacket w = new WrappedClientboundPlayerRotationPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundPlayerRotationPacket wrapper = new WrappedClientboundPlayerRotationPacket(container);
+        assertEquals(PacketType.Play.Server.PLAYER_ROTATION, w.getHandle().getType());
 
-        assertEquals(45.0f, wrapper.getYaw(), 1e-4f);
-        assertEquals(10.0f, wrapper.getPitch(), 1e-4f);
+        ClientboundPlayerRotationPacket p = (ClientboundPlayerRotationPacket) w.getHandle().getHandle();
+
+        assertEquals(0.0f, p.yRot(), 1e-4f);
+        assertFalse(p.relativeY());
+        assertEquals(0.0f, p.xRot(), 1e-4f);
+        assertFalse(p.relativeX());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundPlayerRotationPacket nmsPacket = new ClientboundPlayerRotationPacket(45.0f, false, 10.0f, false);
-
+        ClientboundPlayerRotationPacket nmsPacket = new ClientboundPlayerRotationPacket(0.75f, false, -3.0f, true);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundPlayerRotationPacket wrapper = new WrappedClientboundPlayerRotationPacket(container);
 
-        wrapper.setYaw(180.0f);
+        assertEquals(0.75f, wrapper.getYaw(), 1e-4f);
+        assertFalse(wrapper.isRelativeY());
+        assertEquals(-3.0f, wrapper.getPitch(), 1e-4f);
+        assertTrue(wrapper.isRelativeX());
 
-        assertEquals(180.0f, wrapper.getYaw(), 1e-4f);
-        assertEquals(10.0f, wrapper.getPitch(), 1e-4f);
+        wrapper.setYaw(0.25f);
+        wrapper.setRelativeY(true);
+        wrapper.setPitch(1.0f);
+        wrapper.setRelativeX(false);
+
+        assertEquals(0.25f, nmsPacket.yRot(), 1e-4f);
+        assertTrue(nmsPacket.relativeY());
+        assertEquals(1.0f, nmsPacket.xRot(), 1e-4f);
+        assertFalse(nmsPacket.relativeX());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundPlayerRotationPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

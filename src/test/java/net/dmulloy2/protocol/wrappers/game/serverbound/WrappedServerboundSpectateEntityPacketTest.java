@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ServerboundSpectateEntityPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundSpectateEntityPacketTest {
@@ -16,15 +15,17 @@ class WrappedServerboundSpectateEntityPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundSpectateEntityPacket w = new WrappedServerboundSpectateEntityPacket(42);
+        WrappedServerboundSpectateEntityPacket w = new WrappedServerboundSpectateEntityPacket(3);
 
         assertEquals(PacketType.Play.Client.SPECTATE_ENTITY, w.getHandle().getType());
 
         ServerboundSpectateEntityPacket p = (ServerboundSpectateEntityPacket) w.getHandle().getHandle();
 
-        assertEquals(42, p.entityId());
+        assertEquals(3, p.entityId());
     }
 
     @Test
@@ -40,22 +41,21 @@ class WrappedServerboundSpectateEntityPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundSpectateEntityPacket nmsPacket = new ServerboundSpectateEntityPacket(100);
-
+        ServerboundSpectateEntityPacket nmsPacket = new ServerboundSpectateEntityPacket(3);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSpectateEntityPacket wrapper = new WrappedServerboundSpectateEntityPacket(container);
 
-        assertEquals(100, wrapper.getEntityId());
+        assertEquals(3, wrapper.getEntityId());
 
-        wrapper.setEntityId(77);
+        wrapper.setEntityId(9);
 
-        assertEquals(77, nmsPacket.entityId());
+        assertEquals(9, nmsPacket.entityId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundSpectateEntityPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

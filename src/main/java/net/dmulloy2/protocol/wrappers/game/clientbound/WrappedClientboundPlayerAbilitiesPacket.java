@@ -23,7 +23,17 @@ public class WrappedClientboundPlayerAbilitiesPacket extends AbstractPacket {
 
     public WrappedClientboundPlayerAbilitiesPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundPlayerAbilitiesPacket(boolean invulnerable, boolean flying, boolean canFly, boolean creativeMode, float flySpeed, float walkSpeed) {
+        this();
+        setInvulnerable(invulnerable);
+        setFlying(flying);
+        setCanFly(canFly);
+        setCreativeMode(creativeMode);
+        setFlySpeed(flySpeed);
+        setWalkSpeed(walkSpeed);
+    }
 
     public WrappedClientboundPlayerAbilitiesPacket(PacketContainer packet) {
         super(packet, TYPE);

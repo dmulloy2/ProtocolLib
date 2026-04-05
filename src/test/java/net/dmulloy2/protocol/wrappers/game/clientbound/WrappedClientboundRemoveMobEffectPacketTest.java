@@ -3,11 +3,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket;
 import org.bukkit.potion.PotionEffectType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundRemoveMobEffectPacketTest {
@@ -17,50 +15,49 @@ class WrappedClientboundRemoveMobEffectPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundRemoveMobEffectPacket w = new WrappedClientboundRemoveMobEffectPacket();
-        w.setEntityId(8);
-        w.setEffectType(PotionEffectType.SPEED);
+    void testAllArgsCreate() {
+        WrappedClientboundRemoveMobEffectPacket w = new WrappedClientboundRemoveMobEffectPacket(3, PotionEffectType.STRENGTH);
 
         assertEquals(PacketType.Play.Server.REMOVE_ENTITY_EFFECT, w.getHandle().getType());
 
-        ClientboundRemoveMobEffectPacket p = (ClientboundRemoveMobEffectPacket) w.getHandle().getHandle();
-
-        assertEquals(8, p.entityId());
+        assertEquals(3, w.getEntityId());
+        assertEquals(PotionEffectType.STRENGTH, w.getEffectType());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.REMOVE_ENTITY_EFFECT);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 15);
-        container.getEffectTypes().write(0, PotionEffectType.SLOWNESS);
+    void testNoArgsCreate() {
+        WrappedClientboundRemoveMobEffectPacket w = new WrappedClientboundRemoveMobEffectPacket();
 
-        WrappedClientboundRemoveMobEffectPacket wrapper = new WrappedClientboundRemoveMobEffectPacket(container);
-
-        assertEquals(15, wrapper.getEntityId());
-        assertEquals(PotionEffectType.SLOWNESS, wrapper.getEffectType());
+        assertEquals(PacketType.Play.Server.REMOVE_ENTITY_EFFECT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.REMOVE_ENTITY_EFFECT);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 15);
-        container.getEffectTypes().write(0, PotionEffectType.SLOWNESS);
-
+        WrappedClientboundRemoveMobEffectPacket source = new WrappedClientboundRemoveMobEffectPacket(3, PotionEffectType.STRENGTH);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundRemoveMobEffectPacket wrapper = new WrappedClientboundRemoveMobEffectPacket(container);
-        wrapper.setEntityId(50);
 
-        assertEquals(50, wrapper.getEntityId());
+        assertEquals(3, wrapper.getEntityId());
+        assertEquals(PotionEffectType.STRENGTH, wrapper.getEffectType());
+
+        wrapper.setEntityId(9);
+        wrapper.setEffectType(PotionEffectType.SLOWNESS);
+
+        assertEquals(9, wrapper.getEntityId());
         assertEquals(PotionEffectType.SLOWNESS, wrapper.getEffectType());
+
+        assertEquals(9, source.getEntityId());
+        assertEquals(PotionEffectType.SLOWNESS, source.getEffectType());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundRemoveMobEffectPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

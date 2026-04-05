@@ -3,12 +3,10 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundContainerSetSlotPacketTest {
@@ -18,61 +16,59 @@ class WrappedClientboundContainerSetSlotPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundContainerSetSlotPacket w = new WrappedClientboundContainerSetSlotPacket();
-        ItemStack item = new ItemStack(Material.DIAMOND, 5);
-        w.setWindowId(0);
-        w.setStateId(1);
-        w.setSlot(36);
-        w.setItem(item);
+    void testAllArgsCreate() {
+        WrappedClientboundContainerSetSlotPacket w = new WrappedClientboundContainerSetSlotPacket(3, 7, 5, new ItemStack(Material.STONE));
 
         assertEquals(PacketType.Play.Server.SET_SLOT, w.getHandle().getType());
 
-        ClientboundContainerSetSlotPacket p = (ClientboundContainerSetSlotPacket) w.getHandle().getHandle();
-
-        assertEquals(0, p.getContainerId());
-        assertEquals(1, p.getStateId());
-        assertEquals(36, p.getSlot());
+        assertEquals(3, w.getWindowId());
+        assertEquals(7, w.getStateId());
+        assertEquals(5, w.getSlot());
+        assertEquals(new ItemStack(Material.STONE), w.getItem());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_SLOT);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 1);
-        container.getIntegers().write(1, 0);
-        container.getIntegers().write(2, 5);
-        container.getItemModifier().write(0, new ItemStack(Material.GOLD_INGOT, 1));
+    void testNoArgsCreate() {
+        WrappedClientboundContainerSetSlotPacket w = new WrappedClientboundContainerSetSlotPacket();
 
-        WrappedClientboundContainerSetSlotPacket wrapper = new WrappedClientboundContainerSetSlotPacket(container);
-
-        assertEquals(1, wrapper.getWindowId());
-        assertEquals(5, wrapper.getSlot());
-        assertEquals(Material.GOLD_INGOT, wrapper.getItem().getType());
+        assertEquals(PacketType.Play.Server.SET_SLOT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_SLOT);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 1);
-        container.getIntegers().write(1, 0);
-        container.getIntegers().write(2, 5);
-        container.getItemModifier().write(0, new ItemStack(Material.GOLD_INGOT, 1));
-
+        WrappedClientboundContainerSetSlotPacket source = new WrappedClientboundContainerSetSlotPacket(3, 7, 5, new ItemStack(Material.STONE));
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundContainerSetSlotPacket wrapper = new WrappedClientboundContainerSetSlotPacket(container);
-        wrapper.setSlot(9);
 
-        assertEquals(1, wrapper.getWindowId());
-        assertEquals(9, wrapper.getSlot());
-        assertEquals(Material.GOLD_INGOT, wrapper.getItem().getType());
+        assertEquals(3, wrapper.getWindowId());
+        assertEquals(7, wrapper.getStateId());
+        assertEquals(5, wrapper.getSlot());
+        assertEquals(new ItemStack(Material.STONE), wrapper.getItem());
+
+        wrapper.setWindowId(9);
+        wrapper.setStateId(-5);
+        wrapper.setSlot(0);
+        wrapper.setItem(new ItemStack(Material.DIRT));
+
+        assertEquals(9, wrapper.getWindowId());
+        assertEquals(-5, wrapper.getStateId());
+        assertEquals(0, wrapper.getSlot());
+        assertEquals(new ItemStack(Material.DIRT), wrapper.getItem());
+
+        assertEquals(9, source.getWindowId());
+        assertEquals(-5, source.getStateId());
+        assertEquals(0, source.getSlot());
+        assertEquals(new ItemStack(Material.DIRT), source.getItem());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundContainerSetSlotPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

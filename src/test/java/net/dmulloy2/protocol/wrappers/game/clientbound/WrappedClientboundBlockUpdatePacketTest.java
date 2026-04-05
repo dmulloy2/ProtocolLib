@@ -5,11 +5,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
-import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import org.bukkit.Material;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundBlockUpdatePacketTest {
@@ -19,51 +17,49 @@ class WrappedClientboundBlockUpdatePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundBlockUpdatePacket w = new WrappedClientboundBlockUpdatePacket();
-        w.setPos(new BlockPosition(10, 64, -5));
-        w.setBlockData(WrappedBlockData.createData(Material.STONE));
+    void testAllArgsCreate() {
+        WrappedClientboundBlockUpdatePacket w = new WrappedClientboundBlockUpdatePacket(new BlockPosition(1, 2, 3), WrappedBlockData.createData(Material.DIRT));
 
         assertEquals(PacketType.Play.Server.BLOCK_CHANGE, w.getHandle().getType());
 
-        ClientboundBlockUpdatePacket p = (ClientboundBlockUpdatePacket) w.getHandle().getHandle();
-
-        assertNotNull(p.getBlockState());
-        assertNotNull(p.getPos());
+        assertEquals(new BlockPosition(1, 2, 3), w.getPos());
+        assertEquals(WrappedBlockData.createData(Material.DIRT), w.getBlockData());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
-        container.getModifier().writeDefaults();
-        container.getBlockPositionModifier().write(0, new BlockPosition(1, 2, 3));
-        container.getBlockData().write(0, WrappedBlockData.createData(Material.DIRT));
+    void testNoArgsCreate() {
+        WrappedClientboundBlockUpdatePacket w = new WrappedClientboundBlockUpdatePacket();
 
-        WrappedClientboundBlockUpdatePacket wrapper = new WrappedClientboundBlockUpdatePacket(container);
-
-        assertEquals(new BlockPosition(1, 2, 3), wrapper.getPos());
-        assertNotNull(wrapper.getBlockData());
+        assertEquals(PacketType.Play.Server.BLOCK_CHANGE, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
-        container.getModifier().writeDefaults();
-        container.getBlockPositionModifier().write(0, new BlockPosition(1, 2, 3));
-        container.getBlockData().write(0, WrappedBlockData.createData(Material.DIRT));
-
+        WrappedClientboundBlockUpdatePacket source = new WrappedClientboundBlockUpdatePacket(new BlockPosition(1, 2, 3), WrappedBlockData.createData(Material.DIRT));
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundBlockUpdatePacket wrapper = new WrappedClientboundBlockUpdatePacket(container);
-        wrapper.setPos(new BlockPosition(5, 5, 5));
 
-        assertEquals(new BlockPosition(5, 5, 5), wrapper.getPos());
-        assertNotNull(wrapper.getBlockData());
+        assertEquals(new BlockPosition(1, 2, 3), wrapper.getPos());
+        assertEquals(WrappedBlockData.createData(Material.DIRT), wrapper.getBlockData());
+
+        wrapper.setPos(new BlockPosition(10, 20, 30));
+        wrapper.setBlockData(WrappedBlockData.createData(Material.OAK_PLANKS));
+
+        assertEquals(new BlockPosition(10, 20, 30), wrapper.getPos());
+        assertEquals(WrappedBlockData.createData(Material.OAK_PLANKS), wrapper.getBlockData());
+
+        assertEquals(new BlockPosition(10, 20, 30), source.getPos());
+        assertEquals(WrappedBlockData.createData(Material.OAK_PLANKS), source.getBlockData());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundBlockUpdatePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

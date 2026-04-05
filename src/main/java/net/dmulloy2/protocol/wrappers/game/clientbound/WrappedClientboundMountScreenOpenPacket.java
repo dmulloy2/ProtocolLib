@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -17,10 +18,18 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundMountScreenOpenPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.OPEN_WINDOW_HORSE;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(int.class)
+            .withParam(int.class);
 
     public WrappedClientboundMountScreenOpenPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundMountScreenOpenPacket(int windowId, int containerSize, int entityId) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(windowId, containerSize, entityId)));
+    }
 
     public WrappedClientboundMountScreenOpenPacket(PacketContainer packet) {
         super(packet, TYPE);

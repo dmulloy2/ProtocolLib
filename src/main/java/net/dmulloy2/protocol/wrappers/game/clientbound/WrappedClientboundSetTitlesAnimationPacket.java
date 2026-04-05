@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -17,10 +18,18 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundSetTitlesAnimationPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.SET_TITLES_ANIMATION;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(int.class)
+            .withParam(int.class);
 
     public WrappedClientboundSetTitlesAnimationPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetTitlesAnimationPacket(int fadeIn, int stay, int fadeOut) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(fadeIn, stay, fadeOut)));
+    }
 
     public WrappedClientboundSetTitlesAnimationPacket(PacketContainer packet) {
         super(packet, TYPE);

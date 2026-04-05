@@ -4,11 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetActionBarTextPacketTest {
@@ -18,48 +15,44 @@ class WrappedClientboundSetActionBarTextPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetActionBarTextPacket w = new WrappedClientboundSetActionBarTextPacket();
-        w.setText(WrappedChatComponent.fromText("Hello, action bar!"));
+    void testAllArgsCreate() {
+        WrappedClientboundSetActionBarTextPacket w = new WrappedClientboundSetActionBarTextPacket(WrappedChatComponent.fromText("Hello, world!"));
 
         assertEquals(PacketType.Play.Server.SET_ACTION_BAR_TEXT, w.getHandle().getType());
 
-        ClientboundSetActionBarTextPacket p = (ClientboundSetActionBarTextPacket) w.getHandle().getHandle();
-
-        assertNotNull(p.text());
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), w.getText());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetActionBarTextPacket nmsPacket = new ClientboundSetActionBarTextPacket(
-                Component.literal("Bar text")
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundSetActionBarTextPacket w = new WrappedClientboundSetActionBarTextPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetActionBarTextPacket wrapper = new WrappedClientboundSetActionBarTextPacket(container);
-
-        assertTrue(wrapper.getText().getJson().contains("Bar text"));
+        assertEquals(PacketType.Play.Server.SET_ACTION_BAR_TEXT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundSetActionBarTextPacket nmsPacket = new ClientboundSetActionBarTextPacket(
-                Component.literal("original")
-        );
-
+        WrappedClientboundSetActionBarTextPacket source = new WrappedClientboundSetActionBarTextPacket(WrappedChatComponent.fromText("Hello, world!"));
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetActionBarTextPacket wrapper = new WrappedClientboundSetActionBarTextPacket(container);
 
-        wrapper.setText(WrappedChatComponent.fromText("updated"));
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), wrapper.getText());
 
-        assertTrue(wrapper.getText().getJson().contains("updated"));
+        wrapper.setText(WrappedChatComponent.fromText("Modified"));
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), wrapper.getText());
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), source.getText());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetActionBarTextPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

@@ -3,11 +3,9 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ServerboundMoveVehiclePacket;
 import org.bukkit.util.Vector;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundMoveVehiclePacketTest {
@@ -17,16 +15,17 @@ class WrappedServerboundMoveVehiclePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
     void testAllArgsCreate() {
-        Vector pos = new Vector(1.0, 65.0, -3.0);
-        WrappedServerboundMoveVehiclePacket w = new WrappedServerboundMoveVehiclePacket(pos, 180.0f, 10.0f, true);
+        WrappedServerboundMoveVehiclePacket w = new WrappedServerboundMoveVehiclePacket(new Vector(1.0, 2.0, 3.0), 0.5f, -3.0f, true);
 
         assertEquals(PacketType.Play.Client.VEHICLE_MOVE, w.getHandle().getType());
 
-        assertEquals(pos, w.getPosition());
-        assertEquals(180.0f, w.getYRot(), 1e-4f);
-        assertEquals(10.0f, w.getXRot(), 1e-4f);
+        assertEquals(new Vector(1.0, 2.0, 3.0), w.getPosition());
+        assertEquals(0.5f, w.getYRot(), 1e-4f);
+        assertEquals(-3.0f, w.getXRot(), 1e-4f);
         assertTrue(w.isOnGround());
     }
 
@@ -35,42 +34,40 @@ class WrappedServerboundMoveVehiclePacketTest {
         WrappedServerboundMoveVehiclePacket w = new WrappedServerboundMoveVehiclePacket();
 
         assertEquals(PacketType.Play.Client.VEHICLE_MOVE, w.getHandle().getType());
-
-        assertEquals(0.0f, w.getYRot(), 1e-4f);
-        assertEquals(0.0f, w.getXRot(), 1e-4f);
-        assertFalse(w.isOnGround());
     }
 
     @Test
     void testModifyExistingPacket() {
-        Vector pos = new Vector(1.0, 65.0, -3.0);
-        WrappedServerboundMoveVehiclePacket src = new WrappedServerboundMoveVehiclePacket(pos, 180.0f, 10.0f, true);
-        ServerboundMoveVehiclePacket nmsPacket = (ServerboundMoveVehiclePacket) src.getHandle().getHandle();
-
+        WrappedServerboundMoveVehiclePacket source = new WrappedServerboundMoveVehiclePacket(new Vector(1.0, 2.0, 3.0), 0.5f, -3.0f, true);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundMoveVehiclePacket wrapper = new WrappedServerboundMoveVehiclePacket(container);
 
-        assertEquals(pos, wrapper.getPosition());
-        assertEquals(180.0f, wrapper.getYRot(), 1e-4f);
-        assertEquals(10.0f, wrapper.getXRot(), 1e-4f);
+        assertEquals(new Vector(1.0, 2.0, 3.0), wrapper.getPosition());
+        assertEquals(0.5f, wrapper.getYRot(), 1e-4f);
+        assertEquals(-3.0f, wrapper.getXRot(), 1e-4f);
         assertTrue(wrapper.isOnGround());
 
-        Vector newPos = new Vector(50.0, 70.0, 25.0);
-        wrapper.setPosition(newPos);
-        wrapper.setYRot(90.0f);
-        wrapper.setXRot(-5.0f);
+        wrapper.setPosition(new Vector(10.0, 20.0, 30.0));
+        wrapper.setYRot(-3.0f);
+        wrapper.setXRot(1.0f);
         wrapper.setOnGround(false);
 
-        assertEquals(newPos, wrapper.getPosition());
-        assertEquals(90.0f, wrapper.getYRot(), 1e-4f);
-        assertEquals(-5.0f, wrapper.getXRot(), 1e-4f);
+        assertEquals(new Vector(10.0, 20.0, 30.0), wrapper.getPosition());
+        assertEquals(-3.0f, wrapper.getYRot(), 1e-4f);
+        assertEquals(1.0f, wrapper.getXRot(), 1e-4f);
         assertFalse(wrapper.isOnGround());
+
+        assertEquals(new Vector(10.0, 20.0, 30.0), source.getPosition());
+        assertEquals(-3.0f, source.getYRot(), 1e-4f);
+        assertEquals(1.0f, source.getXRot(), 1e-4f);
+        assertFalse(source.isOnGround());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundMoveVehiclePacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

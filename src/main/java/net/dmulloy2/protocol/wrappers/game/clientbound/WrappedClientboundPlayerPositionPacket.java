@@ -2,11 +2,12 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
-import net.dmulloy2.protocol.AbstractPacket;
-
 import java.util.Set;
+import net.dmulloy2.protocol.AbstractPacket;
 
 /**
  * Wrapper for {@code ClientboundPlayerPositionPacket} (Play phase, clientbound).
@@ -24,7 +25,14 @@ public class WrappedClientboundPlayerPositionPacket extends AbstractPacket {
 
     public WrappedClientboundPlayerPositionPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundPlayerPositionPacket(int id, WrappedPositionMoveRotation change, Set<EnumWrappers.RelativeArgument> relatives) {
+        this();
+        setId(id);
+        setChange(change);
+        setRelatives(relatives);
+    }
 
     public WrappedClientboundPlayerPositionPacket(PacketContainer packet) {
         super(packet, TYPE);

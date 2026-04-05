@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDelayPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetBorderWarningDelayPacketTest {
@@ -16,45 +14,44 @@ class WrappedClientboundSetBorderWarningDelayPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetBorderWarningDelayPacket w = new WrappedClientboundSetBorderWarningDelayPacket();
-        w.setWarningDelay(15);
+    void testAllArgsCreate() {
+        WrappedClientboundSetBorderWarningDelayPacket w = new WrappedClientboundSetBorderWarningDelayPacket(3);
 
         assertEquals(PacketType.Play.Server.SET_BORDER_WARNING_DELAY, w.getHandle().getType());
 
-        ClientboundSetBorderWarningDelayPacket p = (ClientboundSetBorderWarningDelayPacket) w.getHandle().getHandle();
-
-        assertEquals(15, p.getWarningDelay());
+        assertEquals(3, w.getWarningDelay());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_WARNING_DELAY);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 30);
+    void testNoArgsCreate() {
+        WrappedClientboundSetBorderWarningDelayPacket w = new WrappedClientboundSetBorderWarningDelayPacket();
 
-        WrappedClientboundSetBorderWarningDelayPacket wrapper = new WrappedClientboundSetBorderWarningDelayPacket(container);
-
-        assertEquals(30, wrapper.getWarningDelay());
+        assertEquals(PacketType.Play.Server.SET_BORDER_WARNING_DELAY, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_WARNING_DELAY);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 30);
-
+        WrappedClientboundSetBorderWarningDelayPacket source = new WrappedClientboundSetBorderWarningDelayPacket(3);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetBorderWarningDelayPacket wrapper = new WrappedClientboundSetBorderWarningDelayPacket(container);
-        wrapper.setWarningDelay(60);
 
-        assertEquals(60, wrapper.getWarningDelay());
+        assertEquals(3, wrapper.getWarningDelay());
+
+        wrapper.setWarningDelay(9);
+
+        assertEquals(9, wrapper.getWarningDelay());
+
+        assertEquals(9, source.getWarningDelay());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetBorderWarningDelayPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

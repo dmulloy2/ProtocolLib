@@ -18,7 +18,12 @@ public class WrappedClientboundSetBorderWarningDelayPacket extends AbstractPacke
 
     public WrappedClientboundSetBorderWarningDelayPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetBorderWarningDelayPacket(int warningDelay) {
+        this();
+        setWarningDelay(warningDelay);
+    }
 
     public WrappedClientboundSetBorderWarningDelayPacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -17,10 +18,17 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundChangeDifficultyPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.SERVER_DIFFICULTY;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(EnumWrappers.getDifficultyClass(), EnumWrappers.getDifficultyConverter())
+            .withParam(boolean.class);
 
     public WrappedClientboundChangeDifficultyPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundChangeDifficultyPacket(EnumWrappers.Difficulty difficulty, boolean locked) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(difficulty, locked)));
+    }
 
     public WrappedClientboundChangeDifficultyPacket(PacketContainer packet) {
         super(packet, TYPE);

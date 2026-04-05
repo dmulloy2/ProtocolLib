@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetBorderLerpSizePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetBorderLerpSizePacketTest {
@@ -16,57 +14,54 @@ class WrappedClientboundSetBorderLerpSizePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetBorderLerpSizePacket w = new WrappedClientboundSetBorderLerpSizePacket();
-        w.setOldDiameter(1000.0);
-        w.setNewDiameter(500.0);
-        w.setSpeed(10000L);
+    void testAllArgsCreate() {
+        WrappedClientboundSetBorderLerpSizePacket w = new WrappedClientboundSetBorderLerpSizePacket(3.14, 100.0, -1L);
 
         assertEquals(PacketType.Play.Server.SET_BORDER_LERP_SIZE, w.getHandle().getType());
 
-        ClientboundSetBorderLerpSizePacket p = (ClientboundSetBorderLerpSizePacket) w.getHandle().getHandle();
-
-        assertEquals(1000.0, p.getOldSize(), 1e-6);
-        assertEquals(500.0, p.getNewSize(), 1e-6);
-        assertEquals(10000L, p.getLerpTime());
+        assertEquals(3.14, w.getOldDiameter(), 1e-9);
+        assertEquals(100.0, w.getNewDiameter(), 1e-9);
+        assertEquals(-1L, w.getSpeed());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_LERP_SIZE);
-        container.getModifier().writeDefaults();
-        container.getDoubles().write(0, 200.0);
-        container.getDoubles().write(1, 100.0);
-        container.getLongs().write(0, 5000L);
+    void testNoArgsCreate() {
+        WrappedClientboundSetBorderLerpSizePacket w = new WrappedClientboundSetBorderLerpSizePacket();
 
-        WrappedClientboundSetBorderLerpSizePacket wrapper = new WrappedClientboundSetBorderLerpSizePacket(container);
-
-        assertEquals(200.0, wrapper.getOldDiameter(), 1e-6);
-        assertEquals(100.0, wrapper.getNewDiameter(), 1e-6);
-        assertEquals(5000L, wrapper.getSpeed());
+        assertEquals(PacketType.Play.Server.SET_BORDER_LERP_SIZE, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_LERP_SIZE);
-        container.getModifier().writeDefaults();
-        container.getDoubles().write(0, 200.0);
-        container.getDoubles().write(1, 100.0);
-        container.getLongs().write(0, 5000L);
-
+        WrappedClientboundSetBorderLerpSizePacket source = new WrappedClientboundSetBorderLerpSizePacket(3.14, 100.0, -1L);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetBorderLerpSizePacket wrapper = new WrappedClientboundSetBorderLerpSizePacket(container);
-        wrapper.setSpeed(9999L);
 
-        assertEquals(200.0, wrapper.getOldDiameter(), 1e-6);
-        assertEquals(100.0, wrapper.getNewDiameter(), 1e-6);
-        assertEquals(9999L, wrapper.getSpeed());
+        assertEquals(3.14, wrapper.getOldDiameter(), 1e-9);
+        assertEquals(100.0, wrapper.getNewDiameter(), 1e-9);
+        assertEquals(-1L, wrapper.getSpeed());
+
+        wrapper.setOldDiameter(2.71);
+        wrapper.setNewDiameter(-5.0);
+        wrapper.setSpeed(0L);
+
+        assertEquals(2.71, wrapper.getOldDiameter(), 1e-9);
+        assertEquals(-5.0, wrapper.getNewDiameter(), 1e-9);
+        assertEquals(0L, wrapper.getSpeed());
+
+        assertEquals(2.71, source.getOldDiameter(), 1e-9);
+        assertEquals(-5.0, source.getNewDiameter(), 1e-9);
+        assertEquals(0L, source.getSpeed());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetBorderLerpSizePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

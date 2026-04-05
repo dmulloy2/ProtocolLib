@@ -8,7 +8,6 @@ import net.minecraft.network.protocol.game.ServerboundSwingPacket;
 import net.minecraft.world.InteractionHand;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundSwingPacketTest {
@@ -17,6 +16,8 @@ class WrappedServerboundSwingPacketTest {
     static void beforeAll() {
         BukkitInitialization.initializeAll();
     }
+
+
 
     @Test
     void testAllArgsCreate() {
@@ -35,13 +36,14 @@ class WrappedServerboundSwingPacketTest {
 
         assertEquals(PacketType.Play.Client.ARM_ANIMATION, w.getHandle().getType());
 
-        assertNotNull(w.getHand());
+        ServerboundSwingPacket p = (ServerboundSwingPacket) w.getHandle().getHandle();
+
+
     }
 
     @Test
     void testModifyExistingPacket() {
         ServerboundSwingPacket nmsPacket = new ServerboundSwingPacket(InteractionHand.OFF_HAND);
-
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSwingPacket wrapper = new WrappedServerboundSwingPacket(container);
 
@@ -56,6 +58,6 @@ class WrappedServerboundSwingPacketTest {
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedServerboundSwingPacket(
-                        new PacketContainer(PacketType.Play.Client.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }

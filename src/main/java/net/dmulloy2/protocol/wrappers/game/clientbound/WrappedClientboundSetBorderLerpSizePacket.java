@@ -20,7 +20,14 @@ public class WrappedClientboundSetBorderLerpSizePacket extends AbstractPacket {
 
     public WrappedClientboundSetBorderLerpSizePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSetBorderLerpSizePacket(double oldDiameter, double newDiameter, long speed) {
+        this();
+        setOldDiameter(oldDiameter);
+        setNewDiameter(newDiameter);
+        setSpeed(speed);
+    }
 
     public WrappedClientboundSetBorderLerpSizePacket(PacketContainer packet) {
         super(packet, TYPE);

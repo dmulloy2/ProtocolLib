@@ -4,11 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundTabListPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundTabListPacketTest {
@@ -18,54 +15,49 @@ class WrappedClientboundTabListPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundTabListPacket w = new WrappedClientboundTabListPacket();
-        w.setHeader(WrappedChatComponent.fromText("Header text"));
-        w.setFooter(WrappedChatComponent.fromText("Footer text"));
+    void testAllArgsCreate() {
+        WrappedClientboundTabListPacket w = new WrappedClientboundTabListPacket(WrappedChatComponent.fromText("Hello, world!"), WrappedChatComponent.fromText("Testing"));
 
         assertEquals(PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER, w.getHandle().getType());
 
-        ClientboundTabListPacket p = (ClientboundTabListPacket) w.getHandle().getHandle();
-
-        assertNotNull(p.header());
-        assertNotNull(p.footer());
-        assertTrue(w.getHeader().getJson().contains("Header text"));
-        assertTrue(w.getFooter().getJson().contains("Footer text"));
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), w.getHeader());
+        assertEquals(WrappedChatComponent.fromText("Testing"), w.getFooter());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundTabListPacket nmsPacket = new ClientboundTabListPacket(
-                Component.literal("Top"), Component.literal("Bottom")
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundTabListPacket w = new WrappedClientboundTabListPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundTabListPacket wrapper = new WrappedClientboundTabListPacket(container);
-
-        assertTrue(wrapper.getHeader().getJson().contains("Top"));
-        assertTrue(wrapper.getFooter().getJson().contains("Bottom"));
+        assertEquals(PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundTabListPacket nmsPacket = new ClientboundTabListPacket(
-                Component.literal("old header"), Component.literal("old footer")
-        );
-
+        WrappedClientboundTabListPacket source = new WrappedClientboundTabListPacket(WrappedChatComponent.fromText("Hello, world!"), WrappedChatComponent.fromText("Testing"));
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundTabListPacket wrapper = new WrappedClientboundTabListPacket(container);
 
-        wrapper.setHeader(WrappedChatComponent.fromText("new header"));
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), wrapper.getHeader());
+        assertEquals(WrappedChatComponent.fromText("Testing"), wrapper.getFooter());
 
-        assertTrue(wrapper.getHeader().getJson().contains("new header"));
-        assertTrue(wrapper.getFooter().getJson().contains("old footer"));
+        wrapper.setHeader(WrappedChatComponent.fromText("Modified"));
+        wrapper.setFooter(WrappedChatComponent.fromText("Modified"));
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), wrapper.getHeader());
+        assertEquals(WrappedChatComponent.fromText("Modified"), wrapper.getFooter());
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), source.getHeader());
+        assertEquals(WrappedChatComponent.fromText("Modified"), source.getFooter());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundTabListPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

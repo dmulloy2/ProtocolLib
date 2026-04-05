@@ -2,6 +2,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -20,10 +22,18 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundBlockDestructionPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.BLOCK_BREAK_ANIMATION;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)                                                                   // id
+            .withParam(MinecraftReflection.getBlockPositionClass(), BlockPosition.getConverter())  // pos
+            .withParam(int.class);
 
     public WrappedClientboundBlockDestructionPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundBlockDestructionPacket(int id, BlockPosition pos, int destroyStage) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(id, pos, destroyStage)));
+    }
 
     public WrappedClientboundBlockDestructionPacket(PacketContainer packet) {
         super(packet, TYPE);

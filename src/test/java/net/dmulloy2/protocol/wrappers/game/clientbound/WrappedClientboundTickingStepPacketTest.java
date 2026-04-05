@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundTickingStepPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundTickingStepPacketTest {
@@ -16,10 +15,11 @@ class WrappedClientboundTickingStepPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundTickingStepPacket w = new WrappedClientboundTickingStepPacket();
-        w.setTickSteps(3);
+    void testAllArgsCreate() {
+        WrappedClientboundTickingStepPacket w = new WrappedClientboundTickingStepPacket(3);
 
         assertEquals(PacketType.Play.Server.TICKING_STEP_STATE, w.getHandle().getType());
 
@@ -29,31 +29,33 @@ class WrappedClientboundTickingStepPacketTest {
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundTickingStepPacket nmsPacket = new ClientboundTickingStepPacket(7);
+    void testNoArgsCreate() {
+        WrappedClientboundTickingStepPacket w = new WrappedClientboundTickingStepPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundTickingStepPacket wrapper = new WrappedClientboundTickingStepPacket(container);
+        assertEquals(PacketType.Play.Server.TICKING_STEP_STATE, w.getHandle().getType());
 
-        assertEquals(7, wrapper.getTickSteps());
+        ClientboundTickingStepPacket p = (ClientboundTickingStepPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.tickSteps());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundTickingStepPacket nmsPacket = new ClientboundTickingStepPacket(1);
-
+        ClientboundTickingStepPacket nmsPacket = new ClientboundTickingStepPacket(3);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundTickingStepPacket wrapper = new WrappedClientboundTickingStepPacket(container);
 
-        wrapper.setTickSteps(10);
+        assertEquals(3, wrapper.getTickSteps());
 
-        assertEquals(10, wrapper.getTickSteps());
+        wrapper.setTickSteps(9);
+
+        assertEquals(9, nmsPacket.tickSteps());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundTickingStepPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

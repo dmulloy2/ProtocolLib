@@ -24,7 +24,13 @@ public class WrappedClientboundEntityEventPacket extends AbstractPacket {
 
     public WrappedClientboundEntityEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundEntityEventPacket(int entityId, byte status) {
+        this();
+        setEntityId(entityId);
+        setStatus(status);
+    }
 
     public WrappedClientboundEntityEventPacket(PacketContainer packet) {
         super(packet, TYPE);

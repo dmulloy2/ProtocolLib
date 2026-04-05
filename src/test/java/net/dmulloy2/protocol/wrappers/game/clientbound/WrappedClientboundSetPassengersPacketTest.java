@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetPassengersPacketTest {
@@ -16,52 +14,49 @@ class WrappedClientboundSetPassengersPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetPassengersPacket w = new WrappedClientboundSetPassengersPacket();
-        int[] passengers = {5, 6, 7};
-        w.setVehicleId(1);
-        w.setPassengerIds(passengers);
+    void testAllArgsCreate() {
+        WrappedClientboundSetPassengersPacket w = new WrappedClientboundSetPassengersPacket(3, new int[] { 4, 5, 6 });
 
         assertEquals(PacketType.Play.Server.MOUNT, w.getHandle().getType());
 
-        ClientboundSetPassengersPacket p = (ClientboundSetPassengersPacket) w.getHandle().getHandle();
-
-        assertEquals(1, p.getVehicle());
-        assertArrayEquals(passengers, p.getPassengers());
+        assertEquals(3, w.getVehicleId());
+        assertArrayEquals(new int[] { 4, 5, 6 }, w.getPassengerIds());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer raw = new PacketContainer(PacketType.Play.Server.MOUNT);
-        raw.getModifier().writeDefaults();
-        raw.getIntegers().write(0, 99);
-        raw.getIntegerArrays().write(0, new int[]{10, 20});
+    void testNoArgsCreate() {
+        WrappedClientboundSetPassengersPacket w = new WrappedClientboundSetPassengersPacket();
 
-        WrappedClientboundSetPassengersPacket wrapper = new WrappedClientboundSetPassengersPacket(raw);
-
-        assertEquals(99, wrapper.getVehicleId());
-        assertArrayEquals(new int[]{10, 20}, wrapper.getPassengerIds());
+        assertEquals(PacketType.Play.Server.MOUNT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer raw = new PacketContainer(PacketType.Play.Server.MOUNT);
-        raw.getModifier().writeDefaults();
-        raw.getIntegers().write(0, 1);
-        raw.getIntegerArrays().write(0, new int[]{3});
+        WrappedClientboundSetPassengersPacket source = new WrappedClientboundSetPassengersPacket(3, new int[] { 4, 5, 6 });
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundSetPassengersPacket wrapper = new WrappedClientboundSetPassengersPacket(container);
 
-        WrappedClientboundSetPassengersPacket wrapper = new WrappedClientboundSetPassengersPacket(raw);
-        wrapper.setVehicleId(42);
+        assertEquals(3, wrapper.getVehicleId());
+        assertArrayEquals(new int[] { 4, 5, 6 }, wrapper.getPassengerIds());
 
-        assertEquals(42, wrapper.getVehicleId());
-        assertArrayEquals(new int[]{3}, wrapper.getPassengerIds());
+        wrapper.setVehicleId(9);
+        wrapper.setPassengerIds(new int[] { 10, 20, 30 });
+
+        assertEquals(9, wrapper.getVehicleId());
+        assertArrayEquals(new int[] { 10, 20, 30 }, wrapper.getPassengerIds());
+
+        assertEquals(9, source.getVehicleId());
+        assertArrayEquals(new int[] { 10, 20, 30 }, source.getPassengerIds());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetPassengersPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

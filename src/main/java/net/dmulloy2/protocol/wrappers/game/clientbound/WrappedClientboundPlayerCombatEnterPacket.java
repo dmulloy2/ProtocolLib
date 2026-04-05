@@ -15,7 +15,7 @@ public class WrappedClientboundPlayerCombatEnterPacket extends AbstractPacket {
 
     public WrappedClientboundPlayerCombatEnterPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedClientboundPlayerCombatEnterPacket(PacketContainer packet) {
         super(packet, TYPE);

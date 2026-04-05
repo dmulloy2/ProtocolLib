@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -18,10 +19,16 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundPlayerCombatEndPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.PLAYER_COMBAT_END;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class);
 
     public WrappedClientboundPlayerCombatEndPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundPlayerCombatEndPacket(int duration) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(duration)));
+    }
 
     public WrappedClientboundPlayerCombatEndPacket(PacketContainer packet) {
         super(packet, TYPE);

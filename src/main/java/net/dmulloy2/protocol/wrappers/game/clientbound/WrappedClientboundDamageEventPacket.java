@@ -3,10 +3,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BukkitConverters;
+import java.util.Optional;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.util.Vector;
-
-import java.util.Optional;
 
 /**
  * Wrapper for {@code ClientboundDamageEventPacket} (Play phase, clientbound).
@@ -26,7 +25,15 @@ public class WrappedClientboundDamageEventPacket extends AbstractPacket {
 
     public WrappedClientboundDamageEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundDamageEventPacket(int entityId, int sourceCauseId, int sourceDirectId, Optional<Vector> sourcePosition) {
+        this();
+        setEntityId(entityId);
+        setSourceCauseId(sourceCauseId);
+        setSourceDirectId(sourceDirectId);
+        setSourcePosition(sourcePosition);
+    }
 
     public WrappedClientboundDamageEventPacket(PacketContainer packet) {
         super(packet, TYPE);

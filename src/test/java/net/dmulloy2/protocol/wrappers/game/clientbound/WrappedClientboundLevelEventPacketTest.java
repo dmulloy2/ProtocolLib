@@ -4,10 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundLevelEventPacketTest {
@@ -17,59 +15,59 @@ class WrappedClientboundLevelEventPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundLevelEventPacket w = new WrappedClientboundLevelEventPacket();
-        w.setType(1004);
-        w.setPos(new BlockPosition(5, 64, -3));
-        w.setData(0);
-        w.setBroadcastToAll(false);
+    void testAllArgsCreate() {
+        WrappedClientboundLevelEventPacket w = new WrappedClientboundLevelEventPacket(3, new BlockPosition(4, 5, 6), 5, true);
 
         assertEquals(PacketType.Play.Server.WORLD_EVENT, w.getHandle().getType());
 
-        ClientboundLevelEventPacket p = (ClientboundLevelEventPacket) w.getHandle().getHandle();
-
-        assertEquals(1004, p.getType());
-        assertEquals(0, p.getData());
-        assertFalse(p.isGlobalEvent());
+        assertEquals(3, w.getType());
+        assertEquals(new BlockPosition(4, 5, 6), w.getPos());
+        assertEquals(5, w.getData());
+        assertTrue(w.isBroadcastToAll());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundLevelEventPacket nmsPacket = new ClientboundLevelEventPacket(
-                2001, new net.minecraft.core.BlockPos(1, 2, 3), 10, true
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundLevelEventPacket w = new WrappedClientboundLevelEventPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundLevelEventPacket wrapper = new WrappedClientboundLevelEventPacket(container);
-
-        assertEquals(2001, wrapper.getType());
-        assertEquals(new BlockPosition(1, 2, 3), wrapper.getPos());
-        assertEquals(10, wrapper.getData());
-        assertTrue(wrapper.isBroadcastToAll());
+        assertEquals(PacketType.Play.Server.WORLD_EVENT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundLevelEventPacket nmsPacket = new ClientboundLevelEventPacket(
-                2001, new net.minecraft.core.BlockPos(1, 2, 3), 10, true
-        );
-
+        WrappedClientboundLevelEventPacket source = new WrappedClientboundLevelEventPacket(3, new BlockPosition(4, 5, 6), 5, true);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundLevelEventPacket wrapper = new WrappedClientboundLevelEventPacket(container);
 
-        wrapper.setData(42);
-
-        assertEquals(2001, wrapper.getType());
-        assertEquals(new BlockPosition(1, 2, 3), wrapper.getPos());
-        assertEquals(42, wrapper.getData());
+        assertEquals(3, wrapper.getType());
+        assertEquals(new BlockPosition(4, 5, 6), wrapper.getPos());
+        assertEquals(5, wrapper.getData());
         assertTrue(wrapper.isBroadcastToAll());
+
+        wrapper.setType(9);
+        wrapper.setPos(new BlockPosition(10, 20, 30));
+        wrapper.setData(0);
+        wrapper.setBroadcastToAll(false);
+
+        assertEquals(9, wrapper.getType());
+        assertEquals(new BlockPosition(10, 20, 30), wrapper.getPos());
+        assertEquals(0, wrapper.getData());
+        assertFalse(wrapper.isBroadcastToAll());
+
+        assertEquals(9, source.getType());
+        assertEquals(new BlockPosition(10, 20, 30), source.getPos());
+        assertEquals(0, source.getData());
+        assertFalse(source.isBroadcastToAll());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundLevelEventPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

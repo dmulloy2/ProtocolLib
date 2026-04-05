@@ -15,7 +15,7 @@ public class WrappedClientboundChunkBatchStartPacket extends AbstractPacket {
 
     public WrappedClientboundChunkBatchStartPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedClientboundChunkBatchStartPacket(PacketContainer packet) {
         super(packet, TYPE);

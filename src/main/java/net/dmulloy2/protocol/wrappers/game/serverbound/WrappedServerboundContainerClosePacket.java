@@ -2,7 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -16,13 +16,15 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedServerboundContainerClosePacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.CLOSE_WINDOW;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class);
 
     public WrappedServerboundContainerClosePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedServerboundContainerClosePacket(int containerId) {
-        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class }).createPacket(containerId));
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(containerId)));
     }
 
     public WrappedServerboundContainerClosePacket(PacketContainer packet) {

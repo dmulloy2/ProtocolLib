@@ -4,10 +4,9 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import org.bukkit.Sound;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSoundPacketTest {
@@ -17,67 +16,79 @@ class WrappedClientboundSoundPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSoundPacket w = new WrappedClientboundSoundPacket();
-        w.setCategory(EnumWrappers.SoundCategory.PLAYERS);
-        w.setPosition(10.0, 64.0, -5.0);
-        w.setVolume(1.0f);
-        w.setPitch(1.5f);
-        w.setSeed(77777L);
+    void testAllArgsCreate() {
+        WrappedClientboundSoundPacket w = new WrappedClientboundSoundPacket(Sound.ENTITY_PLAYER_HURT, EnumWrappers.SoundCategory.MASTER, 5, 3, 7, -3.0f, 0.75f, 42L);
 
         assertEquals(PacketType.Play.Server.NAMED_SOUND_EFFECT, w.getHandle().getType());
 
-        ClientboundSoundPacket p = (ClientboundSoundPacket) w.getHandle().getHandle();
-
-        assertEquals(1.0f, p.getVolume(), 1e-4f);
-        assertEquals(1.5f, p.getPitch(), 1e-4f);
-        assertEquals(77777L, p.getSeed());
-        assertEquals(10.0, w.getActualX(), 1e-6);
-        assertEquals(64.0, w.getActualY(), 1e-6);
-        assertEquals(-5.0, w.getActualZ(), 1e-6);
+        assertEquals(Sound.ENTITY_PLAYER_HURT, w.getSound());
+        assertEquals(EnumWrappers.SoundCategory.MASTER, w.getCategory());
+        assertEquals(5, w.getX());
+        assertEquals(3, w.getY());
+        assertEquals(7, w.getZ());
+        assertEquals(-3.0f, w.getVolume(), 1e-4f);
+        assertEquals(0.75f, w.getPitch(), 1e-4f);
+        assertEquals(42L, w.getSeed());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer raw = new PacketContainer(PacketType.Play.Server.NAMED_SOUND_EFFECT);
-        raw.getModifier().writeDefaults();
-        raw.getIntegers().write(0, 80);  // x * 8 = 10.0
-        raw.getIntegers().write(1, 512); // y * 8 = 64.0
-        raw.getIntegers().write(2, -40); // z * 8 = -5.0
-        raw.getFloat().write(0, 0.8f);
-        raw.getFloat().write(1, 1.0f);
-        raw.getLongs().write(0, 42L);
+    void testNoArgsCreate() {
+        WrappedClientboundSoundPacket w = new WrappedClientboundSoundPacket();
 
-        WrappedClientboundSoundPacket wrapper = new WrappedClientboundSoundPacket(raw);
-
-        assertEquals(80, wrapper.getX());
-        assertEquals(10.0, wrapper.getActualX(), 1e-6);
-        assertEquals(0.8f, wrapper.getVolume(), 1e-4f);
-        assertEquals(1.0f, wrapper.getPitch(), 1e-4f);
-        assertEquals(42L, wrapper.getSeed());
+        assertEquals(PacketType.Play.Server.NAMED_SOUND_EFFECT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer raw = new PacketContainer(PacketType.Play.Server.NAMED_SOUND_EFFECT);
-        raw.getModifier().writeDefaults();
-        raw.getFloat().write(0, 1.0f);
-        raw.getFloat().write(1, 1.0f);
-        raw.getLongs().write(0, 1L);
+        WrappedClientboundSoundPacket source = new WrappedClientboundSoundPacket(Sound.ENTITY_PLAYER_HURT, EnumWrappers.SoundCategory.MASTER, 5, 3, 7, -3.0f, 0.75f, 42L);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundSoundPacket wrapper = new WrappedClientboundSoundPacket(container);
 
-        WrappedClientboundSoundPacket wrapper = new WrappedClientboundSoundPacket(raw);
-        wrapper.setVolume(0.25f);
+        assertEquals(Sound.ENTITY_PLAYER_HURT, wrapper.getSound());
+        assertEquals(EnumWrappers.SoundCategory.MASTER, wrapper.getCategory());
+        assertEquals(5, wrapper.getX());
+        assertEquals(3, wrapper.getY());
+        assertEquals(7, wrapper.getZ());
+        assertEquals(-3.0f, wrapper.getVolume(), 1e-4f);
+        assertEquals(0.75f, wrapper.getPitch(), 1e-4f);
+        assertEquals(42L, wrapper.getSeed());
 
-        assertEquals(0.25f, wrapper.getVolume(), 1e-4f);
+        wrapper.setSound(Sound.ENTITY_ZOMBIE_HURT);
+        wrapper.setCategory(EnumWrappers.SoundCategory.MUSIC);
+        wrapper.setX(0);
+        wrapper.setY(42);
+        wrapper.setZ(9);
+        wrapper.setVolume(1.0f);
+        wrapper.setPitch(1.0f);
+        wrapper.setSeed(987654321L);
+
+        assertEquals(Sound.ENTITY_ZOMBIE_HURT, wrapper.getSound());
+        assertEquals(EnumWrappers.SoundCategory.MUSIC, wrapper.getCategory());
+        assertEquals(0, wrapper.getX());
+        assertEquals(42, wrapper.getY());
+        assertEquals(9, wrapper.getZ());
+        assertEquals(1.0f, wrapper.getVolume(), 1e-4f);
         assertEquals(1.0f, wrapper.getPitch(), 1e-4f);
-        assertEquals(1L, wrapper.getSeed());
+        assertEquals(987654321L, wrapper.getSeed());
+
+        assertEquals(Sound.ENTITY_ZOMBIE_HURT, source.getSound());
+        assertEquals(EnumWrappers.SoundCategory.MUSIC, source.getCategory());
+        assertEquals(0, source.getX());
+        assertEquals(42, source.getY());
+        assertEquals(9, source.getZ());
+        assertEquals(1.0f, source.getVolume(), 1e-4f);
+        assertEquals(1.0f, source.getPitch(), 1e-4f);
+        assertEquals(987654321L, source.getSeed());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSoundPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

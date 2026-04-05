@@ -27,7 +27,19 @@ public class WrappedClientboundSoundPacket extends AbstractPacket {
 
     public WrappedClientboundSoundPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundSoundPacket(Sound sound, EnumWrappers.SoundCategory category, int x, int y, int z, float volume, float pitch, long seed) {
+        this();
+        setSound(sound);
+        setCategory(category);
+        setX(x);
+        setY(y);
+        setZ(z);
+        setVolume(volume);
+        setPitch(pitch);
+        setSeed(seed);
+    }
 
     public WrappedClientboundSoundPacket(PacketContainer packet) {
         super(packet, TYPE);

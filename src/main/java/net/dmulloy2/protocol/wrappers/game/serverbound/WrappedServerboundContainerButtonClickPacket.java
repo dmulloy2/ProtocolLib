@@ -1,8 +1,8 @@
 package net.dmulloy2.protocol.wrappers.game.serverbound;
 
-import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -19,13 +19,16 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedServerboundContainerButtonClickPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.ENCHANT_ITEM;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(int.class);
 
     public WrappedServerboundContainerButtonClickPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedServerboundContainerButtonClickPacket(int containerId, int buttonId) {
-        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class, int.class }).createPacket(containerId, buttonId));
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(containerId, buttonId)));
     }
 
     public WrappedServerboundContainerButtonClickPacket(PacketContainer packet) {

@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetTitlesAnimationPacketTest {
@@ -16,52 +15,57 @@ class WrappedClientboundSetTitlesAnimationPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetTitlesAnimationPacket w = new WrappedClientboundSetTitlesAnimationPacket();
-        w.setFadeIn(10);
-        w.setStay(70);
-        w.setFadeOut(20);
+    void testAllArgsCreate() {
+        WrappedClientboundSetTitlesAnimationPacket w = new WrappedClientboundSetTitlesAnimationPacket(3, 7, 5);
 
         assertEquals(PacketType.Play.Server.SET_TITLES_ANIMATION, w.getHandle().getType());
 
         ClientboundSetTitlesAnimationPacket p = (ClientboundSetTitlesAnimationPacket) w.getHandle().getHandle();
 
-        assertEquals(10, p.getFadeIn());
-        assertEquals(70, p.getStay());
-        assertEquals(20, p.getFadeOut());
+        assertEquals(3, p.getFadeIn());
+        assertEquals(7, p.getStay());
+        assertEquals(5, p.getFadeOut());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetTitlesAnimationPacket nmsPacket = new ClientboundSetTitlesAnimationPacket(5, 40, 10);
+    void testNoArgsCreate() {
+        WrappedClientboundSetTitlesAnimationPacket w = new WrappedClientboundSetTitlesAnimationPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetTitlesAnimationPacket wrapper = new WrappedClientboundSetTitlesAnimationPacket(container);
+        assertEquals(PacketType.Play.Server.SET_TITLES_ANIMATION, w.getHandle().getType());
 
-        assertEquals(5, wrapper.getFadeIn());
-        assertEquals(40, wrapper.getStay());
-        assertEquals(10, wrapper.getFadeOut());
+        ClientboundSetTitlesAnimationPacket p = (ClientboundSetTitlesAnimationPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getFadeIn());
+        assertEquals(0, p.getStay());
+        assertEquals(0, p.getFadeOut());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundSetTitlesAnimationPacket nmsPacket = new ClientboundSetTitlesAnimationPacket(5, 40, 10);
-
+        ClientboundSetTitlesAnimationPacket nmsPacket = new ClientboundSetTitlesAnimationPacket(3, 7, 5);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetTitlesAnimationPacket wrapper = new WrappedClientboundSetTitlesAnimationPacket(container);
 
-        wrapper.setStay(100);
+        assertEquals(3, wrapper.getFadeIn());
+        assertEquals(7, wrapper.getStay());
+        assertEquals(5, wrapper.getFadeOut());
 
-        assertEquals(5, wrapper.getFadeIn());
-        assertEquals(100, wrapper.getStay());
-        assertEquals(10, wrapper.getFadeOut());
+        wrapper.setFadeIn(9);
+        wrapper.setStay(-5);
+        wrapper.setFadeOut(0);
+
+        assertEquals(9, nmsPacket.getFadeIn());
+        assertEquals(-5, nmsPacket.getStay());
+        assertEquals(0, nmsPacket.getFadeOut());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetTitlesAnimationPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

@@ -4,11 +4,9 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import net.minecraft.network.protocol.game.ClientboundBlockEventPacket;
 import org.bukkit.Material;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundBlockEventPacketTest {
@@ -18,61 +16,59 @@ class WrappedClientboundBlockEventPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundBlockEventPacket w = new WrappedClientboundBlockEventPacket();
-        w.setPos(new BlockPosition(0, 64, 0));
-        w.setActionId(1);
-        w.setActionParam(0);
-        w.setBlockType(Material.CHEST);
+    void testAllArgsCreate() {
+        WrappedClientboundBlockEventPacket w = new WrappedClientboundBlockEventPacket(new BlockPosition(1, 2, 3), 7, 5, null);
 
         assertEquals(PacketType.Play.Server.BLOCK_ACTION, w.getHandle().getType());
 
-        ClientboundBlockEventPacket p = (ClientboundBlockEventPacket) w.getHandle().getHandle();
-
-        assertEquals(1, p.getB0());
-        assertEquals(0, p.getB1());
+        assertEquals(new BlockPosition(1, 2, 3), w.getPos());
+        assertEquals(7, w.getActionId());
+        assertEquals(5, w.getActionParam());
+        assertEquals(null, w.getBlockType());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.BLOCK_ACTION);
-        container.getModifier().writeDefaults();
-        container.getBlockPositionModifier().write(0, new BlockPosition(5, 10, 5));
-        container.getIntegers().write(0, 2);
-        container.getIntegers().write(1, 3);
-        container.getBlocks().write(0, Material.NOTE_BLOCK);
+    void testNoArgsCreate() {
+        WrappedClientboundBlockEventPacket w = new WrappedClientboundBlockEventPacket();
 
-        WrappedClientboundBlockEventPacket wrapper = new WrappedClientboundBlockEventPacket(container);
-
-        assertEquals(new BlockPosition(5, 10, 5), wrapper.getPos());
-        assertEquals(2, wrapper.getActionId());
-        assertEquals(3, wrapper.getActionParam());
-        assertEquals(Material.NOTE_BLOCK, wrapper.getBlockType());
+        assertEquals(PacketType.Play.Server.BLOCK_ACTION, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.BLOCK_ACTION);
-        container.getModifier().writeDefaults();
-        container.getBlockPositionModifier().write(0, new BlockPosition(5, 10, 5));
-        container.getIntegers().write(0, 2);
-        container.getIntegers().write(1, 3);
-        container.getBlocks().write(0, Material.NOTE_BLOCK);
-
+        WrappedClientboundBlockEventPacket source = new WrappedClientboundBlockEventPacket(new BlockPosition(1, 2, 3), 7, 5, null);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundBlockEventPacket wrapper = new WrappedClientboundBlockEventPacket(container);
-        wrapper.setActionId(5);
 
-        assertEquals(new BlockPosition(5, 10, 5), wrapper.getPos());
-        assertEquals(5, wrapper.getActionId());
-        assertEquals(3, wrapper.getActionParam());
-        assertEquals(Material.NOTE_BLOCK, wrapper.getBlockType());
+        assertEquals(new BlockPosition(1, 2, 3), wrapper.getPos());
+        assertEquals(7, wrapper.getActionId());
+        assertEquals(5, wrapper.getActionParam());
+        assertEquals(null, wrapper.getBlockType());
+
+        wrapper.setPos(new BlockPosition(10, 20, 30));
+        wrapper.setActionId(-5);
+        wrapper.setActionParam(0);
+        wrapper.setBlockType(null);
+
+        assertEquals(new BlockPosition(10, 20, 30), wrapper.getPos());
+        assertEquals(-5, wrapper.getActionId());
+        assertEquals(0, wrapper.getActionParam());
+        assertEquals(null, wrapper.getBlockType());
+
+        assertEquals(new BlockPosition(10, 20, 30), source.getPos());
+        assertEquals(-5, source.getActionId());
+        assertEquals(0, source.getActionParam());
+        assertEquals(null, source.getBlockType());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundBlockEventPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

@@ -4,11 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
-import net.minecraft.network.protocol.game.ClientboundForgetLevelChunkPacket;
-import net.minecraft.world.level.ChunkPos;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundForgetLevelChunkPacketTest {
@@ -18,50 +15,44 @@ class WrappedClientboundForgetLevelChunkPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundForgetLevelChunkPacket w = new WrappedClientboundForgetLevelChunkPacket();
-        w.setPos(new ChunkCoordIntPair(3, -5));
+    void testAllArgsCreate() {
+        WrappedClientboundForgetLevelChunkPacket w = new WrappedClientboundForgetLevelChunkPacket(new ChunkCoordIntPair(3, -5));
 
         assertEquals(PacketType.Play.Server.UNLOAD_CHUNK, w.getHandle().getType());
 
-        ClientboundForgetLevelChunkPacket p = (ClientboundForgetLevelChunkPacket) w.getHandle().getHandle();
-
-        assertNotNull(p.pos());
+        assertEquals(new ChunkCoordIntPair(3, -5), w.getPos());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundForgetLevelChunkPacket nmsPacket = new ClientboundForgetLevelChunkPacket(
-                new ChunkPos(10, 20)
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundForgetLevelChunkPacket w = new WrappedClientboundForgetLevelChunkPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundForgetLevelChunkPacket wrapper = new WrappedClientboundForgetLevelChunkPacket(container);
-
-        assertEquals(10, wrapper.getChunkX());
-        assertEquals(20, wrapper.getChunkZ());
+        assertEquals(PacketType.Play.Server.UNLOAD_CHUNK, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundForgetLevelChunkPacket nmsPacket = new ClientboundForgetLevelChunkPacket(
-                new ChunkPos(10, 20)
-        );
-
+        WrappedClientboundForgetLevelChunkPacket source = new WrappedClientboundForgetLevelChunkPacket(new ChunkCoordIntPair(3, -5));
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundForgetLevelChunkPacket wrapper = new WrappedClientboundForgetLevelChunkPacket(container);
 
-        wrapper.setChunkX(7);
+        assertEquals(new ChunkCoordIntPair(3, -5), wrapper.getPos());
 
-        assertEquals(7, wrapper.getChunkX());
-        assertEquals(20, wrapper.getChunkZ());
+        wrapper.setPos(new ChunkCoordIntPair(-10, 20));
+
+        assertEquals(new ChunkCoordIntPair(-10, 20), wrapper.getPos());
+
+        assertEquals(new ChunkCoordIntPair(-10, 20), source.getPos());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundForgetLevelChunkPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

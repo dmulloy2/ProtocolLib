@@ -2,6 +2,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MinecraftKey;
 import net.dmulloy2.protocol.AbstractPacket;
@@ -21,10 +23,17 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundStopSoundPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.STOP_SOUND;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getMinecraftKeyClass(), MinecraftKey.getConverter())
+            .withParam(EnumWrappers.getSoundCategoryClass(), EnumWrappers.getSoundCategoryConverter());
 
     public WrappedClientboundStopSoundPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundStopSoundPacket(MinecraftKey name, EnumWrappers.SoundCategory source) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(name, source)));
+    }
 
     public WrappedClientboundStopSoundPacket(PacketContainer packet) {
         super(packet, TYPE);

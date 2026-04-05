@@ -2,7 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import net.dmulloy2.protocol.AbstractPacket;
@@ -20,13 +20,16 @@ import org.bukkit.inventory.ItemStack;
 public class WrappedServerboundSetCreativeModeSlotPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.SET_CREATIVE_SLOT;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(short.class)
+            .withParam(MinecraftReflection.getItemStackClass(), BukkitConverters.getItemStackConverter());
 
     public WrappedServerboundSetCreativeModeSlotPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedServerboundSetCreativeModeSlotPacket(short slotNum, ItemStack itemStack) {
-        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { short.class, MinecraftReflection.getItemStackClass() }).createPacket(slotNum, BukkitConverters.getItemStackConverter().getGeneric(itemStack)));
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(slotNum, itemStack)));
     }
 
     public WrappedServerboundSetCreativeModeSlotPacket(PacketContainer packet) {

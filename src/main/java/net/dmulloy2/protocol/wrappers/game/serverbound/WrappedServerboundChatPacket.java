@@ -2,9 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.dmulloy2.protocol.AbstractPacket;
-
+import com.comphenix.protocol.wrappers.WrappedMessageSignature;
 import java.time.Instant;
+import net.dmulloy2.protocol.AbstractPacket;
 
 /**
  * Wrapper for {@code ServerboundChatPacket} (Play phase, serverbound).
@@ -24,13 +24,14 @@ public class WrappedServerboundChatPacket extends AbstractPacket {
 
     public WrappedServerboundChatPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
-    public WrappedServerboundChatPacket(String message, Instant timeStamp, long salt) {
+    public WrappedServerboundChatPacket(String message, Instant timeStamp, long salt, WrappedMessageSignature signature) {
         this();
         setMessage(message);
         setTimeStamp(timeStamp);
         setSalt(salt);
+        setSignature(signature);
     }
 
     public WrappedServerboundChatPacket(PacketContainer packet) {
@@ -77,5 +78,19 @@ public class WrappedServerboundChatPacket extends AbstractPacket {
      */
     public void setSalt(long salt) {
         handle.getLongs().write(0, salt);
+    }
+
+    /**
+     * Returns the optional message signature bytes, or {@code null} if unsigned.
+     */
+    public WrappedMessageSignature getSignature() {
+        return handle.getMessageSignatures().read(0);
+    }
+
+    /**
+     * Sets the message signature.
+     */
+    public void setSignature(WrappedMessageSignature signature) {
+        handle.getMessageSignatures().write(0, signature);
     }
 }

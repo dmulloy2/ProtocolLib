@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetHeldSlotPacketTest {
@@ -16,44 +15,47 @@ class WrappedClientboundSetHeldSlotPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetHeldSlotPacket w = new WrappedClientboundSetHeldSlotPacket();
-        w.setSlot(4);
+    void testAllArgsCreate() {
+        WrappedClientboundSetHeldSlotPacket w = new WrappedClientboundSetHeldSlotPacket(3);
 
         assertEquals(PacketType.Play.Server.HELD_ITEM_SLOT, w.getHandle().getType());
 
         ClientboundSetHeldSlotPacket p = (ClientboundSetHeldSlotPacket) w.getHandle().getHandle();
 
-        assertEquals(4, p.slot());
+        assertEquals(3, p.slot());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetHeldSlotPacket nmsPacket = new ClientboundSetHeldSlotPacket(7);
+    void testNoArgsCreate() {
+        WrappedClientboundSetHeldSlotPacket w = new WrappedClientboundSetHeldSlotPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetHeldSlotPacket wrapper = new WrappedClientboundSetHeldSlotPacket(container);
+        assertEquals(PacketType.Play.Server.HELD_ITEM_SLOT, w.getHandle().getType());
 
-        assertEquals(7, wrapper.getSlot());
+        ClientboundSetHeldSlotPacket p = (ClientboundSetHeldSlotPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.slot());
     }
 
     @Test
     void testModifyExistingPacket() {
         ClientboundSetHeldSlotPacket nmsPacket = new ClientboundSetHeldSlotPacket(3);
-
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetHeldSlotPacket wrapper = new WrappedClientboundSetHeldSlotPacket(container);
 
-        wrapper.setSlot(8);
+        assertEquals(3, wrapper.getSlot());
 
-        assertEquals(8, wrapper.getSlot());
+        wrapper.setSlot(9);
+
+        assertEquals(9, nmsPacket.slot());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetHeldSlotPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

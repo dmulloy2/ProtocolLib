@@ -2,6 +2,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -18,10 +20,16 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundForgetLevelChunkPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.UNLOAD_CHUNK;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getChunkCoordIntPair(), ChunkCoordIntPair.getConverter());
 
     public WrappedClientboundForgetLevelChunkPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundForgetLevelChunkPacket(ChunkCoordIntPair pos) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(pos)));
+    }
 
     public WrappedClientboundForgetLevelChunkPacket(PacketContainer packet) {
         super(packet, TYPE);

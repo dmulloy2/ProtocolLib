@@ -4,11 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetTitleTextPacketTest {
@@ -18,49 +15,44 @@ class WrappedClientboundSetTitleTextPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetTitleTextPacket w = new WrappedClientboundSetTitleTextPacket();
-        w.setTitle(WrappedChatComponent.fromText("My Title"));
+    void testAllArgsCreate() {
+        WrappedClientboundSetTitleTextPacket w = new WrappedClientboundSetTitleTextPacket(WrappedChatComponent.fromText("Hello, world!"));
 
         assertEquals(PacketType.Play.Server.SET_TITLE_TEXT, w.getHandle().getType());
 
-        ClientboundSetTitleTextPacket p = (ClientboundSetTitleTextPacket) w.getHandle().getHandle();
-
-        assertNotNull(p.text());
-        assertTrue(w.getTitle().getJson().contains("My Title"));
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), w.getTitle());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundSetTitleTextPacket nmsPacket = new ClientboundSetTitleTextPacket(
-                Component.literal("Hello Title")
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundSetTitleTextPacket w = new WrappedClientboundSetTitleTextPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundSetTitleTextPacket wrapper = new WrappedClientboundSetTitleTextPacket(container);
-
-        assertTrue(wrapper.getTitle().getJson().contains("Hello Title"));
+        assertEquals(PacketType.Play.Server.SET_TITLE_TEXT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundSetTitleTextPacket nmsPacket = new ClientboundSetTitleTextPacket(
-                Component.literal("original")
-        );
-
+        WrappedClientboundSetTitleTextPacket source = new WrappedClientboundSetTitleTextPacket(WrappedChatComponent.fromText("Hello, world!"));
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetTitleTextPacket wrapper = new WrappedClientboundSetTitleTextPacket(container);
 
-        wrapper.setTitle(WrappedChatComponent.fromText("updated title"));
+        assertEquals(WrappedChatComponent.fromText("Hello, world!"), wrapper.getTitle());
 
-        assertTrue(wrapper.getTitle().getJson().contains("updated title"));
+        wrapper.setTitle(WrappedChatComponent.fromText("Modified"));
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), wrapper.getTitle());
+
+        assertEquals(WrappedChatComponent.fromText("Modified"), source.getTitle());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetTitleTextPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

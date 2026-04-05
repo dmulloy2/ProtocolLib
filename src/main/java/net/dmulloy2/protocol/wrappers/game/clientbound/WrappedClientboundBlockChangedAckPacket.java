@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -15,10 +16,16 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundBlockChangedAckPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.BLOCK_CHANGED_ACK;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class);
 
     public WrappedClientboundBlockChangedAckPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundBlockChangedAckPacket(int sequence) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(sequence)));
+    }
 
     public WrappedClientboundBlockChangedAckPacket(PacketContainer packet) {
         super(packet, TYPE);

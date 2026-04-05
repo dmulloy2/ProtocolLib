@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundChunkBatchStartPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundChunkBatchStartPacketTest {
@@ -16,32 +14,24 @@ class WrappedClientboundChunkBatchStartPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundChunkBatchStartPacket w = new WrappedClientboundChunkBatchStartPacket();
-
-        assertEquals(PacketType.Play.Server.CHUNK_BATCH_START, w.getHandle().getType());
-
-        ClientboundChunkBatchStartPacket p = (ClientboundChunkBatchStartPacket) w.getHandle().getHandle();
-
-        assertNotNull(p);
+    void testAllArgsCreate() {
+        // TODO: packet has no suitable all-args constructor
+        assertEquals(PacketType.Play.Server.CHUNK_BATCH_START, new WrappedClientboundChunkBatchStartPacket().getHandle().getType());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.CHUNK_BATCH_START);
-        container.getModifier().writeDefaults();
+    void testNoArgsCreate() {
+        WrappedClientboundChunkBatchStartPacket w = new WrappedClientboundChunkBatchStartPacket();
 
-        WrappedClientboundChunkBatchStartPacket wrapper = new WrappedClientboundChunkBatchStartPacket(container);
-
-        assertEquals(PacketType.Play.Server.CHUNK_BATCH_START, wrapper.getHandle().getType());
+        assertEquals(PacketType.Play.Server.CHUNK_BATCH_START, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
         PacketContainer container = new PacketContainer(PacketType.Play.Server.CHUNK_BATCH_START);
-        container.getModifier().writeDefaults();
-
         WrappedClientboundChunkBatchStartPacket wrapper = new WrappedClientboundChunkBatchStartPacket(container);
 
         assertEquals(PacketType.Play.Server.CHUNK_BATCH_START, wrapper.getHandle().getType());
@@ -51,6 +41,6 @@ class WrappedClientboundChunkBatchStartPacketTest {
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundChunkBatchStartPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

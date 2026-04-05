@@ -21,16 +21,18 @@ public class WrappedClientboundUpdateMobEffectPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.ENTITY_EFFECT;
 
-    /** The effect plays without ambience particles. */
-    public static final byte FLAG_IS_AMBIENT    = 0x01;
-    /** Show particles for the effect. */
-    public static final byte FLAG_SHOW_PARTICLES = 0x02;
-    /** Show the effect icon in the HUD. */
-    public static final byte FLAG_SHOW_ICON      = 0x04;
-
     public WrappedClientboundUpdateMobEffectPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundUpdateMobEffectPacket(int entityId, PotionEffectType effectType, int amplifier, int duration, byte flags) {
+        this();
+        setEntityId(entityId);
+        setEffectType(effectType);
+        setAmplifier(amplifier);
+        setDuration(duration);
+        setFlags(flags);
+    }
 
     public WrappedClientboundUpdateMobEffectPacket(PacketContainer packet) {
         super(packet, TYPE);

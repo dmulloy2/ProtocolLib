@@ -2,6 +2,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -21,7 +23,13 @@ public class WrappedClientboundOpenScreenPacket extends AbstractPacket {
 
     public WrappedClientboundOpenScreenPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundOpenScreenPacket(int containerId, WrappedChatComponent title) {
+        this();
+        setContainerId(containerId);
+        setTitle(title);
+    }
 
     public WrappedClientboundOpenScreenPacket(PacketContainer packet) {
         super(packet, TYPE);

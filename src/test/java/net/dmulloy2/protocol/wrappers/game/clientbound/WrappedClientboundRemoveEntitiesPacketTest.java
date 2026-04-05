@@ -3,12 +3,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundRemoveEntitiesPacketTest {
@@ -18,45 +15,44 @@ class WrappedClientboundRemoveEntitiesPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundRemoveEntitiesPacket w = new WrappedClientboundRemoveEntitiesPacket();
-        w.setEntityIds(List.of(10, 20, 30));
+    void testAllArgsCreate() {
+        WrappedClientboundRemoveEntitiesPacket w = new WrappedClientboundRemoveEntitiesPacket(List.of(1, 2, 3));
 
         assertEquals(PacketType.Play.Server.ENTITY_DESTROY, w.getHandle().getType());
 
-        ClientboundRemoveEntitiesPacket p = (ClientboundRemoveEntitiesPacket) w.getHandle().getHandle();
-
-        assertEquals(3, p.getEntityIds().size());
+        assertEquals(List.of(1, 2, 3), w.getEntityIds());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundRemoveEntitiesPacket nmsPacket = new ClientboundRemoveEntitiesPacket(1, 2, 3);
+    void testNoArgsCreate() {
+        WrappedClientboundRemoveEntitiesPacket w = new WrappedClientboundRemoveEntitiesPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundRemoveEntitiesPacket wrapper = new WrappedClientboundRemoveEntitiesPacket(container);
-
-        assertEquals(3, wrapper.getEntityIds().size());
-        assertTrue(wrapper.getEntityIds().contains(1));
+        assertEquals(PacketType.Play.Server.ENTITY_DESTROY, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundRemoveEntitiesPacket nmsPacket = new ClientboundRemoveEntitiesPacket(1, 2, 3);
-
+        WrappedClientboundRemoveEntitiesPacket source = new WrappedClientboundRemoveEntitiesPacket(List.of(1, 2, 3));
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundRemoveEntitiesPacket wrapper = new WrappedClientboundRemoveEntitiesPacket(container);
 
-        wrapper.setEntityIds(List.of(5, 6, 7, 8));
+        assertEquals(List.of(1, 2, 3), wrapper.getEntityIds());
 
-        assertEquals(4, wrapper.getEntityIds().size());
+        wrapper.setEntityIds(List.of(99, 100));
+
+        assertEquals(List.of(99, 100), wrapper.getEntityIds());
+
+        assertEquals(List.of(99, 100), source.getEntityIds());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundRemoveEntitiesPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

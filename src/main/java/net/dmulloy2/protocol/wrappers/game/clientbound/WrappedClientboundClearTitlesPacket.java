@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -15,10 +16,16 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedClientboundClearTitlesPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.CLEAR_TITLES;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(boolean.class);
 
     public WrappedClientboundClearTitlesPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundClearTitlesPacket(boolean resetTimes) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(resetTimes)));
+    }
 
     public WrappedClientboundClearTitlesPacket(PacketContainer packet) {
         super(packet, TYPE);

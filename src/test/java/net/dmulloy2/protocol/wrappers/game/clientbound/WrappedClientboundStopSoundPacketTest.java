@@ -5,12 +5,8 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MinecraftKey;
-import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
-import net.minecraft.resources.Identifier;
-import net.minecraft.sounds.SoundSource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundStopSoundPacketTest {
@@ -20,53 +16,49 @@ class WrappedClientboundStopSoundPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundStopSoundPacket w = new WrappedClientboundStopSoundPacket();
-        w.setName(new MinecraftKey("minecraft", "block.note_block.harp"));
-        w.setSource(EnumWrappers.SoundCategory.RECORDS);
+    void testAllArgsCreate() {
+        WrappedClientboundStopSoundPacket w = new WrappedClientboundStopSoundPacket(new MinecraftKey("minecraft", "stone"), EnumWrappers.SoundCategory.MASTER);
 
         assertEquals(PacketType.Play.Server.STOP_SOUND, w.getHandle().getType());
 
-        ClientboundStopSoundPacket p = (ClientboundStopSoundPacket) w.getHandle().getHandle();
-
-        assertNotNull(p.getName());
-        assertNotNull(p.getSource());
+        assertEquals(new MinecraftKey("minecraft", "stone"), w.getName());
+        assertEquals(EnumWrappers.SoundCategory.MASTER, w.getSource());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundStopSoundPacket nmsPacket = new ClientboundStopSoundPacket(
-                Identifier.fromNamespaceAndPath("minecraft", "block.note_block.bass"),
-                SoundSource.MUSIC
-        );
+    void testNoArgsCreate() {
+        WrappedClientboundStopSoundPacket w = new WrappedClientboundStopSoundPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundStopSoundPacket wrapper = new WrappedClientboundStopSoundPacket(container);
-
-        assertNotNull(wrapper.getName());
-        assertEquals(EnumWrappers.SoundCategory.MUSIC, wrapper.getSource());
+        assertEquals(PacketType.Play.Server.STOP_SOUND, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundStopSoundPacket nmsPacket = new ClientboundStopSoundPacket(
-                Identifier.fromNamespaceAndPath("minecraft", "entity.player.hurt"),
-                SoundSource.PLAYERS
-        );
-
+        WrappedClientboundStopSoundPacket source = new WrappedClientboundStopSoundPacket(new MinecraftKey("minecraft", "stone"), EnumWrappers.SoundCategory.MASTER);
+        Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundStopSoundPacket wrapper = new WrappedClientboundStopSoundPacket(container);
 
-        wrapper.setSource(EnumWrappers.SoundCategory.AMBIENT);
+        assertEquals(new MinecraftKey("minecraft", "stone"), wrapper.getName());
+        assertEquals(EnumWrappers.SoundCategory.MASTER, wrapper.getSource());
 
-        assertEquals(EnumWrappers.SoundCategory.AMBIENT, wrapper.getSource());
+        wrapper.setName(new MinecraftKey("minecraft", "sand"));
+        wrapper.setSource(EnumWrappers.SoundCategory.MUSIC);
+
+        assertEquals(new MinecraftKey("minecraft", "sand"), wrapper.getName());
+        assertEquals(EnumWrappers.SoundCategory.MUSIC, wrapper.getSource());
+
+        assertEquals(new MinecraftKey("minecraft", "sand"), source.getName());
+        assertEquals(EnumWrappers.SoundCategory.MUSIC, source.getSource());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundStopSoundPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

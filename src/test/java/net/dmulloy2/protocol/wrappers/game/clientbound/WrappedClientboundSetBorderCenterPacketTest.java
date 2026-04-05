@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetBorderCenterPacketTest {
@@ -16,51 +14,49 @@ class WrappedClientboundSetBorderCenterPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundSetBorderCenterPacket w = new WrappedClientboundSetBorderCenterPacket();
-        w.setX(100.5);
-        w.setZ(-200.5);
+    void testAllArgsCreate() {
+        WrappedClientboundSetBorderCenterPacket w = new WrappedClientboundSetBorderCenterPacket(3.14, 100.0);
 
         assertEquals(PacketType.Play.Server.SET_BORDER_CENTER, w.getHandle().getType());
 
-        ClientboundSetBorderCenterPacket p = (ClientboundSetBorderCenterPacket) w.getHandle().getHandle();
-
-        assertEquals(100.5, p.getNewCenterX(), 1e-6);
-        assertEquals(-200.5, p.getNewCenterZ(), 1e-6);
+        assertEquals(3.14, w.getX(), 1e-9);
+        assertEquals(100.0, w.getZ(), 1e-9);
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_CENTER);
-        container.getModifier().writeDefaults();
-        container.getDoubles().write(0, 500.0);
-        container.getDoubles().write(1, -300.0);
+    void testNoArgsCreate() {
+        WrappedClientboundSetBorderCenterPacket w = new WrappedClientboundSetBorderCenterPacket();
 
-        WrappedClientboundSetBorderCenterPacket wrapper = new WrappedClientboundSetBorderCenterPacket(container);
-
-        assertEquals(500.0, wrapper.getX(), 1e-6);
-        assertEquals(-300.0, wrapper.getZ(), 1e-6);
+        assertEquals(PacketType.Play.Server.SET_BORDER_CENTER, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.SET_BORDER_CENTER);
-        container.getModifier().writeDefaults();
-        container.getDoubles().write(0, 500.0);
-        container.getDoubles().write(1, -300.0);
-
+        WrappedClientboundSetBorderCenterPacket source = new WrappedClientboundSetBorderCenterPacket(3.14, 100.0);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundSetBorderCenterPacket wrapper = new WrappedClientboundSetBorderCenterPacket(container);
-        wrapper.setX(600.0);
 
-        assertEquals(600.0, wrapper.getX(), 1e-6);
-        assertEquals(-300.0, wrapper.getZ(), 1e-6);
+        assertEquals(3.14, wrapper.getX(), 1e-9);
+        assertEquals(100.0, wrapper.getZ(), 1e-9);
+
+        wrapper.setX(2.71);
+        wrapper.setZ(-5.0);
+
+        assertEquals(2.71, wrapper.getX(), 1e-9);
+        assertEquals(-5.0, wrapper.getZ(), 1e-9);
+
+        assertEquals(2.71, source.getX(), 1e-9);
+        assertEquals(-5.0, source.getZ(), 1e-9);
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundSetBorderCenterPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

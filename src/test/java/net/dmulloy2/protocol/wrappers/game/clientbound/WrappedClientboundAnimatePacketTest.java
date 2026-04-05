@@ -3,10 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundAnimatePacketTest {
@@ -16,51 +14,49 @@ class WrappedClientboundAnimatePacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundAnimatePacket w = new WrappedClientboundAnimatePacket();
-        w.setEntityId(7);
-        w.setAnimationId(3);
+    void testAllArgsCreate() {
+        WrappedClientboundAnimatePacket w = new WrappedClientboundAnimatePacket(3, 7);
 
         assertEquals(PacketType.Play.Server.ANIMATION, w.getHandle().getType());
 
-        ClientboundAnimatePacket p = (ClientboundAnimatePacket) w.getHandle().getHandle();
-
-        assertEquals(7, p.getId());
-        assertEquals(3, p.getAction());
+        assertEquals(3, w.getEntityId());
+        assertEquals(7, w.getAnimationId());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.ANIMATION);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 5);
-        container.getIntegers().write(1, 1);
+    void testNoArgsCreate() {
+        WrappedClientboundAnimatePacket w = new WrappedClientboundAnimatePacket();
 
-        WrappedClientboundAnimatePacket wrapper = new WrappedClientboundAnimatePacket(container);
-
-        assertEquals(5, wrapper.getEntityId());
-        assertEquals(1, wrapper.getAnimationId());
+        assertEquals(PacketType.Play.Server.ANIMATION, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.ANIMATION);
-        container.getModifier().writeDefaults();
-        container.getIntegers().write(0, 5);
-        container.getIntegers().write(1, 1);
-
+        WrappedClientboundAnimatePacket source = new WrappedClientboundAnimatePacket(3, 7);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundAnimatePacket wrapper = new WrappedClientboundAnimatePacket(container);
-        wrapper.setAnimationId(4);
 
-        assertEquals(5, wrapper.getEntityId());
-        assertEquals(4, wrapper.getAnimationId());
+        assertEquals(3, wrapper.getEntityId());
+        assertEquals(7, wrapper.getAnimationId());
+
+        wrapper.setEntityId(9);
+        wrapper.setAnimationId(-5);
+
+        assertEquals(9, wrapper.getEntityId());
+        assertEquals(-5, wrapper.getAnimationId());
+
+        assertEquals(9, source.getEntityId());
+        assertEquals(-5, source.getAnimationId());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundAnimatePacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

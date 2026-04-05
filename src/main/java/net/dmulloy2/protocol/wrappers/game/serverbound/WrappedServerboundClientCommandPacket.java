@@ -2,7 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -17,13 +17,15 @@ import net.dmulloy2.protocol.AbstractPacket;
 public class WrappedServerboundClientCommandPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.CLIENT_COMMAND;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(EnumWrappers.getClientCommandClass(), EnumWrappers.getClientCommandConverter());
 
     public WrappedServerboundClientCommandPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
     public WrappedServerboundClientCommandPacket(EnumWrappers.ClientCommand action) {
-        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { EnumWrappers.getClientCommandClass() }).createPacket(EnumWrappers.getClientCommandConverter().getGeneric(action)));
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(action)));
     }
 
     public WrappedServerboundClientCommandPacket(PacketContainer packet) {

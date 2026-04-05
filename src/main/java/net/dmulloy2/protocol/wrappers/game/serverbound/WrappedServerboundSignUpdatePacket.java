@@ -2,7 +2,6 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import net.dmulloy2.protocol.AbstractPacket;
@@ -23,14 +22,13 @@ public class WrappedServerboundSignUpdatePacket extends AbstractPacket {
 
     public WrappedServerboundSignUpdatePacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
 
-    public WrappedServerboundSignUpdatePacket(BlockPosition pos, boolean isFrontText, String[] lines) {
-        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] {
-                MinecraftReflection.getBlockPositionClass(), boolean.class,
-                String.class, String.class, String.class, String.class
-        }).createPacket(BlockPosition.getConverter().getGeneric(pos), isFrontText,
-                lines[0], lines[1], lines[2], lines[3]));
+    public WrappedServerboundSignUpdatePacket(BlockPosition pos, boolean frontText, String[] lines) {
+        this();
+        setPos(pos);
+        setFrontText(frontText);
+        setLines(lines);
     }
 
     public WrappedServerboundSignUpdatePacket(PacketContainer packet) {

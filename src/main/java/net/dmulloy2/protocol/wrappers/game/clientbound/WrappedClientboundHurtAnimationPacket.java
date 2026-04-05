@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -21,10 +22,17 @@ import org.bukkit.entity.Entity;
 public class WrappedClientboundHurtAnimationPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.HURT_ANIMATION;
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(float.class);
 
     public WrappedClientboundHurtAnimationPacket() {
         super(new PacketContainer(TYPE), TYPE);
-            }
+    }
+
+    public WrappedClientboundHurtAnimationPacket(int entityId, float yaw) {
+        this(PacketContainer.fromPacket(CONSTRUCTOR.create(entityId, yaw)));
+    }
 
     public WrappedClientboundHurtAnimationPacket(PacketContainer packet) {
         super(packet, TYPE);

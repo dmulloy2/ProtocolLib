@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundChunkBatchFinishedPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundChunkBatchFinishedPacketTest {
@@ -16,44 +15,47 @@ class WrappedClientboundChunkBatchFinishedPacketTest {
         BukkitInitialization.initializeAll();
     }
 
+
+
     @Test
-    void testCreate() {
-        WrappedClientboundChunkBatchFinishedPacket w = new WrappedClientboundChunkBatchFinishedPacket();
-        w.setBatchSize(5);
+    void testAllArgsCreate() {
+        WrappedClientboundChunkBatchFinishedPacket w = new WrappedClientboundChunkBatchFinishedPacket(3);
 
         assertEquals(PacketType.Play.Server.CHUNK_BATCH_FINISHED, w.getHandle().getType());
 
         ClientboundChunkBatchFinishedPacket p = (ClientboundChunkBatchFinishedPacket) w.getHandle().getHandle();
 
-        assertEquals(5, p.batchSize());
+        assertEquals(3, p.batchSize());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ClientboundChunkBatchFinishedPacket nmsPacket = new ClientboundChunkBatchFinishedPacket(10);
+    void testNoArgsCreate() {
+        WrappedClientboundChunkBatchFinishedPacket w = new WrappedClientboundChunkBatchFinishedPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundChunkBatchFinishedPacket wrapper = new WrappedClientboundChunkBatchFinishedPacket(container);
+        assertEquals(PacketType.Play.Server.CHUNK_BATCH_FINISHED, w.getHandle().getType());
 
-        assertEquals(10, wrapper.getBatchSize());
+        ClientboundChunkBatchFinishedPacket p = (ClientboundChunkBatchFinishedPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.batchSize());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ClientboundChunkBatchFinishedPacket nmsPacket = new ClientboundChunkBatchFinishedPacket(10);
-
+        ClientboundChunkBatchFinishedPacket nmsPacket = new ClientboundChunkBatchFinishedPacket(3);
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundChunkBatchFinishedPacket wrapper = new WrappedClientboundChunkBatchFinishedPacket(container);
 
-        wrapper.setBatchSize(20);
+        assertEquals(3, wrapper.getBatchSize());
 
-        assertEquals(20, wrapper.getBatchSize());
+        wrapper.setBatchSize(9);
+
+        assertEquals(9, nmsPacket.batchSize());
     }
 
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundChunkBatchFinishedPacket(
-                        new PacketContainer(PacketType.Play.Server.CHAT)));
+                        new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
     }
 }

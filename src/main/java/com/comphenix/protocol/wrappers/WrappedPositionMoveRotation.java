@@ -114,6 +114,23 @@ public class WrappedPositionMoveRotation {
     public void setPitch(float pitch) { this.pitch = pitch; }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof WrappedPositionMoveRotation other)) return false;
+        return Double.compare(x, other.x) == 0 && Double.compare(y, other.y) == 0
+                && Double.compare(z, other.z) == 0
+                && Double.compare(deltaX, other.deltaX) == 0
+                && Double.compare(deltaY, other.deltaY) == 0
+                && Double.compare(deltaZ, other.deltaZ) == 0
+                && Float.compare(yaw, other.yaw) == 0 && Float.compare(pitch, other.pitch) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(x, y, z, deltaX, deltaY, deltaZ, yaw, pitch);
+    }
+
+    @Override
     public String toString() {
         return "WrappedPositionMoveRotation{pos=(" + x + ", " + y + ", " + z + ")"
                 + ", delta=(" + deltaX + ", " + deltaY + ", " + deltaZ + ")"
