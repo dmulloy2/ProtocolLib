@@ -19,4 +19,7 @@ public class WrappedClientboundDebugEventPacket extends AbstractPacket {
     public WrappedClientboundDebugEventPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'event' (NMS type: DebugSubscription.Event<?> — registry-backed debug event)
+    //   No ProtocolLib accessor exists. Use handle.getModifier().read(0) for the raw event object.
 }

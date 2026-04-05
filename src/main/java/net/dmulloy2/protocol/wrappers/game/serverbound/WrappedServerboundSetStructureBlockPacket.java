@@ -113,4 +113,20 @@ public class WrappedServerboundSetStructureBlockPacket extends AbstractPacket {
     public void setOffset(BlockPosition offset) {
         handle.getBlockPositionModifier().write(1, offset);
     }
+
+    // TODO: missing field 'updateType' (NMS type: StructureBlockEntity.UpdateType enum — LOAD, SAVE, SCAN, DATA)
+    //   Declare a local UpdateType enum matching NMS constants and use
+    //   getEnumModifier(UpdateType.class, globalFieldIndex).read(0) / .write(0, value).
+    // TODO: missing field 'mode' (NMS type: StructureMode enum — SAVE, LOAD, CORNER, DATA)
+    //   Declare a local StructureMode enum matching NMS constants and use
+    //   getEnumModifier(StructureMode.class, globalFieldIndex).read(0) / .write(0, value).
+    // TODO: missing field 'size' (NMS type: Vec3i — structure size as block-coordinate offset)
+    //   Vec3i is not directly wrapped by ProtocolLib; use handle.getModifier().read(N) for the raw Vec3i,
+    //   or read individual int components if exposed separately.
+    // TODO: missing field 'mirror' (NMS type: Mirror enum — NONE, LEFT_RIGHT, FRONT_BACK)
+    //   Declare a local Mirror enum matching NMS constants and use
+    //   getEnumModifier(Mirror.class, globalFieldIndex).read(0) / .write(0, value).
+    // TODO: missing field 'rotation' (NMS type: Rotation enum — NONE, CLOCKWISE_90, CLOCKWISE_180, COUNTERCLOCKWISE_90)
+    //   Declare a local Rotation enum matching NMS constants and use
+    //   getEnumModifier(Rotation.class, globalFieldIndex).read(0) / .write(0, value).
 }

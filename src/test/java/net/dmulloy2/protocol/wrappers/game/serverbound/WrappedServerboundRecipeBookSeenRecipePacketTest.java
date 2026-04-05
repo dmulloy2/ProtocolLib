@@ -18,8 +18,11 @@ class WrappedServerboundRecipeBookSeenRecipePacketTest {
 
     @Test
     void testAllArgsCreate() {
-        // TODO: packet has no suitable all-args constructor
-        assertEquals(PacketType.Play.Client.RECIPE_DISPLAYED, new WrappedServerboundRecipeBookSeenRecipePacket().getHandle().getType());
+        WrappedServerboundRecipeBookSeenRecipePacket w = new WrappedServerboundRecipeBookSeenRecipePacket(42);
+
+        assertEquals(PacketType.Play.Client.RECIPE_DISPLAYED, w.getHandle().getType());
+
+        assertEquals(42, w.getRecipeIndex());
     }
 
     @Test
@@ -31,10 +34,17 @@ class WrappedServerboundRecipeBookSeenRecipePacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Client.RECIPE_DISPLAYED);
+        WrappedServerboundRecipeBookSeenRecipePacket source = new WrappedServerboundRecipeBookSeenRecipePacket(42);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundRecipeBookSeenRecipePacket wrapper = new WrappedServerboundRecipeBookSeenRecipePacket(container);
 
-        assertEquals(PacketType.Play.Client.RECIPE_DISPLAYED, wrapper.getHandle().getType());
+        assertEquals(42, wrapper.getRecipeIndex());
+
+        wrapper.setRecipeIndex(99);
+
+        assertEquals(99, wrapper.getRecipeIndex());
+        assertEquals(99, source.getRecipeIndex());
     }
 
     @Test

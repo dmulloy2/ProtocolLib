@@ -41,4 +41,9 @@ public class WrappedClientboundSetTimePacket extends AbstractPacket {
     public void setWorldAge(long worldAge) {
         handle.getLongs().write(0, worldAge);
     }
+
+    // TODO: missing field 'clockUpdates' (NMS type: Map<Holder<WorldClock>, ClockNetworkState>)
+    //   Each entry maps a registry-backed WorldClock to a ClockNetworkState (gametime/daytime/tickRate).
+    //   No ProtocolLib getMaps() accessor covers Holder<WorldClock> keys.
+    //   Use handle.getModifier().read(1) for the raw Map, or add a dedicated converter.
 }

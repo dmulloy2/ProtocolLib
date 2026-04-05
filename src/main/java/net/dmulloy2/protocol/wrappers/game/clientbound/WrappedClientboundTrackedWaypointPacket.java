@@ -19,4 +19,9 @@ public class WrappedClientboundTrackedWaypointPacket extends AbstractPacket {
     public WrappedClientboundTrackedWaypointPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'operation' (NMS type: ClientboundTrackedWaypointPacket.Operation enum — TRACK / UNTRACK)
+    //   Declare a local Operation enum matching NMS constants and use getEnumModifier(Operation.class, globalIndex).
+    // TODO: missing field 'waypoint' (NMS type: TrackedWaypoint — record with UUID identifier, Optional<Waypoint.Icon>, Optional<Vec3i>)
+    //   Use AutoWrapper or a dedicated WrappedTrackedWaypoint class.
 }

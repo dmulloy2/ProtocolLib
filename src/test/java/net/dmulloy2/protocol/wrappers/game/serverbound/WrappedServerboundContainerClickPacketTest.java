@@ -18,7 +18,8 @@ class WrappedServerboundContainerClickPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundContainerClickPacket w = new WrappedServerboundContainerClickPacket(3, 7, (short) -1, (byte) 3);
+        WrappedServerboundContainerClickPacket w = new WrappedServerboundContainerClickPacket(
+                3, 7, (short) -1, (byte) 3, WrappedServerboundContainerClickPacket.ContainerInput.PICKUP);
 
         assertEquals(PacketType.Play.Client.WINDOW_CLICK, w.getHandle().getType());
 
@@ -26,6 +27,7 @@ class WrappedServerboundContainerClickPacketTest {
         assertEquals(7, w.getStateId());
         assertEquals((short) -1, w.getSlotNum());
         assertEquals((byte) 3, w.getButtonNum());
+        assertEquals(WrappedServerboundContainerClickPacket.ContainerInput.PICKUP, w.getContainerInput());
     }
 
     @Test
@@ -37,7 +39,8 @@ class WrappedServerboundContainerClickPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundContainerClickPacket source = new WrappedServerboundContainerClickPacket(3, 7, (short) -1, (byte) 3);
+        WrappedServerboundContainerClickPacket source = new WrappedServerboundContainerClickPacket(
+                3, 7, (short) -1, (byte) 3, WrappedServerboundContainerClickPacket.ContainerInput.PICKUP);
         Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundContainerClickPacket wrapper = new WrappedServerboundContainerClickPacket(container);
@@ -46,21 +49,25 @@ class WrappedServerboundContainerClickPacketTest {
         assertEquals(7, wrapper.getStateId());
         assertEquals((short) -1, wrapper.getSlotNum());
         assertEquals((byte) 3, wrapper.getButtonNum());
+        assertEquals(WrappedServerboundContainerClickPacket.ContainerInput.PICKUP, wrapper.getContainerInput());
 
         wrapper.setContainerId(9);
         wrapper.setStateId(-5);
         wrapper.setSlotNum((short) 0);
         wrapper.setButtonNum((byte) 15);
+        wrapper.setContainerInput(WrappedServerboundContainerClickPacket.ContainerInput.THROW);
 
         assertEquals(9, wrapper.getContainerId());
         assertEquals(-5, wrapper.getStateId());
         assertEquals((short) 0, wrapper.getSlotNum());
         assertEquals((byte) 15, wrapper.getButtonNum());
+        assertEquals(WrappedServerboundContainerClickPacket.ContainerInput.THROW, wrapper.getContainerInput());
 
         assertEquals(9, source.getContainerId());
         assertEquals(-5, source.getStateId());
         assertEquals((short) 0, source.getSlotNum());
         assertEquals((byte) 15, source.getButtonNum());
+        assertEquals(WrappedServerboundContainerClickPacket.ContainerInput.THROW, source.getContainerInput());
     }
 
     @Test

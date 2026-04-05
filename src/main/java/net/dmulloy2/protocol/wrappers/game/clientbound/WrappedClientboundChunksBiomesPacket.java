@@ -18,4 +18,9 @@ public class WrappedClientboundChunksBiomesPacket extends AbstractPacket {
     public WrappedClientboundChunksBiomesPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'chunkBiomeData' (NMS type: List<ClientboundChunksBiomesPacket.ChunkBiomeData>)
+    //   Each ChunkBiomeData holds a ChunkPos and a raw byte[] of biome data.
+    //   No ProtocolLib accessor exists; use handle.getModifier().read(0) for the raw List,
+    //   or add a dedicated WrappedChunkBiomeData class with AutoWrapper.
 }

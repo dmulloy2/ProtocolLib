@@ -50,4 +50,8 @@ public class WrappedClientboundOpenScreenPacket extends AbstractPacket {
     public void setTitle(WrappedChatComponent title) {
         handle.getChatComponents().write(0, title);
     }
+
+    // TODO: missing field 'type' (NMS type: MenuType<?> — the inventory/container type)
+    //   Use handle.getSpecificModifier(MinecraftReflection.getMenuTypeClass()).read(0) for the raw MenuType,
+    //   or add a dedicated getContainerType() method once a MenuType → string converter is available.
 }

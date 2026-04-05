@@ -32,4 +32,9 @@ public class WrappedClientboundMoveMinecartPacket extends AbstractPacket {
     public void setEntityId(int entityId) {
         handle.getIntegers().write(0, entityId);
     }
+
+    // TODO: missing field 'lerpSteps' (NMS type: List<NewMinecartBehavior.MinecartStep>)
+    //   Each MinecartStep holds position (Vec3), movement (Vec3), yRot (float), xRot (float), weight (float).
+    //   No ProtocolLib accessor exists; use handle.getModifier().read(1) for the raw List,
+    //   or add a dedicated WrappedMinecartStep class with AutoWrapper.
 }

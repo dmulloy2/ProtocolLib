@@ -18,4 +18,8 @@ public class WrappedServerboundClientInformationPacket extends AbstractPacket {
     public WrappedServerboundClientInformationPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'information' (NMS type: ClientInformation — see configuration-phase wrapper for field list)
+    //   Same as the configuration-phase ClientInformation packet. See WrappedServerboundClientInformationPacket
+    //   in configuration/serverbound for implementation guidance.
 }

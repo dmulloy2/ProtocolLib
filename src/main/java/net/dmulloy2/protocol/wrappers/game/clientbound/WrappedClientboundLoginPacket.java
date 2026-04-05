@@ -116,4 +116,12 @@ public class WrappedClientboundLoginPacket extends AbstractPacket {
     public void setLevels(Set<World> levels) {
         handle.getSets(BukkitConverters.getWorldKeyConverter()).write(0, levels);
     }
+
+    // TODO: missing field 'commonPlayerSpawnInfo' (NMS type: CommonPlayerSpawnInfo)
+    //   CommonPlayerSpawnInfo holds: Holder<DimensionType> dimensionType, ResourceKey<Level> dimension,
+    //   long seed, GameType gameType, @Nullable GameType previousGameType, boolean isDebug,
+    //   boolean isFlat, Optional<GlobalPos> lastDeathLocation, int portalCooldown, int seaLevel.
+    //   This is a shared type used by both Login and Respawn packets.
+    //   Add a WrappedCommonPlayerSpawnInfo wrapper class and a getCommonPlayerSpawnInfos() accessor
+    //   in AbstractStructure, then expose it here.
 }

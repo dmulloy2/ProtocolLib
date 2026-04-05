@@ -19,4 +19,8 @@ public class WrappedServerboundDebugSubscriptionRequestPacket extends AbstractPa
     public WrappedServerboundDebugSubscriptionRequestPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'subscriptions' (NMS type: Set<DebugSubscription<?>> — registry-backed set)
+    //   No standard ProtocolLib accessor exists. Use handle.getModifier().read(0) for the raw Set,
+    //   or add a getSets() call once a DebugSubscription converter is registered.
 }

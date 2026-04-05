@@ -18,4 +18,11 @@ public class WrappedServerboundClientInformationPacket extends AbstractPacket {
     public WrappedServerboundClientInformationPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'information' (NMS type: ClientInformation — record with locale, viewDistance, chatMode, etc.)
+    //   ClientInformation holds: String locale, int viewDistance, ChatVisiblity chatVisibility,
+    //   boolean chatColors, int modelCustomisation, HumanoidArm mainHand, boolean textFilteringEnabled,
+    //   boolean allowsListing, ParticleStatus particleStatus.
+    //   Use AutoWrapper with a dedicated WrappedClientInformation POJO, or expose individual fields
+    //   via getStrings().read(0), getIntegers().read(0), etc. in declaration order.
 }

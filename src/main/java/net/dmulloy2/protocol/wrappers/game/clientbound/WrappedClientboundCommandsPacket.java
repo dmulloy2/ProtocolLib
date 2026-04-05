@@ -18,4 +18,8 @@ public class WrappedClientboundCommandsPacket extends AbstractPacket {
     public WrappedClientboundCommandsPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field — Brigadier command tree (RootCommandNode<SharedSuggestionProvider>)
+    //   No ProtocolLib accessor exists for the serialised command tree.
+    //   Use handle.getModifier().read(0) to access the raw RootCommandNode object.
 }

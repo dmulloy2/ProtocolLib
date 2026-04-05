@@ -18,4 +18,9 @@ public class WrappedClientboundUpdateRecipesPacket extends AbstractPacket {
     public WrappedClientboundUpdateRecipesPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'itemSets' (NMS type: Map<ResourceKey<RecipePropertySet>, RecipePropertySet>)
+    // TODO: missing field 'stonecutterRecipes' (NMS type: SelectableRecipe.SingleInputSet<StonecutterRecipe>)
+    //   No ProtocolLib accessors exist for these recipe structures.
+    //   Use handle.getModifier().read(0) / read(1) to access the raw objects.
 }

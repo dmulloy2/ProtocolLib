@@ -19,4 +19,9 @@ public class WrappedClientboundGameRuleValuesPacket extends AbstractPacket {
     public WrappedClientboundGameRuleValuesPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
+
+    // TODO: missing field 'values' (NMS type: Map<ResourceKey<GameRule<?>>, String>)
+    //   No standard ProtocolLib getMaps() accessor covers ResourceKey<GameRule<?>> keys.
+    //   Use handle.getModifier().read(0) to get the raw Map, or add a getMaps() call with a custom
+    //   converter for ResourceKey<GameRule<?>>.
 }

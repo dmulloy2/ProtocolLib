@@ -70,4 +70,9 @@ public class WrappedClientboundDamageEventPacket extends AbstractPacket {
     public void setSourcePosition(Optional<Vector> sourcePosition) {
         handle.getOptionals(BukkitConverters.getVectorConverter()).write(0, sourcePosition);
     }
+
+    // TODO: missing field 'sourceType' (NMS type: Holder<DamageType>)
+    //   Use handle.getHolders(MinecraftReflection.getMinecraftClass("world.damagesource.DamageType"), converter).read(0),
+    //   or handle.getModifier().read(1) for the raw Holder<DamageType>.
+    //   A DamageType→String (registry key) converter would be required for a clean Bukkit-side type.
 }

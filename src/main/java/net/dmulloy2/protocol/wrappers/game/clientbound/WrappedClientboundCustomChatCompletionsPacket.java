@@ -9,27 +9,39 @@ import net.dmulloy2.protocol.AbstractPacket;
 /**
  * Wrapper for {@code ClientboundCustomChatCompletionsPacket} (game phase, clientbound).
  *
- * <p>Packet structure:
- * <ul>
- *   <li>{@code Action action} – ADD, REMOVE, or SET</li>
- *   <li>{@code List<String> entries} – completion strings to add/remove/set</li>
- * </ul>
+ * <p>NMS field order: {@code action (global 0), entries (global 1)}
  */
 public class WrappedClientboundCustomChatCompletionsPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.CUSTOM_CHAT_COMPLETIONS;
 
+    /**
+     * Mirrors {@code ClientboundCustomChatCompletionsPacket.Action}.
+     * Global field index 0 — constants must match NMS names exactly.
+     */
+    public enum Action { ADD, REMOVE, SET }
+
     public WrappedClientboundCustomChatCompletionsPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
-    public WrappedClientboundCustomChatCompletionsPacket(List<String> entries) {
+    public WrappedClientboundCustomChatCompletionsPacket(Action action, List<String> entries) {
         this();
+        setAction(action);
         setEntries(entries);
     }
 
     public WrappedClientboundCustomChatCompletionsPacket(PacketContainer packet) {
         super(packet, TYPE);
+    }
+
+    /** Returns the completion action (ADD, REMOVE, or SET). Global field index 0. */
+    public Action getAction() {
+        return handle.getEnumModifier(Action.class, 0).read(0);
+    }
+
+    public void setAction(Action action) {
+        handle.getEnumModifier(Action.class, 0).write(0, action);
     }
 
     public List<String> getEntries() {
