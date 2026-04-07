@@ -2,6 +2,8 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.AutoWrapper;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -18,6 +20,9 @@ public class WrappedServerboundPlayerInputPacket extends AbstractPacket {
 
     private static final AutoWrapper<WrappedInput> INPUT_WRAPPER =
             AutoWrapper.wrap(WrappedInput.class, "world.entity.player.Input");
+
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getMinecraftClass("world.entity.player.Input"), INPUT_WRAPPER);
 
     /**
      * Mirror of {@code record Input(boolean forward, boolean backward, boolean left,
@@ -40,8 +45,7 @@ public class WrappedServerboundPlayerInputPacket extends AbstractPacket {
     }
 
     public WrappedServerboundPlayerInputPacket(WrappedInput input) {
-        this();
-        setInput(input);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(input)));
     }
 
     public WrappedServerboundPlayerInputPacket(PacketContainer packet) {
@@ -50,11 +54,11 @@ public class WrappedServerboundPlayerInputPacket extends AbstractPacket {
 
     /** Returns the player's current movement input state. */
     public WrappedInput getInput() {
-        return INPUT_WRAPPER.getSpecific(handle.getModifier().read(0));
+        return INPUT_WRAPPER.getSpecific(handle.getModifier().readSafely(0));
     }
 
     /** Sets the player's movement input state. */
     public void setInput(WrappedInput input) {
-        handle.getModifier().write(0, INPUT_WRAPPER.getGeneric(input));
+        handle.getModifier().writeSafely(0, INPUT_WRAPPER.getGeneric(input));
     }
 }

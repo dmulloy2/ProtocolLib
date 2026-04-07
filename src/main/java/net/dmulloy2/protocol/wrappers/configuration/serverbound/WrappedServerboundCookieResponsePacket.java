@@ -2,8 +2,9 @@ package net.dmulloy2.protocol.wrappers.configuration.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.MinecraftKey;
-import java.util.Optional;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -12,21 +13,23 @@ import net.dmulloy2.protocol.AbstractPacket;
  * <p>Packet structure:
  * <ul>
  *   <li>{@code Identifier key} – namespaced key identifying the cookie</li>
- *   <li>{@code Optional<byte[]> payload} – cookie bytes, or empty if the client has no value</li>
+ *   <li>{@code byte[] payload} – cookie bytes, or {@code null} if the client has no value</li>
  * </ul>
  */
 public class WrappedServerboundCookieResponsePacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Configuration.Client.COOKIE_RESPONSE;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getMinecraftKeyClass(), MinecraftKey.getConverter())
+            .withParam(byte[].class);
+
     public WrappedServerboundCookieResponsePacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
-    public WrappedServerboundCookieResponsePacket(MinecraftKey key, Optional<byte[]> payload) {
-        this();
-        setKey(key);
-        setPayload(payload);
+    public WrappedServerboundCookieResponsePacket(MinecraftKey key, byte[] payload) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(key, payload)));
     }
 
     public WrappedServerboundCookieResponsePacket(PacketContainer packet) {
@@ -34,18 +37,18 @@ public class WrappedServerboundCookieResponsePacket extends AbstractPacket {
     }
 
     public MinecraftKey getKey() {
-        return handle.getMinecraftKeys().read(0);
+        return handle.getMinecraftKeys().readSafely(0);
     }
 
     public void setKey(MinecraftKey key) {
-        handle.getMinecraftKeys().write(0, key);
+        handle.getMinecraftKeys().writeSafely(0, key);
     }
 
-    public Optional<byte[]> getPayload() {
-        return Optional.ofNullable(handle.getByteArrays().readSafely(0));
+    public byte[] getPayload() {
+        return handle.getByteArrays().readSafely(0);
     }
 
-    public void setPayload(Optional<byte[]> payload) {
-        handle.getByteArrays().write(0, payload == null ? null : payload.orElse(null));
+    public void setPayload(byte[] payload) {
+        handle.getByteArrays().writeSafely(0, payload);
     }
 }

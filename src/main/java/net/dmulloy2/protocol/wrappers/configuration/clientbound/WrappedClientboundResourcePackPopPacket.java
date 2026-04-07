@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.configuration.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.wrappers.Converters;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,13 +20,15 @@ public class WrappedClientboundResourcePackPopPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Configuration.Server.REMOVE_RESOURCE_PACK;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(Optional.class);
+
     public WrappedClientboundResourcePackPopPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundResourcePackPopPacket(Optional<UUID> id) {
-        this();
-        setId(id);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(id)));
     }
 
     public WrappedClientboundResourcePackPopPacket(PacketContainer packet) {
@@ -33,10 +36,10 @@ public class WrappedClientboundResourcePackPopPacket extends AbstractPacket {
     }
 
     public Optional<UUID> getId() {
-        return handle.getOptionals(Converters.passthrough(UUID.class)).read(0);
+        return handle.getOptionals(Converters.passthrough(UUID.class)).readSafely(0);
     }
 
     public void setId(Optional<UUID> id) {
-        handle.getOptionals(Converters.passthrough(UUID.class)).write(0, id);
+        handle.getOptionals(Converters.passthrough(UUID.class)).writeSafely(0, id);
     }
 }

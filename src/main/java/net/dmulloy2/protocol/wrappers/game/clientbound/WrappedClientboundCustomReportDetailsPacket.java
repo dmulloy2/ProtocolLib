@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.wrappers.Converters;
 import java.util.Map;
 import net.dmulloy2.protocol.AbstractPacket;
@@ -18,13 +19,15 @@ public class WrappedClientboundCustomReportDetailsPacket extends AbstractPacket 
 
     public static final PacketType TYPE = PacketType.Play.Server.REPORT_DETAILS;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(Map.class);
+
     public WrappedClientboundCustomReportDetailsPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundCustomReportDetailsPacket(Map<String, String> details) {
-        this();
-        setDetails(details);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(details)));
     }
 
     public WrappedClientboundCustomReportDetailsPacket(PacketContainer packet) {
@@ -34,12 +37,12 @@ public class WrappedClientboundCustomReportDetailsPacket extends AbstractPacket 
     public Map<String, String> getDetails() {
         return handle.getMaps(
                 Converters.passthrough(String.class),
-                Converters.passthrough(String.class)).read(0);
+                Converters.passthrough(String.class)).readSafely(0);
     }
 
     public void setDetails(Map<String, String> details) {
         handle.getMaps(
                 Converters.passthrough(String.class),
-                Converters.passthrough(String.class)).write(0, details);
+                Converters.passthrough(String.class)).writeSafely(0, details);
     }
 }

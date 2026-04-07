@@ -2,6 +2,8 @@ package net.dmulloy2.protocol.wrappers.handshake.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -21,16 +23,18 @@ public class WrappedClientIntentionPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Handshake.Client.SET_PROTOCOL;
 
-    /**
-     * The client's intended next connection state, matching
-     * {@code net.minecraft.network.protocol.handshake.ClientIntent}.
-     */
-    public enum ClientIntent {
-        STATUS, LOGIN, TRANSFER
-    }
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(String.class)
+            .withParam(int.class)
+            .withParam(EnumWrappers.getClientIntentClass(), EnumWrappers.getClientIntentConverter());
 
     public WrappedClientIntentionPacket() {
         super(new PacketContainer(TYPE), TYPE);
+    }
+
+    public WrappedClientIntentionPacket(int protocolVersion, String hostName, int port, EnumWrappers.ClientIntent intention) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(protocolVersion, hostName, port, intention)));
     }
 
     public WrappedClientIntentionPacket(PacketContainer packet) {
@@ -38,34 +42,34 @@ public class WrappedClientIntentionPacket extends AbstractPacket {
     }
 
     public int getProtocolVersion() {
-        return handle.getIntegers().read(0);
+        return handle.getIntegers().readSafely(0);
     }
 
     public void setProtocolVersion(int protocolVersion) {
-        handle.getIntegers().write(0, protocolVersion);
+        handle.getIntegers().writeSafely(0, protocolVersion);
     }
 
     public String getHostName() {
-        return handle.getStrings().read(0);
+        return handle.getStrings().readSafely(0);
     }
 
     public void setHostName(String hostName) {
-        handle.getStrings().write(0, hostName);
+        handle.getStrings().writeSafely(0, hostName);
     }
 
     public int getPort() {
-        return handle.getIntegers().read(1);
+        return handle.getIntegers().readSafely(1);
     }
 
     public void setPort(int port) {
-        handle.getIntegers().write(1, port);
+        handle.getIntegers().writeSafely(1, port);
     }
 
-    public ClientIntent getIntention() {
-        return handle.getEnumModifier(ClientIntent.class, 3).read(0);
+    public EnumWrappers.ClientIntent getIntention() {
+        return handle.getClientIntents().readSafely(0);
     }
 
-    public void setIntention(ClientIntent intention) {
-        handle.getEnumModifier(ClientIntent.class, 3).write(0, intention);
+    public void setIntention(EnumWrappers.ClientIntent intention) {
+        handle.getClientIntents().writeSafely(0, intention);
     }
 }

@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -18,15 +19,17 @@ public class WrappedServerboundSetCommandMinecartPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.SET_COMMAND_MINECART;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(String.class)
+            .withParam(boolean.class);
+
     public WrappedServerboundSetCommandMinecartPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedServerboundSetCommandMinecartPacket(int entityId, String command, boolean trackOutput) {
-        this();
-        setEntityId(entityId);
-        setCommand(command);
-        setTrackOutput(trackOutput);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(entityId, command, trackOutput)));
     }
 
     public WrappedServerboundSetCommandMinecartPacket(PacketContainer packet) {
@@ -34,26 +37,26 @@ public class WrappedServerboundSetCommandMinecartPacket extends AbstractPacket {
     }
 
     public int getEntityId() {
-        return handle.getIntegers().read(0);
+        return handle.getIntegers().readSafely(0);
     }
 
     public void setEntityId(int entityId) {
-        handle.getIntegers().write(0, entityId);
+        handle.getIntegers().writeSafely(0, entityId);
     }
 
     public String getCommand() {
-        return handle.getStrings().read(0);
+        return handle.getStrings().readSafely(0);
     }
 
     public void setCommand(String command) {
-        handle.getStrings().write(0, command);
+        handle.getStrings().writeSafely(0, command);
     }
 
     public boolean isTrackOutput() {
-        return handle.getBooleans().read(0);
+        return handle.getBooleans().readSafely(0);
     }
 
     public void setTrackOutput(boolean trackOutput) {
-        handle.getBooleans().write(0, trackOutput);
+        handle.getBooleans().writeSafely(0, trackOutput);
     }
 }

@@ -4,6 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,7 +21,7 @@ class WrappedServerboundSignUpdatePacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundSignUpdatePacket w = new WrappedServerboundSignUpdatePacket(new BlockPosition(1, 2, 3), false, new String[] { "line1", "line2", "line3", "line4" });
+        WrappedServerboundSignUpdatePacket w = new WrappedServerboundSignUpdatePacket(new BlockPosition(1, 2, 3), false, "line1", "line2", "line3", "line4");
 
         assertEquals(PacketType.Play.Client.UPDATE_SIGN, w.getHandle().getType());
 
@@ -37,8 +39,7 @@ class WrappedServerboundSignUpdatePacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundSignUpdatePacket source = new WrappedServerboundSignUpdatePacket(new BlockPosition(1, 2, 3), false, new String[] { "line1", "line2", "line3", "line4" });
-        Object nmsPacket = source.getHandle().getHandle();
+        ServerboundSignUpdatePacket nmsPacket = new ServerboundSignUpdatePacket(new BlockPos(1, 2, 3), false, "line1", "line2", "line3", "line4");
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSignUpdatePacket wrapper = new WrappedServerboundSignUpdatePacket(container);
 
@@ -54,9 +55,11 @@ class WrappedServerboundSignUpdatePacketTest {
         assertTrue(wrapper.isFrontText());
         assertArrayEquals(new String[] { "x", "y", "z", "w" }, wrapper.getLines());
 
-        assertEquals(new BlockPosition(10, 20, 30), source.getPos());
-        assertTrue(source.isFrontText());
-        assertArrayEquals(new String[] { "x", "y", "z", "w" }, source.getLines());
+        assertEquals(10, nmsPacket.getPos().getX());
+        assertEquals(20, nmsPacket.getPos().getY());
+        assertEquals(30, nmsPacket.getPos().getZ());
+        assertTrue(nmsPacket.isFrontText());
+        assertArrayEquals(new String[] { "x", "y", "z", "w" }, nmsPacket.getLines());
     }
 
     @Test

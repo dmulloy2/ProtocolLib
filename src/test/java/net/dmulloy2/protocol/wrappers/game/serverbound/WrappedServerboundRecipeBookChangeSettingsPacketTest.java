@@ -18,10 +18,12 @@ class WrappedServerboundRecipeBookChangeSettingsPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundRecipeBookChangeSettingsPacket w = new WrappedServerboundRecipeBookChangeSettingsPacket(true, false);
+        WrappedServerboundRecipeBookChangeSettingsPacket w = new WrappedServerboundRecipeBookChangeSettingsPacket(
+                WrappedServerboundRecipeBookChangeSettingsPacket.RecipeBookType.CRAFTING, true, false);
 
         assertEquals(PacketType.Play.Client.RECIPE_SETTINGS, w.getHandle().getType());
 
+        assertEquals(WrappedServerboundRecipeBookChangeSettingsPacket.RecipeBookType.CRAFTING, w.getBookType());
         assertTrue(w.isOpen());
         assertFalse(w.isFiltering());
     }
@@ -35,20 +37,25 @@ class WrappedServerboundRecipeBookChangeSettingsPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundRecipeBookChangeSettingsPacket source = new WrappedServerboundRecipeBookChangeSettingsPacket(true, false);
+        WrappedServerboundRecipeBookChangeSettingsPacket source = new WrappedServerboundRecipeBookChangeSettingsPacket(
+                WrappedServerboundRecipeBookChangeSettingsPacket.RecipeBookType.CRAFTING, true, false);
         Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundRecipeBookChangeSettingsPacket wrapper = new WrappedServerboundRecipeBookChangeSettingsPacket(container);
 
+        assertEquals(WrappedServerboundRecipeBookChangeSettingsPacket.RecipeBookType.CRAFTING, wrapper.getBookType());
         assertTrue(wrapper.isOpen());
         assertFalse(wrapper.isFiltering());
 
+        wrapper.setBookType(WrappedServerboundRecipeBookChangeSettingsPacket.RecipeBookType.FURNACE);
         wrapper.setOpen(false);
         wrapper.setFiltering(true);
 
+        assertEquals(WrappedServerboundRecipeBookChangeSettingsPacket.RecipeBookType.FURNACE, wrapper.getBookType());
         assertFalse(wrapper.isOpen());
         assertTrue(wrapper.isFiltering());
 
+        assertEquals(WrappedServerboundRecipeBookChangeSettingsPacket.RecipeBookType.FURNACE, source.getBookType());
         assertFalse(source.isOpen());
         assertTrue(source.isFiltering());
     }
