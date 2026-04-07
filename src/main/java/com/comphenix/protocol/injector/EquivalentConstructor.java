@@ -11,7 +11,7 @@ import java.util.List;
 
 public class EquivalentConstructor {
     private final PacketType packetType;
-    private final List<Tuple<Class<?>, EquivalentConverter<?>>> converters = new ArrayList<>();
+    private final List<Tuple<Class<?>, Object>> converters = new ArrayList<>();
 
     private ConstructorAccessor constructorAccessor;
 
@@ -21,6 +21,11 @@ public class EquivalentConstructor {
 
     public EquivalentConstructor withParam(Class<?> param, EquivalentConverter<?> converter) {
         converters.add(new Tuple<>(param, converter));
+        return this;
+    }
+
+    public EquivalentConstructor withParam(Class<?> param, PacketConstructor.Unwrapper unwrapper) {
+        converters.add(new Tuple<>(param, unwrapper));
         return this;
     }
 
@@ -42,9 +47,15 @@ public class EquivalentConstructor {
         Object[] convertedArgs = new Object[args.length];
 
         int i = 0;
-        for (Tuple<Class<?>, EquivalentConverter<?>> entry : converters) {
-            EquivalentConverter converter = (EquivalentConverter) entry.second();
-            convertedArgs[i] = converter != null ? converter.getGeneric(args[i]) : args[i];
+        for (Tuple<Class<?>, Object> entry : converters) {
+            Object rawConverter = entry.second();
+            switch (rawConverter) {
+                case EquivalentConverter converter -> convertedArgs[i] = converter.getGeneric(args[i]);
+                case PacketConstructor.Unwrapper unwrapper -> convertedArgs[i] = unwrapper.unwrapItem(args[i]);
+                case null -> convertedArgs[i] = args[i];
+                default -> throw new IllegalStateException("Invalid converter type: " + rawConverter.getClass());
+            }
+
             i++;
         }
 

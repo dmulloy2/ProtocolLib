@@ -13,9 +13,7 @@ class WrappedServerboundContainerClickPacketTest {
     static void beforeAll() {
         BukkitInitialization.initializeAll();
     }
-
-
-
+    
     @Test
     void testAllArgsCreate() {
         WrappedServerboundContainerClickPacket w = new WrappedServerboundContainerClickPacket(
