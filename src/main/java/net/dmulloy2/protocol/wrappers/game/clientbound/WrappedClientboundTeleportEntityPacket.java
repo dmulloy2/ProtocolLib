@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.EnumWrappers;
@@ -26,16 +27,19 @@ public class WrappedClientboundTeleportEntityPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.ENTITY_TELEPORT;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(MinecraftReflection.getMinecraftClass("world.entity.PositionMoveRotation"),
+                    WrappedPositionMoveRotation.getConverter())
+            .withParam(Set.class, BukkitConverters.getSetConverter(EnumWrappers.getRelativeArgumentConverter()))
+            .withParam(boolean.class);
+
     public WrappedClientboundTeleportEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundTeleportEntityPacket(int entityId, WrappedPositionMoveRotation change, Set<EnumWrappers.RelativeArgument> relatives, boolean onGround) {
-        this();
-        setEntityId(entityId);
-        setChange(change);
-        setRelatives(relatives);
-        setOnGround(onGround);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(entityId, change, relatives, onGround)));
     }
 
     public WrappedClientboundTeleportEntityPacket(PacketContainer packet) {

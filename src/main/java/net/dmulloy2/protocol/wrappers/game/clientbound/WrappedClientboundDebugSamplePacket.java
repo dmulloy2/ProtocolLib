@@ -2,6 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -25,45 +28,39 @@ public class WrappedClientboundDebugSamplePacket extends AbstractPacket {
         TICK_TIME
     }
 
+    private static final Class<?> REMOTE_DEBUG_SAMPLE_TYPE_CLASS =
+            MinecraftReflection.getMinecraftClass("util.debugchart.RemoteDebugSampleType");
+
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(long[].class)
+            .withParam(REMOTE_DEBUG_SAMPLE_TYPE_CLASS,
+                    new EnumWrappers.EnumConverter<>(REMOTE_DEBUG_SAMPLE_TYPE_CLASS, DebugSampleType.class));
+
     public WrappedClientboundDebugSamplePacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundDebugSamplePacket(long[] sample, DebugSampleType debugSampleType) {
-        this();
-        setSample(sample);
-        setDebugSampleType(debugSampleType);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(sample, debugSampleType)));
     }
 
     public WrappedClientboundDebugSamplePacket(PacketContainer packet) {
         super(packet, TYPE);
     }
 
-    /**
-     * Returns the array of debug timing samples.
-     */
     public long[] getSample() {
-        return handle.getSpecificModifier(long[].class).read(0);
+        return handle.getSpecificModifier(long[].class).readSafely(0);
     }
 
-    /**
-     * Sets the array of debug timing samples.
-     */
     public void setSample(long[] sample) {
-        handle.getSpecificModifier(long[].class).write(0, sample);
+        handle.getSpecificModifier(long[].class).writeSafely(0, sample);
     }
 
-    /**
-     * Returns the debug sample type (field at global index 1 in the NMS packet).
-     */
     public DebugSampleType getDebugSampleType() {
-        return handle.getEnumModifier(DebugSampleType.class, 1).read(0);
+        return handle.getEnumModifier(DebugSampleType.class, 1).readSafely(0);
     }
 
-    /**
-     * Sets the debug sample type.
-     */
     public void setDebugSampleType(DebugSampleType debugSampleType) {
-        handle.getEnumModifier(DebugSampleType.class, 1).write(0, debugSampleType);
+        handle.getEnumModifier(DebugSampleType.class, 1).writeSafely(0, debugSampleType);
     }
 }

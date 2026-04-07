@@ -2,7 +2,12 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.BukkitUnwrapper;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import net.dmulloy2.protocol.AbstractPacket;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
 
 /**
  * Wrapper for {@code ClientboundSetPassengersPacket} (Play phase, clientbound).
@@ -17,6 +22,9 @@ public class WrappedClientboundSetPassengersPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.MOUNT;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getEntityClass(), BukkitUnwrapper.getInstance());
+
     public WrappedClientboundSetPassengersPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
@@ -27,23 +35,39 @@ public class WrappedClientboundSetPassengersPacket extends AbstractPacket {
         setPassengerIds(passengerIds);
     }
 
+    /**
+     * Constructs the packet from a live {@link Entity}.
+     * The passenger list is derived from {@code vehicle.getPassengers()} at construction time.
+     */
+    public WrappedClientboundSetPassengersPacket(Entity vehicle) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(vehicle)));
+    }
+
     public WrappedClientboundSetPassengersPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
 
+    public Entity getVehicle(World world) {
+        return handle.getEntityModifier(world).readSafely(0);
+    }
+
+    public void setVehicle(Entity vehicle) {
+        handle.getEntityModifier(vehicle.getWorld()).writeSafely(0, vehicle);
+    }
+
     public int getVehicleId() {
-        return handle.getIntegers().read(0);
+        return handle.getIntegers().readSafely(0);
     }
 
     public void setVehicleId(int vehicleId) {
-        handle.getIntegers().write(0, vehicleId);
+        handle.getIntegers().writeSafely(0, vehicleId);
     }
 
     public int[] getPassengerIds() {
-        return handle.getIntegerArrays().read(0);
+        return handle.getIntegerArrays().readSafely(0);
     }
 
     public void setPassengerIds(int[] passengerIds) {
-        handle.getIntegerArrays().write(0, passengerIds);
+        handle.getIntegerArrays().writeSafely(0, passengerIds);
     }
 }

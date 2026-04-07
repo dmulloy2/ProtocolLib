@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import java.util.List;
 import java.util.UUID;
 import net.dmulloy2.protocol.AbstractPacket;
@@ -18,13 +19,15 @@ public class WrappedClientboundPlayerInfoRemovePacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.PLAYER_INFO_REMOVE;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(List.class);
+
     public WrappedClientboundPlayerInfoRemovePacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundPlayerInfoRemovePacket(List<UUID> profileIds) {
-        this();
-        setProfileIds(profileIds);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(profileIds)));
     }
 
     public WrappedClientboundPlayerInfoRemovePacket(PacketContainer packet) {
@@ -32,10 +35,10 @@ public class WrappedClientboundPlayerInfoRemovePacket extends AbstractPacket {
     }
 
     public List<UUID> getProfileIds() {
-        return handle.getUUIDLists().read(0);
+        return handle.getUUIDLists().readSafely(0);
     }
 
     public void setProfileIds(List<UUID> profileIds) {
-        handle.getUUIDLists().write(0, profileIds);
+        handle.getUUIDLists().writeSafely(0, profileIds);
     }
 }

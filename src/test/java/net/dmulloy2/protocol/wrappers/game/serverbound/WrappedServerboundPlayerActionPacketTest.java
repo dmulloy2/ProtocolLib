@@ -20,7 +20,7 @@ class WrappedServerboundPlayerActionPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundPlayerActionPacket w = new WrappedServerboundPlayerActionPacket(new BlockPosition(1, 2, 3), EnumWrappers.Direction.DOWN, EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK, 3);
+        WrappedServerboundPlayerActionPacket w = new WrappedServerboundPlayerActionPacket(EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK, new BlockPosition(1, 2, 3), EnumWrappers.Direction.DOWN, 3);
 
         assertEquals(PacketType.Play.Client.BLOCK_DIG, w.getHandle().getType());
 
@@ -39,7 +39,7 @@ class WrappedServerboundPlayerActionPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundPlayerActionPacket source = new WrappedServerboundPlayerActionPacket(new BlockPosition(1, 2, 3), EnumWrappers.Direction.DOWN, EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK, 3);
+        WrappedServerboundPlayerActionPacket source = new WrappedServerboundPlayerActionPacket(EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK, new BlockPosition(1, 2, 3), EnumWrappers.Direction.DOWN, 3);
         Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundPlayerActionPacket wrapper = new WrappedServerboundPlayerActionPacket(container);

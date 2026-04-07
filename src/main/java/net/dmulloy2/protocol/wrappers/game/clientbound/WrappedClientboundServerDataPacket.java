@@ -2,6 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.Converters;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import java.util.Optional;
@@ -20,14 +23,17 @@ public class WrappedClientboundServerDataPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.SERVER_DATA;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getIChatBaseComponentClass(),
+                    BukkitConverters.getWrappedChatComponentConverter())
+            .withParam(Optional.class);
+
     public WrappedClientboundServerDataPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundServerDataPacket(WrappedChatComponent motd, Optional<byte[]> iconBytes) {
-        this();
-        setMotd(motd);
-        setIconBytes(iconBytes);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(motd, iconBytes)));
     }
 
     public WrappedClientboundServerDataPacket(PacketContainer packet) {
@@ -35,18 +41,18 @@ public class WrappedClientboundServerDataPacket extends AbstractPacket {
     }
 
     public WrappedChatComponent getMotd() {
-        return handle.getChatComponents().read(0);
+        return handle.getChatComponents().readSafely(0);
     }
 
     public void setMotd(WrappedChatComponent motd) {
-        handle.getChatComponents().write(0, motd);
+        handle.getChatComponents().writeSafely(0, motd);
     }
 
     public Optional<byte[]> getIconBytes() {
-        return handle.getOptionals(Converters.passthrough(byte[].class)).read(0);
+        return handle.getOptionals(Converters.passthrough(byte[].class)).readSafely(0);
     }
 
     public void setIconBytes(Optional<byte[]> iconBytes) {
-        handle.getOptionals(Converters.passthrough(byte[].class)).write(0, iconBytes);
+        handle.getOptionals(Converters.passthrough(byte[].class)).writeSafely(0, iconBytes);
     }
 }

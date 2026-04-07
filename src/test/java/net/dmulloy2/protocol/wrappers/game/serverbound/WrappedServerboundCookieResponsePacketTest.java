@@ -4,7 +4,6 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.MinecraftKey;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,12 +19,21 @@ class WrappedServerboundCookieResponsePacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundCookieResponsePacket w = new WrappedServerboundCookieResponsePacket(new MinecraftKey("minecraft", "stone"), Optional.empty());
+        WrappedServerboundCookieResponsePacket w = new WrappedServerboundCookieResponsePacket(new MinecraftKey("minecraft", "stone"), null);
 
         assertEquals(PacketType.Play.Client.COOKIE_RESPONSE, w.getHandle().getType());
 
         assertEquals(new MinecraftKey("minecraft", "stone"), w.getKey());
-        assertEquals(Optional.empty(), w.getPayload());
+        assertNull(w.getPayload());
+    }
+
+    @Test
+    void testAllArgsCreateWithPayload() {
+        byte[] data = new byte[] { 1, 2, 3 };
+        WrappedServerboundCookieResponsePacket w = new WrappedServerboundCookieResponsePacket(new MinecraftKey("minecraft", "stone"), data);
+
+        assertEquals(new MinecraftKey("minecraft", "stone"), w.getKey());
+        assertArrayEquals(data, w.getPayload());
     }
 
     @Test
@@ -37,22 +45,22 @@ class WrappedServerboundCookieResponsePacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundCookieResponsePacket source = new WrappedServerboundCookieResponsePacket(new MinecraftKey("minecraft", "stone"), Optional.empty());
+        WrappedServerboundCookieResponsePacket source = new WrappedServerboundCookieResponsePacket(new MinecraftKey("minecraft", "stone"), null);
         Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = new PacketContainer(WrappedServerboundCookieResponsePacket.TYPE, nmsPacket);
         WrappedServerboundCookieResponsePacket wrapper = new WrappedServerboundCookieResponsePacket(container);
 
         assertEquals(new MinecraftKey("minecraft", "stone"), wrapper.getKey());
-        assertEquals(Optional.empty(), wrapper.getPayload());
+        assertNull(wrapper.getPayload());
 
         wrapper.setKey(new MinecraftKey("minecraft", "sand"));
-        wrapper.setPayload(Optional.empty());
+        wrapper.setPayload(null);
 
         assertEquals(new MinecraftKey("minecraft", "sand"), wrapper.getKey());
-        assertEquals(Optional.empty(), wrapper.getPayload());
+        assertNull(wrapper.getPayload());
 
         assertEquals(new MinecraftKey("minecraft", "sand"), source.getKey());
-        assertEquals(Optional.empty(), source.getPayload());
+        assertNull(source.getPayload());
     }
 
     @Test

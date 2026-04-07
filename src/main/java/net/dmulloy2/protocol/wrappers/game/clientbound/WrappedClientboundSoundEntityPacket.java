@@ -2,9 +2,17 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.BukkitUnwrapper;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.Converters;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.WrappedRegistry;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
 
 /**
  * Wrapper for {@code ClientboundSoundEntityPacket} (Play phase, clientbound).
@@ -23,10 +31,20 @@ public class WrappedClientboundSoundEntityPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.ENTITY_SOUND;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getHolderClass(), Converters.holder(BukkitConverters.getSoundConverter(),
+                    WrappedRegistry.getRegistry(MinecraftReflection.getSoundEffectClass())))
+            .withParam(EnumWrappers.getSoundCategoryClass(), EnumWrappers.getSoundCategoryConverter())
+            .withParam(MinecraftReflection.getEntityClass(), BukkitUnwrapper.getInstance())
+            .withParam(float.class)
+            .withParam(float.class)
+            .withParam(long.class);
+
     public WrappedClientboundSoundEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
+    /** Setter-based constructor using an entity ID (useful for testing). */
     public WrappedClientboundSoundEntityPacket(Sound sound, EnumWrappers.SoundCategory category, int entityId, float volume, float pitch, long seed) {
         this();
         setSound(sound);
@@ -37,55 +55,68 @@ public class WrappedClientboundSoundEntityPacket extends AbstractPacket {
         setSeed(seed);
     }
 
+    /** EC constructor using a live {@link Entity} (mirrors the NMS constructor). */
+    public WrappedClientboundSoundEntityPacket(Sound sound, EnumWrappers.SoundCategory category, Entity entity, float volume, float pitch, long seed) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(sound, category, entity, volume, pitch, seed)));
+    }
+
     public WrappedClientboundSoundEntityPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
 
     public Sound getSound() {
-        return handle.getSoundEffects().read(0);
+        return handle.getSoundEffects().readSafely(0);
     }
 
     public void setSound(Sound sound) {
-        handle.getSoundEffects().write(0, sound);
+        handle.getSoundEffects().writeSafely(0, sound);
     }
 
     public EnumWrappers.SoundCategory getCategory() {
-        return handle.getSoundCategories().read(0);
+        return handle.getSoundCategories().readSafely(0);
     }
 
     public void setCategory(EnumWrappers.SoundCategory category) {
-        handle.getSoundCategories().write(0, category);
+        handle.getSoundCategories().writeSafely(0, category);
+    }
+
+    public Entity getEntity(World world) {
+        return handle.getEntityModifier(world).readSafely(0);
+    }
+
+    public void setEntity(Entity entity) {
+        handle.getEntityModifier(entity.getWorld()).writeSafely(0, entity);
     }
 
     public int getEntityId() {
-        return handle.getIntegers().read(0);
+        return handle.getIntegers().readSafely(0);
     }
 
     public void setEntityId(int entityId) {
-        handle.getIntegers().write(0, entityId);
+        handle.getIntegers().writeSafely(0, entityId);
     }
 
     public float getVolume() {
-        return handle.getFloat().read(0);
+        return handle.getFloat().readSafely(0);
     }
 
     public void setVolume(float volume) {
-        handle.getFloat().write(0, volume);
+        handle.getFloat().writeSafely(0, volume);
     }
 
     public float getPitch() {
-        return handle.getFloat().read(1);
+        return handle.getFloat().readSafely(1);
     }
 
     public void setPitch(float pitch) {
-        handle.getFloat().write(1, pitch);
+        handle.getFloat().writeSafely(1, pitch);
     }
 
     public long getSeed() {
-        return handle.getLongs().read(0);
+        return handle.getLongs().readSafely(0);
     }
 
     public void setSeed(long seed) {
-        handle.getLongs().write(0, seed);
+        handle.getLongs().writeSafely(0, seed);
     }
 }

@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.login.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -19,16 +20,18 @@ public class WrappedClientboundHelloPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Login.Server.ENCRYPTION_BEGIN;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(String.class)
+            .withParam(byte[].class)
+            .withParam(byte[].class)
+            .withParam(boolean.class);
+
     public WrappedClientboundHelloPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundHelloPacket(String serverId, byte[] publicKey, byte[] challenge, boolean shouldAuthenticate) {
-        this();
-        setServerId(serverId);
-        setPublicKey(publicKey);
-        setChallenge(challenge);
-        setShouldAuthenticate(shouldAuthenticate);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(serverId, publicKey, challenge, shouldAuthenticate)));
     }
 
     public WrappedClientboundHelloPacket(PacketContainer packet) {
@@ -36,34 +39,34 @@ public class WrappedClientboundHelloPacket extends AbstractPacket {
     }
 
     public String getServerId() {
-        return handle.getStrings().read(0);
+        return handle.getStrings().readSafely(0);
     }
 
     public void setServerId(String serverId) {
-        handle.getStrings().write(0, serverId);
+        handle.getStrings().writeSafely(0, serverId);
     }
 
     public byte[] getPublicKey() {
-        return handle.getByteArrays().read(0);
+        return handle.getByteArrays().readSafely(0);
     }
 
     public void setPublicKey(byte[] publicKey) {
-        handle.getByteArrays().write(0, publicKey);
+        handle.getByteArrays().writeSafely(0, publicKey);
     }
 
     public byte[] getChallenge() {
-        return handle.getByteArrays().read(1);
+        return handle.getByteArrays().readSafely(1);
     }
 
     public void setChallenge(byte[] challenge) {
-        handle.getByteArrays().write(1, challenge);
+        handle.getByteArrays().writeSafely(1, challenge);
     }
 
     public boolean isShouldAuthenticate() {
-        return handle.getBooleans().read(0);
+        return handle.getBooleans().readSafely(0);
     }
 
     public void setShouldAuthenticate(boolean shouldAuthenticate) {
-        handle.getBooleans().write(0, shouldAuthenticate);
+        handle.getBooleans().writeSafely(0, shouldAuthenticate);
     }
 }

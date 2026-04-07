@@ -3,6 +3,8 @@ package net.dmulloy2.protocol.wrappers.configuration.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.MinecraftKey;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,8 +18,12 @@ class WrappedClientboundUpdateEnabledFeaturesPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        // TODO: packet has no suitable all-args constructor
-        assertEquals(PacketType.Configuration.Server.UPDATE_ENABLED_FEATURES, new WrappedClientboundUpdateEnabledFeaturesPacket().getHandle().getType());
+        Set<MinecraftKey> features = Set.of(new MinecraftKey("minecraft", "vanilla"));
+        WrappedClientboundUpdateEnabledFeaturesPacket w = new WrappedClientboundUpdateEnabledFeaturesPacket(features);
+
+        assertEquals(PacketType.Configuration.Server.UPDATE_ENABLED_FEATURES, w.getHandle().getType());
+
+        assertEquals(features, w.getFeatures());
     }
 
     @Test
@@ -29,12 +35,19 @@ class WrappedClientboundUpdateEnabledFeaturesPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Configuration.Server.UPDATE_ENABLED_FEATURES);
+        Set<MinecraftKey> features = Set.of(new MinecraftKey("minecraft", "vanilla"));
+        WrappedClientboundUpdateEnabledFeaturesPacket source = new WrappedClientboundUpdateEnabledFeaturesPacket(features);
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = new PacketContainer(WrappedClientboundUpdateEnabledFeaturesPacket.TYPE, nmsPacket);
         WrappedClientboundUpdateEnabledFeaturesPacket wrapper = new WrappedClientboundUpdateEnabledFeaturesPacket(container);
 
+        assertEquals(features, wrapper.getFeatures());
 
+        Set<MinecraftKey> updated = Set.of(new MinecraftKey("minecraft", "update_1_21"));
+        wrapper.setFeatures(updated);
 
-
+        assertEquals(updated, wrapper.getFeatures());
+        assertEquals(updated, source.getFeatures());
     }
 
     @Test

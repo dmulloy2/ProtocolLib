@@ -2,7 +2,12 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.Converters;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.WrappedRegistry;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.Sound;
 
@@ -25,10 +30,22 @@ public class WrappedClientboundSoundPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.NAMED_SOUND_EFFECT;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getHolderClass(), Converters.holder(BukkitConverters.getSoundConverter(),
+                    WrappedRegistry.getRegistry(MinecraftReflection.getSoundEffectClass())))
+            .withParam(EnumWrappers.getSoundCategoryClass(), EnumWrappers.getSoundCategoryConverter())
+            .withParam(double.class)
+            .withParam(double.class)
+            .withParam(double.class)
+            .withParam(float.class)
+            .withParam(float.class)
+            .withParam(long.class);
+
     public WrappedClientboundSoundPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
+    /** Setter-based constructor using fixed-point integer coordinates (as stored in the packet). */
     public WrappedClientboundSoundPacket(Sound sound, EnumWrappers.SoundCategory category, int x, int y, int z, float volume, float pitch, long seed) {
         this();
         setSound(sound);
@@ -39,6 +56,11 @@ public class WrappedClientboundSoundPacket extends AbstractPacket {
         setVolume(volume);
         setPitch(pitch);
         setSeed(seed);
+    }
+
+    /** EC constructor using world-space double coordinates (mirrors the NMS constructor). */
+    public WrappedClientboundSoundPacket(Sound sound, EnumWrappers.SoundCategory category, double x, double y, double z, float volume, float pitch, long seed) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(sound, category, x, y, z, volume, pitch, seed)));
     }
 
     public WrappedClientboundSoundPacket(PacketContainer packet) {

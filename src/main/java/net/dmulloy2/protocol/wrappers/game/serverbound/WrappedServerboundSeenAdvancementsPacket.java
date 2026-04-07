@@ -2,8 +2,11 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MinecraftKey;
-import java.util.Optional;
+import java.util.Arrays;
 import net.dmulloy2.protocol.AbstractPacket;
 import net.minecraft.network.protocol.game.ServerboundSeenAdvancementsPacket;
 
@@ -13,7 +16,7 @@ import net.minecraft.network.protocol.game.ServerboundSeenAdvancementsPacket;
  * <p>Packet structure:
  * <ul>
  *   <li>{@code Action action} – OPEN_TAB or CLOSE_SCREEN</li>
- *   <li>{@code Optional<ResourceLocation> tab} – the advancement tab to open (only when action is OPEN_TAB)</li>
+ *   <li>{@code @Nullable ResourceLocation tab} – the advancement tab to open (only when action is OPEN_TAB, otherwise {@code null})</li>
  * </ul>
  */
 public class WrappedServerboundSeenAdvancementsPacket extends AbstractPacket {
@@ -28,14 +31,21 @@ public class WrappedServerboundSeenAdvancementsPacket extends AbstractPacket {
         OPENED_TAB, CLOSED_SCREEN
     }
 
+    private static final Class<?> ACTION_NMS_CLASS = Arrays.stream(TYPE.getPacketClass().getDeclaredClasses())
+            .filter(Class::isEnum)
+            .findFirst()
+            .orElse(null);
+
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(ACTION_NMS_CLASS, new EnumWrappers.EnumConverter<>(ACTION_NMS_CLASS, Action.class))
+            .withParam(MinecraftReflection.getMinecraftKeyClass(), MinecraftKey.getConverter());
+
     public WrappedServerboundSeenAdvancementsPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedServerboundSeenAdvancementsPacket(Action action, MinecraftKey tab) {
-        this();
-        setAction(action);
-        setTab(tab);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(action, tab)));
     }
 
     public WrappedServerboundSeenAdvancementsPacket(PacketContainer packet) {
@@ -43,11 +53,11 @@ public class WrappedServerboundSeenAdvancementsPacket extends AbstractPacket {
     }
 
     public Action getAction() {
-        return handle.getEnumModifier(Action.class, 0).read(0);
+        return handle.getEnumModifier(Action.class, 0).readSafely(0);
     }
 
     public void setAction(Action action) {
-        handle.getEnumModifier(Action.class, 0).write(0, action);
+        handle.getEnumModifier(Action.class, 0).writeSafely(0, action);
     }
 
     public MinecraftKey getTab() {
