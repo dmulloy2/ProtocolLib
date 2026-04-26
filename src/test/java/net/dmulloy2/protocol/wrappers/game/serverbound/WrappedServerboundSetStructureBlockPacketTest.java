@@ -4,6 +4,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import net.dmulloy2.protocol.wrappers.game.serverbound.WrappedServerboundSetStructureBlockPacket.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,15 +16,35 @@ class WrappedServerboundSetStructureBlockPacketTest {
         BukkitInitialization.initializeAll();
     }
 
-
+    private static WrappedServerboundSetStructureBlockPacket createFull() {
+        return new WrappedServerboundSetStructureBlockPacket(
+                new BlockPosition(7, 8, 9),
+                UpdateType.SAVE_AREA,
+                StructureMode.LOAD,
+                "hello",
+                new BlockPosition(1, 2, 3),
+                new BlockPosition(5, 5, 5),
+                Mirror.LEFT_RIGHT,
+                Rotation.CLOCKWISE_90,
+                "world",
+                true, true, false, true,
+                0.75f, 42L);
+    }
 
     @Test
     void testAllArgsCreate() {
-        WrappedServerboundSetStructureBlockPacket w = new WrappedServerboundSetStructureBlockPacket("hello", "world", true, true, false, true, 0.75f, 42L, new BlockPosition(7, 8, 9), new BlockPosition(1, 2, 3));
+        WrappedServerboundSetStructureBlockPacket w = createFull();
 
         assertEquals(PacketType.Play.Client.STRUCT, w.getHandle().getType());
 
+        assertEquals(new BlockPosition(7, 8, 9), w.getPos());
+        assertEquals(UpdateType.SAVE_AREA, w.getUpdateType());
+        assertEquals(StructureMode.LOAD, w.getMode());
         assertEquals("hello", w.getName());
+        assertEquals(new BlockPosition(1, 2, 3), w.getOffset());
+        assertEquals(new BlockPosition(5, 5, 5), w.getSize());
+        assertEquals(Mirror.LEFT_RIGHT, w.getMirror());
+        assertEquals(Rotation.CLOCKWISE_90, w.getRotation());
         assertEquals("world", w.getData());
         assertTrue(w.isIgnoreEntities());
         assertTrue(w.isStrict());
@@ -31,67 +52,67 @@ class WrappedServerboundSetStructureBlockPacketTest {
         assertTrue(w.isShowBoundingBox());
         assertEquals(0.75f, w.getIntegrity(), 1e-4f);
         assertEquals(42L, w.getSeed());
-        assertEquals(new BlockPosition(7, 8, 9), w.getPos());
-        assertEquals(new BlockPosition(1, 2, 3), w.getOffset());
     }
 
     @Test
     void testNoArgsCreate() {
         WrappedServerboundSetStructureBlockPacket w = new WrappedServerboundSetStructureBlockPacket();
-
         assertEquals(PacketType.Play.Client.STRUCT, w.getHandle().getType());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundSetStructureBlockPacket source = new WrappedServerboundSetStructureBlockPacket("hello", "world", true, true, false, true, 0.75f, 42L, new BlockPosition(7, 8, 9), new BlockPosition(1, 2, 3));
-        Object nmsPacket = source.getHandle().getHandle();
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundSetStructureBlockPacket wrapper = new WrappedServerboundSetStructureBlockPacket(container);
+        WrappedServerboundSetStructureBlockPacket source = createFull();
+        PacketContainer container = PacketContainer.fromPacket(source.getHandle().getHandle());
+        WrappedServerboundSetStructureBlockPacket w = new WrappedServerboundSetStructureBlockPacket(container);
 
-        assertEquals("hello", wrapper.getName());
-        assertEquals("world", wrapper.getData());
-        assertTrue(wrapper.isIgnoreEntities());
-        assertTrue(wrapper.isStrict());
-        assertFalse(wrapper.isShowAir());
-        assertTrue(wrapper.isShowBoundingBox());
-        assertEquals(0.75f, wrapper.getIntegrity(), 1e-4f);
-        assertEquals(42L, wrapper.getSeed());
-        assertEquals(new BlockPosition(7, 8, 9), wrapper.getPos());
-        assertEquals(new BlockPosition(1, 2, 3), wrapper.getOffset());
+        assertEquals(new BlockPosition(7, 8, 9), w.getPos());
+        assertEquals(UpdateType.SAVE_AREA, w.getUpdateType());
+        assertEquals(StructureMode.LOAD, w.getMode());
+        assertEquals("hello", w.getName());
+        assertEquals(new BlockPosition(1, 2, 3), w.getOffset());
+        assertEquals(new BlockPosition(5, 5, 5), w.getSize());
+        assertEquals(Mirror.LEFT_RIGHT, w.getMirror());
+        assertEquals(Rotation.CLOCKWISE_90, w.getRotation());
+        assertEquals("world", w.getData());
+        assertTrue(w.isIgnoreEntities());
+        assertTrue(w.isStrict());
+        assertFalse(w.isShowAir());
+        assertTrue(w.isShowBoundingBox());
+        assertEquals(0.75f, w.getIntegrity(), 1e-4f);
+        assertEquals(42L, w.getSeed());
 
-        wrapper.setName("modified");
-        wrapper.setData("hello");
-        wrapper.setIgnoreEntities(false);
-        wrapper.setStrict(false);
-        wrapper.setShowAir(true);
-        wrapper.setShowBoundingBox(false);
-        wrapper.setIntegrity(1.0f);
-        wrapper.setSeed(987654321L);
-        wrapper.setPos(new BlockPosition(10, 20, 30));
-        wrapper.setOffset(new BlockPosition(10, 20, 30));
+        w.setPos(new BlockPosition(0, 0, 0));
+        w.setUpdateType(UpdateType.LOAD_AREA);
+        w.setMode(StructureMode.SAVE);
+        w.setName("modified");
+        w.setOffset(new BlockPosition(0, 0, 0));
+        w.setSize(new BlockPosition(3, 3, 3));
+        w.setMirror(Mirror.NONE);
+        w.setRotation(Rotation.NONE);
+        w.setData("updated");
+        w.setIgnoreEntities(false);
+        w.setStrict(false);
+        w.setShowAir(true);
+        w.setShowBoundingBox(false);
+        w.setIntegrity(1.0f);
+        w.setSeed(0L);
 
-        assertEquals("modified", wrapper.getName());
-        assertEquals("hello", wrapper.getData());
-        assertFalse(wrapper.isIgnoreEntities());
-        assertFalse(wrapper.isStrict());
-        assertTrue(wrapper.isShowAir());
-        assertFalse(wrapper.isShowBoundingBox());
-        assertEquals(1.0f, wrapper.getIntegrity(), 1e-4f);
-        assertEquals(987654321L, wrapper.getSeed());
-        assertEquals(new BlockPosition(10, 20, 30), wrapper.getPos());
-        assertEquals(new BlockPosition(10, 20, 30), wrapper.getOffset());
-
-        assertEquals("modified", source.getName());
-        assertEquals("hello", source.getData());
-        assertFalse(source.isIgnoreEntities());
-        assertFalse(source.isStrict());
-        assertTrue(source.isShowAir());
-        assertFalse(source.isShowBoundingBox());
-        assertEquals(1.0f, source.getIntegrity(), 1e-4f);
-        assertEquals(987654321L, source.getSeed());
-        assertEquals(new BlockPosition(10, 20, 30), source.getPos());
-        assertEquals(new BlockPosition(10, 20, 30), source.getOffset());
+        assertEquals(new BlockPosition(0, 0, 0), w.getPos());
+        assertEquals(UpdateType.LOAD_AREA, w.getUpdateType());
+        assertEquals(StructureMode.SAVE, w.getMode());
+        assertEquals("modified", w.getName());
+        assertEquals(new BlockPosition(0, 0, 0), w.getOffset());
+        assertEquals(new BlockPosition(3, 3, 3), w.getSize());
+        assertEquals(Mirror.NONE, w.getMirror());
+        assertEquals(Rotation.NONE, w.getRotation());
+        assertEquals("updated", w.getData());
+        assertFalse(w.isIgnoreEntities());
+        assertFalse(w.isStrict());
+        assertTrue(w.isShowAir());
+        assertFalse(w.isShowBoundingBox());
+        assertEquals(1.0f, w.getIntegrity(), 1e-4f);
+        assertEquals(0L, w.getSeed());
     }
 
     @Test

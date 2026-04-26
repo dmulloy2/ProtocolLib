@@ -19,7 +19,7 @@ class WrappedClientboundRemoveEntitiesPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedClientboundRemoveEntitiesPacket w = new WrappedClientboundRemoveEntitiesPacket(List.of(1, 2, 3));
+        WrappedClientboundRemoveEntitiesPacket w = new WrappedClientboundRemoveEntitiesPacket(1, 2, 3);
 
         assertEquals(PacketType.Play.Server.ENTITY_DESTROY, w.getHandle().getType());
 
@@ -35,7 +35,7 @@ class WrappedClientboundRemoveEntitiesPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundRemoveEntitiesPacket source = new WrappedClientboundRemoveEntitiesPacket(List.of(1, 2, 3));
+        WrappedClientboundRemoveEntitiesPacket source = new WrappedClientboundRemoveEntitiesPacket(1, 2, 3);
         Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundRemoveEntitiesPacket wrapper = new WrappedClientboundRemoveEntitiesPacket(container);

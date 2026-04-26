@@ -3,6 +3,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
 import org.bukkit.potion.PotionEffectType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ class WrappedClientboundUpdateMobEffectPacketTest {
 
     @Test
     void testModifyExistingPacket() {
+        ClientboundUpdateMobEffectPacket p;
         WrappedClientboundUpdateMobEffectPacket source = new WrappedClientboundUpdateMobEffectPacket(3, PotionEffectType.STRENGTH, 5, 3, (byte) 1);
         Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);

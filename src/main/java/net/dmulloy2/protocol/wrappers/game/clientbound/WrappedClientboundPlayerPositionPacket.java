@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.EnumWrappers;
@@ -23,15 +24,18 @@ public class WrappedClientboundPlayerPositionPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.POSITION;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(MinecraftReflection.getMinecraftClass("world.entity.PositionMoveRotation"),
+                    WrappedPositionMoveRotation.getConverter())
+            .withParam(Set.class, BukkitConverters.getSetConverter(EnumWrappers.getRelativeArgumentConverter()));
+
     public WrappedClientboundPlayerPositionPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundPlayerPositionPacket(int id, WrappedPositionMoveRotation change, Set<EnumWrappers.RelativeArgument> relatives) {
-        this();
-        setId(id);
-        setChange(change);
-        setRelatives(relatives);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(id, change, relatives)));
     }
 
     public WrappedClientboundPlayerPositionPacket(PacketContainer packet) {

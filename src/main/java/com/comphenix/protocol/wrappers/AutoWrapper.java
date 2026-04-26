@@ -22,6 +22,7 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.base.Defaults;
 import com.google.common.base.Preconditions;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -165,12 +166,26 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
                 nmsInstanceCreator = noArgs;
                 nmsDefaultArgs = NO_ARGS;
             } else {
-                // use the first constructor of the class
-                nmsInstanceCreator = Accessors.getConstructorAccessor(nmsClass.getDeclaredConstructors()[0]);
-                nmsDefaultArgs = Arrays
-                        .stream(nmsInstanceCreator.getConstructor().getParameterTypes())
-                        .map(type -> type.isPrimitive() ? Defaults.defaultValue(type) : null)
-                        .toArray(Object[]::new);
+                // No no-arg constructor. For records (and most NMS data classes) the canonical
+                // constructor has one parameter per non-static field; that's the one we want.
+                // Other constructors (e.g. FriendlyByteBuf decoders) take a single network-buffer
+                // argument and would call methods on it during construction, so they're unsafe to
+                // invoke with default values.
+                Constructor<?>[] ctors = nmsClass.getDeclaredConstructors();
+                Constructor<?> chosen = ctors[0];
+                for (int i = 1; i < ctors.length; i++) {
+                    if (ctors[i].getParameterCount() > chosen.getParameterCount()) {
+                        chosen = ctors[i];
+                    }
+                }
+                nmsInstanceCreator = Accessors.getConstructorAccessor(chosen);
+                Class<?>[] paramTypes = chosen.getParameterTypes();
+                nmsDefaultArgs = new Object[paramTypes.length];
+                for (int i = 0; i < paramTypes.length; i++) {
+                    nmsDefaultArgs[i] = paramTypes[i].isPrimitive()
+                            ? Defaults.defaultValue(paramTypes[i])
+                            : null;
+                }
             }
         }
     }

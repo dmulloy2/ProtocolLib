@@ -2,7 +2,10 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.Material;
 
@@ -21,16 +24,19 @@ public class WrappedClientboundBlockEventPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.BLOCK_ACTION;
 
+    // NMS constructor order: (BlockPos pos, Block block, int b0, int b1)
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getBlockPositionClass(), BlockPosition.getConverter())
+            .withParam(MinecraftReflection.getBlockClass(), BukkitConverters.getBlockConverter())
+            .withParam(int.class)
+            .withParam(int.class);
+
     public WrappedClientboundBlockEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundBlockEventPacket(BlockPosition pos, int actionId, int actionParam, Material blockType) {
-        this();
-        setPos(pos);
-        setActionId(actionId);
-        setActionParam(actionParam);
-        setBlockType(blockType);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(pos, blockType, actionId, actionParam)));
     }
 
     public WrappedClientboundBlockEventPacket(PacketContainer packet) {
