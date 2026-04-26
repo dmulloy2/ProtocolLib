@@ -3,7 +3,6 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import net.dmulloy2.protocol.AbstractPacket;
-import net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket;
 
 /**
  * Wrapper for {@code ClientboundSetBorderCenterPacket} (Play phase, clientbound).
@@ -22,14 +21,14 @@ public class WrappedClientboundSetBorderCenterPacket extends AbstractPacket {
         super(new PacketContainer(TYPE), TYPE);
     }
 
+    public WrappedClientboundSetBorderCenterPacket(PacketContainer packet) {
+        super(packet, TYPE);
+    }
+
     public WrappedClientboundSetBorderCenterPacket(double x, double z) {
         this();
         setX(x);
         setZ(z);
-    }
-
-    public WrappedClientboundSetBorderCenterPacket(PacketContainer packet) {
-        super(packet, TYPE);
     }
 
     public double getX() {

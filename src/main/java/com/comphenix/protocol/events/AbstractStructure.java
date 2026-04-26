@@ -846,6 +846,14 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for {@code Holder<DamageType>} fields.
+     * @return A modifier for DamageType Holder fields.
+     */
+    public StructureModifier<org.bukkit.damage.DamageType> getDamageTypes() {
+        return getHolders(MinecraftReflection.getDamageTypeClass(), BukkitConverters.getDamageTypeConverter());
+    }
+
+    /**
      * Retrieve a read/write structure for the SoundCategory enum in 1.9.
      * @return A modifier for SoundCategory enum fields.
      */

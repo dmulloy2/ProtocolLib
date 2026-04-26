@@ -15,8 +15,14 @@ class WrappedServerboundSetTestBlockPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        // No all-args constructor due to NMS-specific enum type
-        assertEquals(PacketType.Play.Client.SET_TEST_BLOCK, new WrappedServerboundSetTestBlockPacket().getHandle().getType());
+        WrappedServerboundSetTestBlockPacket w = new WrappedServerboundSetTestBlockPacket(
+                new BlockPosition(1, 2, 3), WrappedServerboundSetTestBlockPacket.TestBlockMode.LOG, "test message");
+
+        assertEquals(PacketType.Play.Client.SET_TEST_BLOCK, w.getHandle().getType());
+
+        assertEquals(new BlockPosition(1, 2, 3), w.getPosition());
+        assertEquals(WrappedServerboundSetTestBlockPacket.TestBlockMode.LOG, w.getMode());
+        assertEquals("test message", w.getMessage());
     }
 
     @Test
@@ -27,12 +33,27 @@ class WrappedServerboundSetTestBlockPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Client.SET_TEST_BLOCK);
+        WrappedServerboundSetTestBlockPacket source = new WrappedServerboundSetTestBlockPacket(
+                new BlockPosition(1, 2, 3), WrappedServerboundSetTestBlockPacket.TestBlockMode.LOG, "test message");
+        Object nmsPacket = source.getHandle().getHandle();
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSetTestBlockPacket wrapper = new WrappedServerboundSetTestBlockPacket(container);
-        wrapper.setPosition(new BlockPosition(1, 2, 3));
-        wrapper.setMessage("test message");
+
         assertEquals(new BlockPosition(1, 2, 3), wrapper.getPosition());
+        assertEquals(WrappedServerboundSetTestBlockPacket.TestBlockMode.LOG, wrapper.getMode());
         assertEquals("test message", wrapper.getMessage());
+
+        wrapper.setPosition(new BlockPosition(10, 20, 30));
+        wrapper.setMode(WrappedServerboundSetTestBlockPacket.TestBlockMode.ACCEPT);
+        wrapper.setMessage("modified");
+
+        assertEquals(new BlockPosition(10, 20, 30), wrapper.getPosition());
+        assertEquals(WrappedServerboundSetTestBlockPacket.TestBlockMode.ACCEPT, wrapper.getMode());
+        assertEquals("modified", wrapper.getMessage());
+
+        assertEquals(new BlockPosition(10, 20, 30), source.getPosition());
+        assertEquals(WrappedServerboundSetTestBlockPacket.TestBlockMode.ACCEPT, source.getMode());
+        assertEquals("modified", source.getMessage());
     }
 
     @Test

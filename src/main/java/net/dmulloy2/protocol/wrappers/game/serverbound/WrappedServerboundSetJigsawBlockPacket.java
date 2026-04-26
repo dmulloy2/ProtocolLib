@@ -2,8 +2,12 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MinecraftKey;
+import java.util.Arrays;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -21,6 +25,22 @@ public class WrappedServerboundSetJigsawBlockPacket extends AbstractPacket {
      */
     public enum JointType { ROLLABLE, ALIGNED }
 
+    private static final Class<?> JOINT_NMS_CLASS = Arrays.stream(TYPE.getPacketClass().getDeclaredFields())
+            .map(java.lang.reflect.Field::getType)
+            .filter(Class::isEnum)
+            .findFirst()
+            .orElse(null);
+
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getBlockPositionClass(), BlockPosition.getConverter())
+            .withParam(MinecraftReflection.getMinecraftKeyClass(), MinecraftKey.getConverter())
+            .withParam(MinecraftReflection.getMinecraftKeyClass(), MinecraftKey.getConverter())
+            .withParam(MinecraftReflection.getMinecraftKeyClass(), MinecraftKey.getConverter())
+            .withParam(String.class)
+            .withParam(JOINT_NMS_CLASS, new EnumWrappers.EnumConverter<>(JOINT_NMS_CLASS, JointType.class))
+            .withParam(int.class)
+            .withParam(int.class);
+
     public WrappedServerboundSetJigsawBlockPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
@@ -28,15 +48,7 @@ public class WrappedServerboundSetJigsawBlockPacket extends AbstractPacket {
     public WrappedServerboundSetJigsawBlockPacket(BlockPosition pos, MinecraftKey name, MinecraftKey target,
             MinecraftKey pool, String finalState, JointType joint,
             int selectionPriority, int placementPriority) {
-        this();
-        setPos(pos);
-        setName(name);
-        setTarget(target);
-        setPool(pool);
-        setFinalState(finalState);
-        setJoint(joint);
-        setSelectionPriority(selectionPriority);
-        setPlacementPriority(placementPriority);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(pos, name, target, pool, finalState, joint, selectionPriority, placementPriority)));
     }
 
     public WrappedServerboundSetJigsawBlockPacket(PacketContainer packet) {

@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.Converters;
@@ -23,14 +24,16 @@ public class WrappedServerboundSetBeaconPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.BEACON;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(Optional.class, Converters.optional(effectConverter()))
+            .withParam(Optional.class, Converters.optional(effectConverter()));
+
     public WrappedServerboundSetBeaconPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedServerboundSetBeaconPacket(Optional<PotionEffectType> primary, Optional<PotionEffectType> secondary) {
-        this();
-        setPrimary(primary);
-        setSecondary(secondary);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(primary, secondary)));
     }
 
     public WrappedServerboundSetBeaconPacket(PacketContainer packet) {

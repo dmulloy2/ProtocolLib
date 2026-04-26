@@ -17,7 +17,13 @@ class WrappedClientboundPlayerLookAtPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedClientboundPlayerLookAtPacket w = new WrappedClientboundPlayerLookAtPacket(FEET, EYES, -2.5, 3.14, 100.0, true, 3);
+        // Position-target EC; layer the entity-target fields on with setters since
+        // no single NMS constructor takes all 7 fields.
+        WrappedClientboundPlayerLookAtPacket w =
+                new WrappedClientboundPlayerLookAtPacket(FEET, -2.5, 3.14, 100.0);
+        w.setToAnchor(EYES);
+        w.setAtEntity(true);
+        w.setEntityId(3);
 
         assertEquals(PacketType.Play.Server.LOOK_AT, w.getHandle().getType());
 
@@ -27,7 +33,7 @@ class WrappedClientboundPlayerLookAtPacketTest {
         assertEquals(3.14, w.getY(), 1e-9);
         assertEquals(100.0, w.getZ(), 1e-9);
         assertTrue(w.isAtEntity());
-        assertEquals(3, w.getEntity());
+        assertEquals(3, w.getEntityId());
     }
 
     @Test
@@ -39,13 +45,23 @@ class WrappedClientboundPlayerLookAtPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundPlayerLookAtPacket source = new WrappedClientboundPlayerLookAtPacket(FEET, EYES, -2.5, 3.14, 100.0, true, 3);
+        WrappedClientboundPlayerLookAtPacket source =
+                new WrappedClientboundPlayerLookAtPacket(FEET, -2.5, 3.14, 100.0);
+        source.setToAnchor(EYES);
+        source.setAtEntity(true);
+        source.setEntityId(3);
+
         Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundPlayerLookAtPacket wrapper = new WrappedClientboundPlayerLookAtPacket(container);
 
         assertEquals(FEET, wrapper.getFromAnchor());
         assertEquals(EYES, wrapper.getToAnchor());
+        assertEquals(-2.5, wrapper.getX(), 1e-9);
+        assertEquals(3.14, wrapper.getY(), 1e-9);
+        assertEquals(100.0, wrapper.getZ(), 1e-9);
+        assertTrue(wrapper.isAtEntity());
+        assertEquals(3, wrapper.getEntityId());
 
         wrapper.setFromAnchor(EYES);
         wrapper.setToAnchor(FEET);
@@ -53,7 +69,7 @@ class WrappedClientboundPlayerLookAtPacketTest {
         wrapper.setY(100.0);
         wrapper.setZ(2.71);
         wrapper.setAtEntity(false);
-        wrapper.setEntity(0);
+        wrapper.setEntityId(0);
 
         assertEquals(EYES, wrapper.getFromAnchor());
         assertEquals(FEET, wrapper.getToAnchor());
@@ -61,8 +77,9 @@ class WrappedClientboundPlayerLookAtPacketTest {
         assertEquals(100.0, wrapper.getY(), 1e-9);
         assertEquals(2.71, wrapper.getZ(), 1e-9);
         assertFalse(wrapper.isAtEntity());
-        assertEquals(0, wrapper.getEntity());
+        assertEquals(0, wrapper.getEntityId());
 
+        // Verify write-through to the original wrapper
         assertEquals(EYES, source.getFromAnchor());
         assertEquals(FEET, source.getToAnchor());
     }

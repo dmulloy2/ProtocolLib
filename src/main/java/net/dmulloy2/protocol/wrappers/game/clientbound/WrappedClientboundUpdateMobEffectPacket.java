@@ -6,7 +6,7 @@ import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.potion.PotionEffectType;
 
 /**
- * Wrapper for {@code ClientboundUpdateMobEffectPacket} (Play phase, clientbound).
+ * Wrapper for {@code ClientboundUpdateMobEffectPacket} (game phase, clientbound).
  *
  * <p>Packet structure:
  * <ul>

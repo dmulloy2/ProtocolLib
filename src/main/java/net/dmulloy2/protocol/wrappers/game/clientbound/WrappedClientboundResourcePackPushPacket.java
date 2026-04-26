@@ -2,7 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.Converters;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,17 +17,20 @@ public class WrappedClientboundResourcePackPushPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.ADD_RESOURCE_PACK;
 
+    // NMS constructor order: (UUID id, String url, String hash, boolean required, Optional<Component> prompt)
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(UUID.class)
+            .withParam(String.class)
+            .withParam(String.class)
+            .withParam(boolean.class)
+            .withParam(Optional.class, Converters.optional(BukkitConverters.getWrappedChatComponentConverter()));
+
     public WrappedClientboundResourcePackPushPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundResourcePackPushPacket(String url, String hash, boolean required, UUID id, Optional<WrappedChatComponent> prompt) {
-        this();
-        setUrl(url);
-        setHash(hash);
-        setRequired(required);
-        setId(id);
-        setPrompt(prompt);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(id, url, hash, required, prompt)));
     }
 
     public WrappedClientboundResourcePackPushPacket(PacketContainer packet) {

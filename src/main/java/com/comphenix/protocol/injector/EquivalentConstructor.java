@@ -2,10 +2,13 @@ package com.comphenix.protocol.injector;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.Tuple;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +44,10 @@ public class EquivalentConstructor {
             for (int i = 0; i < converters.size(); i++) {
                 params[i] = converters.get(i).first();
             }
-            constructorAccessor = Accessors.getConstructorAccessor(packetType.getPacketClass(), params);
+
+            Constructor<?> ctor = FuzzyReflection.fromClass(packetType.getPacketClass(), true)
+                        .getConstructor(FuzzyMethodContract.newBuilder().parameterExactArray(params).build());
+            constructorAccessor = Accessors.getConstructorAccessor(ctor);
         }
 
         Object[] convertedArgs = new Object[args.length];

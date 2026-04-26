@@ -2,7 +2,11 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import java.util.Arrays;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -26,8 +30,23 @@ public class WrappedServerboundSetTestBlockPacket extends AbstractPacket {
         START, LOG, FAIL, ACCEPT
     }
 
+    private static final Class<?> MODE_NMS_CLASS = Arrays.stream(TYPE.getPacketClass().getDeclaredFields())
+            .map(java.lang.reflect.Field::getType)
+            .filter(Class::isEnum)
+            .findFirst()
+            .orElse(null);
+
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getBlockPositionClass(), BlockPosition.getConverter())
+            .withParam(MODE_NMS_CLASS, new EnumWrappers.EnumConverter<>(MODE_NMS_CLASS, TestBlockMode.class))
+            .withParam(String.class);
+
     public WrappedServerboundSetTestBlockPacket() {
         super(new PacketContainer(TYPE), TYPE);
+    }
+
+    public WrappedServerboundSetTestBlockPacket(BlockPosition position, TestBlockMode mode, String message) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(position, mode, message)));
     }
 
     public WrappedServerboundSetTestBlockPacket(PacketContainer packet) {
@@ -43,11 +62,11 @@ public class WrappedServerboundSetTestBlockPacket extends AbstractPacket {
     }
 
     public TestBlockMode getMode() {
-        return handle.getEnumModifier(TestBlockMode.class, 3).read(0);
+        return handle.getEnumModifier(TestBlockMode.class, 1).read(0);
     }
 
     public void setMode(TestBlockMode mode) {
-        handle.getEnumModifier(TestBlockMode.class, 3).write(0, mode);
+        handle.getEnumModifier(TestBlockMode.class, 1).write(0, mode);
     }
 
     public String getMessage() {

@@ -4,10 +4,8 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.EquivalentConstructor;
-import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import net.dmulloy2.protocol.AbstractPacket;
-import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 
@@ -64,18 +62,18 @@ public class WrappedClientboundAnimatePacket extends AbstractPacket {
     }
 
     public int getEntityId() {
-        return handle.getIntegers().read(0);
+        return handle.getIntegers().readSafely(0);
     }
 
     public void setEntityId(int entityId) {
-        handle.getIntegers().write(0, entityId);
+        handle.getIntegers().writeSafely(0, entityId);
     }
 
     public int getAnimationId() {
-        return handle.getIntegers().read(1);
+        return handle.getIntegers().readSafely(1);
     }
 
     public void setAnimationId(int animationId) {
-        handle.getIntegers().write(1, animationId);
+        handle.getIntegers().writeSafely(1, animationId);
     }
 }

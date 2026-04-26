@@ -2,8 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.BukkitConverters;
-import com.comphenix.protocol.wrappers.Converters;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import java.util.List;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -19,13 +18,15 @@ public class WrappedClientboundRemoveEntitiesPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.ENTITY_DESTROY;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int[].class);
+
     public WrappedClientboundRemoveEntitiesPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
-    public WrappedClientboundRemoveEntitiesPacket(List<Integer> entityIds) {
-        this();
-        setEntityIds(entityIds);
+    public WrappedClientboundRemoveEntitiesPacket(int... entityIds) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(entityIds)));
     }
 
     public WrappedClientboundRemoveEntitiesPacket(PacketContainer packet) {

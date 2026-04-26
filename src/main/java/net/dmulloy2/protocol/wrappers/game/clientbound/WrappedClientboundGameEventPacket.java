@@ -2,6 +2,9 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -20,14 +23,16 @@ public class WrappedClientboundGameEventPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.GAME_STATE_CHANGE;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(MinecraftReflection.getGameStateClass(), BukkitConverters.getGameStateConverter())
+            .withParam(float.class);
+
     public WrappedClientboundGameEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundGameEventPacket(int event, float value) {
-        this();
-        setEvent(event);
-        setValue(value);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(event, value)));
     }
 
     public WrappedClientboundGameEventPacket(PacketContainer packet) {
@@ -36,19 +41,19 @@ public class WrappedClientboundGameEventPacket extends AbstractPacket {
 
     /** Returns the game-event ID (reason code). */
     public int getEvent() {
-        return handle.getGameStateIDs().read(0);
+        return handle.getGameStateIDs().readSafely(0);
     }
 
     public void setEvent(int event) {
-        handle.getGameStateIDs().write(0, event);
+        handle.getGameStateIDs().writeSafely(0, event);
     }
 
     /** Returns the float parameter associated with the event. */
     public float getValue() {
-        return handle.getFloat().read(0);
+        return handle.getFloat().readSafely(0);
     }
 
     public void setValue(float value) {
-        handle.getFloat().write(0, value);
+        handle.getFloat().writeSafely(0, value);
     }
 }

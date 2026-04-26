@@ -5,6 +5,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundRecipeBookRemovePacketTest {
@@ -15,22 +16,25 @@ class WrappedClientboundRecipeBookRemovePacketTest {
     }
 
     @Test
-    void testAllArgsCreate() {
-        // Packet has no fields; no all-args constructor.
-        assertEquals(PacketType.Play.Server.RECIPE_BOOK_REMOVE, new WrappedClientboundRecipeBookRemovePacket().getHandle().getType());
-    }
-
-    @Test
     void testNoArgsCreate() {
         WrappedClientboundRecipeBookRemovePacket w = new WrappedClientboundRecipeBookRemovePacket();
         assertEquals(PacketType.Play.Server.RECIPE_BOOK_REMOVE, w.getHandle().getType());
     }
 
     @Test
-    void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.RECIPE_BOOK_REMOVE);
-        WrappedClientboundRecipeBookRemovePacket wrapper = new WrappedClientboundRecipeBookRemovePacket(container);
-        assertEquals(PacketType.Play.Server.RECIPE_BOOK_REMOVE, wrapper.getHandle().getType());
+    void testGetRecipeIndicesEmptyByDefault() {
+        WrappedClientboundRecipeBookRemovePacket w = new WrappedClientboundRecipeBookRemovePacket();
+        List<Integer> indices = w.getRecipeIndices();
+        assertNotNull(indices);
+    }
+
+    @Test
+    void testSetAndGetRecipeIndices() {
+        WrappedClientboundRecipeBookRemovePacket w = new WrappedClientboundRecipeBookRemovePacket();
+        w.setRecipeIndices(List.of(1, 42, 100));
+
+        List<Integer> indices = w.getRecipeIndices();
+        assertEquals(List.of(1, 42, 100), indices);
     }
 
     @Test

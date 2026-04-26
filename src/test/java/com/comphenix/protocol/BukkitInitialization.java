@@ -154,11 +154,11 @@ public class BukkitInitialization {
             ).join();
             dataPackResources.updateComponentsAndStaticRegistryTags();
 
-            /* try {
-                IRegistry.class.getName();
+            try {
+                Registries.class.getName();
             } catch (Throwable ex) {
                 ex.printStackTrace();
-            } */
+            }
 
             String releaseTarget = MinecraftReflectionTestUtil.RELEASE_TARGET;
             String serverVersion = CraftServer.class.getPackage().getImplementationVersion();

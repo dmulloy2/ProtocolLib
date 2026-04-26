@@ -1428,6 +1428,47 @@ public class BukkitConverters {
         });
     }
 
+    private static MethodAccessor damageTypeToNms = null;
+    private static MethodAccessor damageTypeFromNms = null;
+
+    public static EquivalentConverter<org.bukkit.damage.DamageType> getDamageTypeConverter() {
+        return ignoreNull(new EquivalentConverter<org.bukkit.damage.DamageType>() {
+
+            @Override
+            public Class<org.bukkit.damage.DamageType> getSpecificType() {
+                return org.bukkit.damage.DamageType.class;
+            }
+
+            @Override
+            public Object getGeneric(org.bukkit.damage.DamageType specific) {
+                if (damageTypeToNms == null) {
+                    Class<?> craftDamageType = getCraftBukkitClass("damage.CraftDamageType");
+                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftDamageType, false);
+                    damageTypeToNms = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                            .parameterExactArray(org.bukkit.damage.DamageType.class)
+                            .returnTypeExact(MinecraftReflection.getDamageTypeClass())
+                            .requireModifier(Modifier.STATIC)
+                            .build()));
+                }
+                return damageTypeToNms.invoke(null, specific);
+            }
+
+            @Override
+            public org.bukkit.damage.DamageType getSpecific(Object generic) {
+                if (damageTypeFromNms == null) {
+                    Class<?> craftDamageType = getCraftBukkitClass("damage.CraftDamageType");
+                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftDamageType, false);
+                    damageTypeFromNms = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                            .parameterExactArray(MinecraftReflection.getDamageTypeClass())
+                            .returnTypeExact(org.bukkit.damage.DamageType.class)
+                            .requireModifier(Modifier.STATIC)
+                            .build()));
+                }
+                return (org.bukkit.damage.DamageType) damageTypeFromNms.invoke(null, generic);
+            }
+        });
+    }
+
     private static Class<?> dimensionManager;
     private static FauxEnumConverter<Dimension> dimensionConverter;
     private static FauxEnumConverter<DimensionImpl> dimensionImplConverter;

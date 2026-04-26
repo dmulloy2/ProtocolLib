@@ -2,19 +2,19 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.wrappers.AutoWrapper;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.BukkitConverters;
-import com.comphenix.protocol.wrappers.Converters;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import net.dmulloy2.protocol.AbstractPacket;
 import org.bukkit.Location;
-import org.bukkit.World;
 
 /**
  * Wrapper for {@code ClientboundSetDefaultSpawnPositionPacket} (Play phase, clientbound).
  *
- * <p>NMS structure (1.21+):
+ * <p>NMS structure:
  * <pre>
  * record ClientboundSetDefaultSpawnPositionPacket(LevelData.RespawnData respawnData)
  * record LevelData.RespawnData(GlobalPos globalPos, float yaw, float pitch)
@@ -24,79 +24,96 @@ import org.bukkit.World;
  * <p>The nested structure maps 1:1 to a Bukkit {@link Location}:
  * <ul>
  *   <li>{@code GlobalPos.dimension} ↔ {@link Location#getWorld()}
- *       (via {@link BukkitConverters#getWorldKeyConverter()})
  *   <li>{@code GlobalPos.pos} ↔ {@link Location#getX()}/{@link Location#getY()}/{@link Location#getZ()}
  *   <li>{@code RespawnData.yaw} ↔ {@link Location#getYaw()}
  *   <li>{@code RespawnData.pitch} ↔ {@link Location#getPitch()}
  * </ul>
- *
- * <p>The {@link #LOCATION_CONVERTER} encapsulates this mapping entirely; the public API
- * is just {@link #getLocation()} and {@link #setLocation(Location)}.
  */
 public class WrappedClientboundSetDefaultSpawnPositionPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.SPAWN_POSITION;
 
-    /**
-     * Converts between {@code LevelData.RespawnData} (NMS) and {@link Location} (Bukkit).
-     *
-     * <p>The nested NMS structure is:
-     * <pre>
-     *   RespawnData { globalPos: GlobalPos { dimension: ResourceKey&lt;Level&gt;, pos: BlockPos }, yaw: float, pitch: float }
-     * </pre>
-     * This converter maps those fields to/from a Bukkit {@link Location}.
-     * A {@code null} input produces a {@code null} output in both directions.
-     */
-    private static final EquivalentConverter<Location> LOCATION_CONVERTER = new EquivalentConverter<Location>() {
+    // ---- Cached NMS classes -------------------------------------------------
+
+    private static final Class<?> RESPAWN_DATA_CLASS;
+    private static final Class<?> GLOBAL_POS_CLASS;
+    private static final Class<?> BLOCK_POS_CLASS;
+    private static final Class<?> RESOURCE_KEY_CLASS;
+
+    // ---- Cached accessors ---------------------------------------------------
+
+    /** RespawnData → GlobalPos */
+    private static final MethodAccessor RESPAWN_DATA_GLOBAL_POS;
+    /** RespawnData → float yaw */
+    private static final MethodAccessor RESPAWN_DATA_YAW;
+    /** RespawnData → float pitch */
+    private static final MethodAccessor RESPAWN_DATA_PITCH;
+    /** GlobalPos → BlockPos */
+    private static final MethodAccessor GLOBAL_POS_POS;
+    /** BlockPos → int x */
+    private static final MethodAccessor BLOCK_POS_GET_X;
+    /** BlockPos → int y */
+    private static final MethodAccessor BLOCK_POS_GET_Y;
+    /** BlockPos → int z */
+    private static final MethodAccessor BLOCK_POS_GET_Z;
+    /** BlockPos(int, int, int) */
+    private static final ConstructorAccessor BLOCK_POS_CTOR;
+    /** static GlobalPos.of(ResourceKey, BlockPos) */
+    private static final MethodAccessor GLOBAL_POS_OF;
+    /** RespawnData(GlobalPos, float, float) */
+    private static final ConstructorAccessor RESPAWN_DATA_CTOR;
+    /** Cached Level.OVERWORLD ResourceKey value */
+    private static final Object OVERWORLD_KEY;
+
+    static {
+        try {
+            RESPAWN_DATA_CLASS  = Class.forName("net.minecraft.world.level.storage.LevelData$RespawnData");
+            GLOBAL_POS_CLASS    = Class.forName("net.minecraft.core.GlobalPos");
+            BLOCK_POS_CLASS     = MinecraftReflection.getBlockPositionClass();
+            RESOURCE_KEY_CLASS  = Class.forName("net.minecraft.resources.ResourceKey");
+
+            RESPAWN_DATA_GLOBAL_POS = Accessors.getMethodAccessor(RESPAWN_DATA_CLASS, "globalPos");
+            RESPAWN_DATA_YAW        = Accessors.getMethodAccessor(RESPAWN_DATA_CLASS, "yaw");
+            RESPAWN_DATA_PITCH      = Accessors.getMethodAccessor(RESPAWN_DATA_CLASS, "pitch");
+            GLOBAL_POS_POS          = Accessors.getMethodAccessor(GLOBAL_POS_CLASS, "pos");
+            BLOCK_POS_GET_X         = Accessors.getMethodAccessor(BLOCK_POS_CLASS, "getX");
+            BLOCK_POS_GET_Y         = Accessors.getMethodAccessor(BLOCK_POS_CLASS, "getY");
+            BLOCK_POS_GET_Z         = Accessors.getMethodAccessor(BLOCK_POS_CLASS, "getZ");
+            BLOCK_POS_CTOR          = Accessors.getConstructorAccessor(BLOCK_POS_CLASS, int.class, int.class, int.class);
+            GLOBAL_POS_OF           = Accessors.getMethodAccessor(GLOBAL_POS_CLASS, "of", RESOURCE_KEY_CLASS, BLOCK_POS_CLASS);
+            RESPAWN_DATA_CTOR       = Accessors.getConstructorAccessor(RESPAWN_DATA_CLASS, GLOBAL_POS_CLASS, float.class, float.class);
+
+            java.lang.reflect.Field owField = Class.forName("net.minecraft.world.level.Level")
+                    .getDeclaredField("OVERWORLD");
+            owField.setAccessible(true);
+            OVERWORLD_KEY = owField.get(null);
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    // ---- Converter ----------------------------------------------------------
+
+    private static final EquivalentConverter<Location> LOCATION_CONVERTER = new EquivalentConverter<>() {
         @Override
         public Location getSpecific(Object generic) {
             if (generic == null) return null;
-            try {
-                // RespawnData.globalPos()
-                java.lang.reflect.Method globalPosM = generic.getClass().getMethod("globalPos");
-                Object globalPos = globalPosM.invoke(generic);
-                // RespawnData.yaw()
-                float yaw   = (float) generic.getClass().getMethod("yaw").invoke(generic);
-                // RespawnData.pitch()
-                float pitch = (float) generic.getClass().getMethod("pitch").invoke(generic);
-
-                // GlobalPos.pos() → BlockPos
-                Object blockPos = globalPos.getClass().getMethod("pos").invoke(globalPos);
-                double x = ((Number) blockPos.getClass().getMethod("getX").invoke(blockPos)).doubleValue();
-                double y = ((Number) blockPos.getClass().getMethod("getY").invoke(blockPos)).doubleValue();
-                double z = ((Number) blockPos.getClass().getMethod("getZ").invoke(blockPos)).doubleValue();
-
-                return new Location(null, x, y, z, yaw, pitch);
-            } catch (ReflectiveOperationException e) {
-                return null;
-            }
+            Object globalPos = RESPAWN_DATA_GLOBAL_POS.invoke(generic);
+            float yaw   = (float) RESPAWN_DATA_YAW.invoke(generic);
+            float pitch = (float) RESPAWN_DATA_PITCH.invoke(generic);
+            Object blockPos = GLOBAL_POS_POS.invoke(globalPos);
+            double x = ((Number) BLOCK_POS_GET_X.invoke(blockPos)).doubleValue();
+            double y = ((Number) BLOCK_POS_GET_Y.invoke(blockPos)).doubleValue();
+            double z = ((Number) BLOCK_POS_GET_Z.invoke(blockPos)).doubleValue();
+            return new Location(null, x, y, z, yaw, pitch);
         }
 
         @Override
         public Object getGeneric(Location specific) {
             if (specific == null) return null;
-            try {
-                // Build BlockPos
-                Class<?> blockPosClass = com.comphenix.protocol.utility.MinecraftReflection.getBlockPositionClass();
-                Object blockPos = blockPosClass.getConstructor(int.class, int.class, int.class)
-                        .newInstance(specific.getBlockX(), specific.getBlockY(), specific.getBlockZ());
-
-                // Build GlobalPos using OVERWORLD dimension key as fallback
-                Class<?> registriesClass = Class.forName("net.minecraft.core.registries.Registries");
-                Object overworldKey = Class.forName("net.minecraft.world.level.Level")
-                        .getDeclaredField("OVERWORLD").get(null);
-                Class<?> globalPosClass = Class.forName("net.minecraft.core.GlobalPos");
-                Object globalPos = globalPosClass.getMethod("of",
-                                Class.forName("net.minecraft.resources.ResourceKey"), blockPosClass)
-                        .invoke(null, overworldKey, blockPos);
-
-                // Build LevelData.RespawnData
-                Class<?> respawnDataClass = Class.forName("net.minecraft.world.level.storage.LevelData$RespawnData");
-                return respawnDataClass.getConstructor(globalPosClass, float.class, float.class)
-                        .newInstance(globalPos, specific.getYaw(), specific.getPitch());
-            } catch (ReflectiveOperationException e) {
-                return null;
-            }
+            Object blockPos  = BLOCK_POS_CTOR.invoke(specific.getBlockX(), specific.getBlockY(), specific.getBlockZ());
+            Object globalPos = GLOBAL_POS_OF.invoke(null, OVERWORLD_KEY, blockPos);
+            return RESPAWN_DATA_CTOR.invoke(globalPos, specific.getYaw(), specific.getPitch());
         }
 
         @Override
@@ -105,13 +122,17 @@ public class WrappedClientboundSetDefaultSpawnPositionPacket extends AbstractPac
         }
     };
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(RESPAWN_DATA_CLASS, LOCATION_CONVERTER);
+
+    // ---- Constructors -------------------------------------------------------
+
     public WrappedClientboundSetDefaultSpawnPositionPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedClientboundSetDefaultSpawnPositionPacket(Location location) {
-        this();
-        setLocation(location);
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(location)));
     }
 
     public WrappedClientboundSetDefaultSpawnPositionPacket(PacketContainer packet) {
@@ -121,12 +142,9 @@ public class WrappedClientboundSetDefaultSpawnPositionPacket extends AbstractPac
     // ---- API ----------------------------------------------------------------
 
     /**
-     * Returns the spawn location.
-     *
-     * <p>{@link Location#getWorld()} is resolved via {@link BukkitConverters#getWorldKeyConverter()}.
-     * If the dimension is absent or the world is not loaded, it will be {@code null} — all
-     * coordinate and angle fields are still populated. Returns {@code null} only if the packet
-     * carries no {@code RespawnData} (should not occur in practice).
+     * Returns the spawn location. {@link Location#getWorld()} is always {@code null} since
+     * the dimension key is not resolved to a loaded world. Returns {@code null} only if the
+     * packet carries no {@code RespawnData}.
      */
     public Location getLocation() {
         Object rawRd = handle.getModifier().read(0);
@@ -135,8 +153,7 @@ public class WrappedClientboundSetDefaultSpawnPositionPacket extends AbstractPac
 
     /**
      * Sets the spawn location. Block coordinates become the spawn position;
-     * {@link Location#getYaw()} and {@link Location#getPitch()} set the angles;
-     * a non-{@code null} {@link Location#getWorld()} is stored as the dimension key.
+     * yaw/pitch are stored as-is. The dimension is always written as {@code Level.OVERWORLD}.
      */
     public void setLocation(Location location) {
         handle.getModifier().write(0, LOCATION_CONVERTER.getGeneric(location));
