@@ -17,7 +17,15 @@ import io.netty.buffer.Unpooled;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
@@ -26,6 +34,7 @@ import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.FieldValue;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.matcher.ElementMatchers;
 
 /**
@@ -46,7 +55,20 @@ public final class CustomPacketPayloadWrapper {
     private static final ConstructorAccessor PAYLOAD_WRAPPER_CONSTRUCTOR;
 
     private static final MethodAccessor GET_ID_PAYLOAD_METHOD;
+    /**
+     * When non-null, all payloads use this interface write method; otherwise resolved per concrete class (Paper 26+).
+     */
     private static final MethodAccessor SERIALIZE_PAYLOAD_METHOD;
+
+    private static final ConcurrentHashMap<Class<?>, Optional<MethodAccessor>> SERIALIZE_BY_CONCRETE_PAYLOAD =
+            new ConcurrentHashMap<>();
+
+    private static volatile Class<?> serializerArgumentClassCache;
+
+    /**
+     * Constructor for {@code CustomPacketPayload.Id} (record); null on versions where the payload key is returned directly.
+     */
+    private static final ConstructorAccessor PAYLOAD_ID_RECORD_CONSTRUCTOR;
 
     private static final EquivalentConverter<CustomPacketPayloadWrapper> CONVERTER;
 
@@ -55,23 +77,46 @@ public final class CustomPacketPayloadWrapper {
             MINECRAFT_KEY_CLASS = MinecraftReflection.getMinecraftKeyClass();
             CUSTOM_PACKET_PAYLOAD_CLASS = MinecraftReflection.getMinecraftClass("network.protocol.common.custom.CustomPacketPayload");
 
-            Method getPayloadId = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
-                    .banModifier(Modifier.STATIC)
-                    .returnTypeExact(MINECRAFT_KEY_CLASS)
-                    .parameterCount(0)
-                    .build());
-            GET_ID_PAYLOAD_METHOD = Accessors.getMethodAccessor(getPayloadId);
+            KeyAccessorResolution keyResolution = resolvePayloadKeyAccessor(CUSTOM_PACKET_PAYLOAD_CLASS, MINECRAFT_KEY_CLASS);
+            GET_ID_PAYLOAD_METHOD = keyResolution.accessor;
 
-            Method serializePayloadData = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
-                    .banModifier(Modifier.STATIC)
-                    .returnTypeVoid()
-                    .parameterCount(1)
-                    .parameterDerivedOf(ByteBuf.class, 0)
-                    .build());
-            SERIALIZE_PAYLOAD_METHOD = Accessors.getMethodAccessor(serializePayloadData);
+            Method serializePayloadData = null;
+            try {
+                serializePayloadData = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
+                        .banModifier(Modifier.STATIC)
+                        .returnTypeVoid()
+                        .parameterCount(1)
+                        .parameterDerivedOf(ByteBuf.class, 0)
+                        .build());
+            } catch (RuntimeException ignored) {
+                // 1.21.11+ / Paper 26.x: CustomPacketPayload has no void(ByteBuf); use FriendlyByteBuf-like arg on impl
+            }
+            if (serializePayloadData == null) {
+                serializePayloadData = findWritablePayloadMethod(CUSTOM_PACKET_PAYLOAD_CLASS);
+            }
+            SERIALIZE_PAYLOAD_METHOD = serializePayloadData != null ? Accessors.getMethodAccessor(serializePayloadData) : null;
 
-            Constructor<?> payloadWrapperConstructor = makePayloadWrapper();
-            PAYLOAD_WRAPPER_CONSTRUCTOR = Accessors.getConstructorAccessor(payloadWrapperConstructor);
+            Class<?> payloadIdClass = keyResolution.idRecordClass;
+            if (payloadIdClass == null) {
+                payloadIdClass = findDeclaredNested(CUSTOM_PACKET_PAYLOAD_CLASS, "Id");
+            }
+            PAYLOAD_ID_RECORD_CONSTRUCTOR = findPayloadIdRecordConstructorAccessor(payloadIdClass, MINECRAFT_KEY_CLASS);
+
+            ConstructorAccessor discardedFactory = findDiscardedPayloadConstructorAccessor(MINECRAFT_KEY_CLASS);
+            if (discardedFactory != null) {
+                // Paper 26+ / Mojang: network codec casts to DiscardedPayload — must use the real record, not ByteBuddy.
+                PAYLOAD_WRAPPER_CONSTRUCTOR = discardedFactory;
+            } else {
+                boolean useIdRecordReturn = keyResolution.viaPayloadIdRecord && PAYLOAD_ID_RECORD_CONSTRUCTOR != null;
+                if (keyResolution.viaPayloadIdRecord && PAYLOAD_ID_RECORD_CONSTRUCTOR == null) {
+                    throw new IllegalStateException(
+                            "CustomPacketPayload exposes Id record but no 1-arg constructor taking " + MINECRAFT_KEY_CLASS.getName()
+                                    + " was found on " + (payloadIdClass == null ? "null" : payloadIdClass.getName()));
+                }
+
+                Constructor<?> payloadWrapperConstructor = makePayloadWrapper(payloadIdClass, useIdRecordReturn);
+                PAYLOAD_WRAPPER_CONSTRUCTOR = Accessors.getConstructorAccessor(payloadWrapperConstructor);
+            }
 
             CONVERTER = new EquivalentConverter<CustomPacketPayloadWrapper>() {
                 @Override
@@ -94,8 +139,8 @@ public final class CustomPacketPayloadWrapper {
         }
     }
 
-    private static Constructor<?> makePayloadWrapper() throws Exception {
-        return new ByteBuddy()
+    private static Constructor<?> makePayloadWrapper(Class<?> payloadIdClass, boolean useIdRecordReturn) throws Exception {
+        net.bytebuddy.dynamic.DynamicType.Builder<?> buddy = new ByteBuddy()
                 .subclass(Object.class)
                 .name("com.comphenix.protocol.wrappers.ProtocolLibCustomPacketPayload")
                 .implement(CUSTOM_PACKET_PAYLOAD_CLASS, ByteBuddyGenerated.class)
@@ -105,15 +150,291 @@ public final class CustomPacketPayloadWrapper {
                 .withParameters(MinecraftReflection.getMinecraftKeyClass(), byte[].class)
                 .intercept(MethodCall.invoke(Object.class.getConstructor())
                         .andThen(FieldAccessor.ofField("id").setsArgumentAt(0))
-                        .andThen(FieldAccessor.ofField("payload").setsArgumentAt(1)))
-                .method(ElementMatchers.returns(MinecraftReflection.getMinecraftKeyClass()).and(ElementMatchers.takesNoArguments()))
-                .intercept(FieldAccessor.ofField("id"))
+                        .andThen(FieldAccessor.ofField("payload").setsArgumentAt(1)));
+
+        if (useIdRecordReturn) {
+            buddy = buddy
+                    .method(ElementMatchers.returns(payloadIdClass).and(ElementMatchers.takesNoArguments()))
+                    .intercept(MethodDelegation.to(IdRecordInterceptor.class));
+        } else {
+            buddy = buddy
+                    .method(ElementMatchers.returns(MinecraftReflection.getMinecraftKeyClass()).and(ElementMatchers.takesNoArguments()))
+                    .intercept(FieldAccessor.ofField("id"));
+        }
+
+        return buddy
                 .method(ElementMatchers.returns(void.class).and(ElementMatchers.takesArguments(MinecraftReflection.getPacketDataSerializerClass())))
                 .intercept(MethodDelegation.to(CustomPacketPayloadInterceptionHandler.class))
                 .make()
                 .load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
                 .getLoaded()
                 .getConstructor(MinecraftReflection.getMinecraftKeyClass(), byte[].class);
+    }
+
+    private static final class ChainedMethodAccessor implements MethodAccessor {
+        private final MethodAccessor outer;
+        private final MethodAccessor inner;
+        private final Method representative;
+
+        private ChainedMethodAccessor(MethodAccessor outer, MethodAccessor inner, Method representative) {
+            this.outer = outer;
+            this.inner = inner;
+            this.representative = representative;
+        }
+
+        @Override
+        public Object invoke(Object target, Object... args) {
+            return this.inner.invoke(this.outer.invoke(target, args));
+        }
+
+        @Override
+        public Method getMethod() {
+            return this.representative;
+        }
+    }
+
+    private static final class KeyAccessorResolution {
+        final MethodAccessor accessor;
+        final boolean viaPayloadIdRecord;
+        /**
+         * Return type of the bridge method (e.g. getId); obfuscated servers use names other than {@code Id}.
+         */
+        final Class<?> idRecordClass;
+
+        private KeyAccessorResolution(MethodAccessor accessor, boolean viaPayloadIdRecord, Class<?> idRecordClass) {
+            this.accessor = accessor;
+            this.viaPayloadIdRecord = viaPayloadIdRecord;
+            this.idRecordClass = idRecordClass;
+        }
+    }
+
+    private static KeyAccessorResolution resolvePayloadKeyAccessor(Class<?> payloadClass, Class<?> keyClass) {
+        try {
+            Method direct = FuzzyReflection.fromClass(payloadClass).getMethod(FuzzyMethodContract.newBuilder()
+                    .banModifier(Modifier.STATIC)
+                    .returnTypeExact(keyClass)
+                    .parameterCount(0)
+                    .build());
+            return new KeyAccessorResolution(Accessors.getMethodAccessor(direct), false, null);
+        } catch (RuntimeException ignored) {
+            // 1.21.11+ / Paper 26.x: getId() returns CustomPacketPayload.Id, Identifier is nested
+        }
+
+        for (Method outer : collectCandidateKeyBridgeMethods(payloadClass)) {
+            Class<?> ret = outer.getReturnType();
+            if (keyClass.isAssignableFrom(ret)) {
+                return new KeyAccessorResolution(Accessors.getMethodAccessor(outer), false, null);
+            }
+            Method inner = findSingleZeroArgInstanceMethodReturning(ret, keyClass);
+            if (inner != null) {
+                MethodAccessor outerAcc = Accessors.getMethodAccessor(outer);
+                MethodAccessor innerAcc = Accessors.getMethodAccessor(inner);
+                return new KeyAccessorResolution(new ChainedMethodAccessor(outerAcc, innerAcc, outer), true, ret);
+            }
+        }
+
+        throw new IllegalArgumentException("Unable to resolve CustomPacketPayload -> " + keyClass.getName() + " accessor");
+    }
+
+    private static List<Method> collectCandidateKeyBridgeMethods(Class<?> payloadClass) {
+        List<Method> idNamedReturns = new ArrayList<>();
+        List<Method> other = new ArrayList<>();
+        for (Method method : payloadClass.getDeclaredMethods()) {
+            if (Modifier.isStatic(method.getModifiers())) {
+                continue;
+            }
+            if (method.getParameterCount() != 0) {
+                continue;
+            }
+            Class<?> ret = method.getReturnType();
+            if (ret == void.class || ret == Void.class) {
+                continue;
+            }
+            if ("Id".equals(ret.getSimpleName())) {
+                idNamedReturns.add(method);
+            } else {
+                other.add(method);
+            }
+        }
+        idNamedReturns.addAll(other);
+        return idNamedReturns;
+    }
+
+    private static Method findSingleZeroArgInstanceMethodReturning(Class<?> holder, Class<?> keyClass) {
+        List<Method> matches = new ArrayList<>();
+        for (Method method : holder.getMethods()) {
+            if (Modifier.isStatic(method.getModifiers())) {
+                continue;
+            }
+            if (method.getParameterCount() != 0) {
+                continue;
+            }
+            if (!keyClass.isAssignableFrom(method.getReturnType())) {
+                continue;
+            }
+            if (method.getDeclaringClass() == Object.class) {
+                continue;
+            }
+            matches.add(method);
+        }
+        for (Method method : matches) {
+            if ("id".equals(method.getName())) {
+                return method;
+            }
+        }
+        return matches.isEmpty() ? null : matches.get(0);
+    }
+
+    private static Class<?> findDeclaredNested(Class<?> outer, String simpleName) {
+        for (Class<?> nested : outer.getDeclaredClasses()) {
+            if (simpleName.equals(nested.getSimpleName())) {
+                return nested;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Paper 26 / modern Mojang: {@code DiscardedPayload(Identifier, byte[])} — required for outbound CUSTOM_PAYLOAD encoding.
+     */
+    private static ConstructorAccessor findDiscardedPayloadConstructorAccessor(Class<?> keyClass) {
+        Class<?> discardedClass;
+        try {
+            discardedClass = MinecraftReflection.getMinecraftClass("network.protocol.common.custom.DiscardedPayload");
+        } catch (RuntimeException e) {
+            return null;
+        }
+        for (Constructor<?> c : discardedClass.getDeclaredConstructors()) {
+            if (c.getParameterCount() != 2) {
+                continue;
+            }
+            Class<?> p0 = c.getParameterTypes()[0];
+            Class<?> p1 = c.getParameterTypes()[1];
+            if (p1 != byte[].class) {
+                continue;
+            }
+            if (!p0.isAssignableFrom(keyClass)) {
+                continue;
+            }
+            c.setAccessible(true);
+            return Accessors.getConstructorAccessor(c);
+        }
+        return null;
+    }
+
+    private static ConstructorAccessor findPayloadIdRecordConstructorAccessor(Class<?> idRecordClass, Class<?> keyClass) {
+        if (idRecordClass == null) {
+            return null;
+        }
+        Constructor<?> chosen = null;
+        try {
+            chosen = idRecordClass.getConstructor(keyClass);
+        } catch (NoSuchMethodException ignored) {
+            for (Constructor<?> c : idRecordClass.getDeclaredConstructors()) {
+                if (c.getParameterCount() != 1) {
+                    continue;
+                }
+                Class<?> p = c.getParameterTypes()[0];
+                if (p.isAssignableFrom(keyClass)) {
+                    chosen = c;
+                    break;
+                }
+            }
+        }
+        if (chosen == null) {
+            return null;
+        }
+        chosen.setAccessible(true);
+        return Accessors.getConstructorAccessor(chosen);
+    }
+
+    private static Class<?> serializerArgumentClass() {
+        Class<?> c = serializerArgumentClassCache;
+        if (c == null) {
+            synchronized (CustomPacketPayloadWrapper.class) {
+                c = serializerArgumentClassCache;
+                if (c == null) {
+                    Object sample = MinecraftReflection.getPacketDataSerializer(Unpooled.buffer());
+                    serializerArgumentClassCache = c = sample.getClass();
+                }
+            }
+        }
+        return c;
+    }
+
+    /**
+     * Breadth-first search for {@code void write(FriendlyByteBuf-like)} (or legacy {@code ByteBuf}) on a type and its supertypes.
+     */
+    private static Method findWritablePayloadMethod(Class<?> start) {
+        Deque<Class<?>> queue = new ArrayDeque<>();
+        Set<Class<?>> seen = new HashSet<>();
+        queue.add(start);
+        Class<?> serializerArg = serializerArgumentClass();
+        while (!queue.isEmpty()) {
+            Class<?> type = queue.poll();
+            if (type == null || type == Object.class || !seen.add(type)) {
+                continue;
+            }
+            for (Method method : type.getDeclaredMethods()) {
+                if (Modifier.isStatic(method.getModifiers())) {
+                    continue;
+                }
+                if (method.getReturnType() != void.class) {
+                    continue;
+                }
+                if (method.getParameterCount() != 1) {
+                    continue;
+                }
+                Class<?> p0 = method.getParameterTypes()[0];
+                if (p0 == Object.class) {
+                    continue;
+                }
+                // Must accept what getPacketDataSerializer(netty Buffer) returns (e.g. FriendlyByteBuf)
+                if (!p0.isAssignableFrom(serializerArg)) {
+                    continue;
+                }
+                method.setAccessible(true);
+                return method;
+            }
+            if (type.getSuperclass() != null) {
+                queue.add(type.getSuperclass());
+            }
+            for (Class<?> itf : type.getInterfaces()) {
+                queue.add(itf);
+            }
+        }
+        return null;
+    }
+
+    private static MethodAccessor resolveSerializeForPayloadInstance(Object payload) {
+        if (SERIALIZE_PAYLOAD_METHOD != null) {
+            return SERIALIZE_PAYLOAD_METHOD;
+        }
+        return SERIALIZE_BY_CONCRETE_PAYLOAD
+                .computeIfAbsent(payload.getClass(), CustomPacketPayloadWrapper::lookupSerializeAccessorForConcrete)
+                .orElse(null);
+    }
+
+    private static Optional<MethodAccessor> lookupSerializeAccessorForConcrete(Class<?> concretePayload) {
+        Method method = findWritablePayloadMethod(concretePayload);
+        return Optional.ofNullable(method == null ? null : Accessors.getMethodAccessor(method));
+    }
+
+    private static byte[] extractPayloadBodyWithoutDirectBuf(Object payload) {
+        MethodAccessor serialize = resolveSerializeForPayloadInstance(payload);
+        if (serialize != null) {
+            ByteBuf buffer = Unpooled.buffer();
+            Object serializer = MinecraftReflection.getPacketDataSerializer(buffer);
+            serialize.invoke(payload, serializer);
+            return StreamSerializer.getDefault().getBytesAndRelease(buffer);
+        }
+        StructureModifier<Object> mod = new StructureModifier<>(payload.getClass()).withTarget(payload);
+        try {
+            return (byte[]) mod.withType(byte[].class).read(0);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Cannot extract CustomPacketPayload body from " + payload.getClass().getName(), e);
+        }
     }
 
     // ====== api methods ======
@@ -184,12 +505,7 @@ public final class CustomPacketPayloadWrapper {
                     buf.resetReaderIndex();
                     return data;
                 })
-                .orElseGet(() -> {
-                    ByteBuf buffer = Unpooled.buffer();
-                    Object serializer = MinecraftReflection.getPacketDataSerializer(buffer);
-                    SERIALIZE_PAYLOAD_METHOD.invoke(payload, serializer);
-                    return StreamSerializer.getDefault().getBytesAndRelease(buffer);
-                });
+                .orElseGet(() -> extractPayloadBodyWithoutDirectBuf(payload));
 
         return new CustomPacketPayloadWrapper(messagePayload, id);
     }
@@ -231,6 +547,17 @@ public final class CustomPacketPayloadWrapper {
      */
     public Object newHandle() {
         return PAYLOAD_WRAPPER_CONSTRUCTOR.invoke(this.getGenericId(), this.payload);
+    }
+
+    /**
+     * Builds {@link CustomPacketPayload}'s Id record from the stored Mojang key for {@link #newHandle()}.
+     */
+    @SuppressWarnings("unused")
+    static final class IdRecordInterceptor {
+        @RuntimeType
+        public static Object intercept(@FieldValue("id") Object nmsKey) {
+            return PAYLOAD_ID_RECORD_CONSTRUCTOR.invoke(nmsKey);
+        }
     }
 
     /**
