@@ -17,9 +17,15 @@ import io.netty.buffer.Unpooled;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
@@ -49,7 +55,15 @@ public final class CustomPacketPayloadWrapper {
     private static final ConstructorAccessor PAYLOAD_WRAPPER_CONSTRUCTOR;
 
     private static final MethodAccessor GET_ID_PAYLOAD_METHOD;
+    /**
+     * When non-null, all payloads use this interface write method; otherwise resolved per concrete class (Paper 26+).
+     */
     private static final MethodAccessor SERIALIZE_PAYLOAD_METHOD;
+
+    private static final ConcurrentHashMap<Class<?>, Optional<MethodAccessor>> SERIALIZE_BY_CONCRETE_PAYLOAD =
+            new ConcurrentHashMap<>();
+
+    private static volatile Class<?> serializerArgumentClassCache;
 
     /**
      * Constructor for {@code CustomPacketPayload.Id} (record); null on versions where the payload key is returned directly.
@@ -66,13 +80,21 @@ public final class CustomPacketPayloadWrapper {
             KeyAccessorResolution keyResolution = resolvePayloadKeyAccessor(CUSTOM_PACKET_PAYLOAD_CLASS, MINECRAFT_KEY_CLASS);
             GET_ID_PAYLOAD_METHOD = keyResolution.accessor;
 
-            Method serializePayloadData = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
-                    .banModifier(Modifier.STATIC)
-                    .returnTypeVoid()
-                    .parameterCount(1)
-                    .parameterDerivedOf(ByteBuf.class, 0)
-                    .build());
-            SERIALIZE_PAYLOAD_METHOD = Accessors.getMethodAccessor(serializePayloadData);
+            Method serializePayloadData = null;
+            try {
+                serializePayloadData = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
+                        .banModifier(Modifier.STATIC)
+                        .returnTypeVoid()
+                        .parameterCount(1)
+                        .parameterDerivedOf(ByteBuf.class, 0)
+                        .build());
+            } catch (RuntimeException ignored) {
+                // 1.21.11+ / Paper 26.x: CustomPacketPayload has no void(ByteBuf); use FriendlyByteBuf-like arg on impl
+            }
+            if (serializePayloadData == null) {
+                serializePayloadData = findWritablePayloadMethod(CUSTOM_PACKET_PAYLOAD_CLASS);
+            }
+            SERIALIZE_PAYLOAD_METHOD = serializePayloadData != null ? Accessors.getMethodAccessor(serializePayloadData) : null;
 
             Class<?> payloadIdClass = findDeclaredNested(CUSTOM_PACKET_PAYLOAD_CLASS, "Id");
             ConstructorAccessor idRecordCtor = null;
@@ -265,6 +287,95 @@ public final class CustomPacketPayloadWrapper {
         return null;
     }
 
+    private static Class<?> serializerArgumentClass() {
+        Class<?> c = serializerArgumentClassCache;
+        if (c == null) {
+            synchronized (CustomPacketPayloadWrapper.class) {
+                c = serializerArgumentClassCache;
+                if (c == null) {
+                    Object sample = MinecraftReflection.getPacketDataSerializer(Unpooled.buffer());
+                    serializerArgumentClassCache = c = sample.getClass();
+                }
+            }
+        }
+        return c;
+    }
+
+    /**
+     * Breadth-first search for {@code void write(FriendlyByteBuf-like)} (or legacy {@code ByteBuf}) on a type and its supertypes.
+     */
+    private static Method findWritablePayloadMethod(Class<?> start) {
+        Deque<Class<?>> queue = new ArrayDeque<>();
+        Set<Class<?>> seen = new HashSet<>();
+        queue.add(start);
+        Class<?> serializerArg = serializerArgumentClass();
+        while (!queue.isEmpty()) {
+            Class<?> type = queue.poll();
+            if (type == null || type == Object.class || !seen.add(type)) {
+                continue;
+            }
+            for (Method method : type.getDeclaredMethods()) {
+                if (Modifier.isStatic(method.getModifiers())) {
+                    continue;
+                }
+                if (method.getReturnType() != void.class) {
+                    continue;
+                }
+                if (method.getParameterCount() != 1) {
+                    continue;
+                }
+                Class<?> p0 = method.getParameterTypes()[0];
+                if (p0 == Object.class) {
+                    continue;
+                }
+                // Must accept what getPacketDataSerializer(netty Buffer) returns (e.g. FriendlyByteBuf)
+                if (!p0.isAssignableFrom(serializerArg)) {
+                    continue;
+                }
+                method.setAccessible(true);
+                return method;
+            }
+            if (type.getSuperclass() != null) {
+                queue.add(type.getSuperclass());
+            }
+            for (Class<?> itf : type.getInterfaces()) {
+                queue.add(itf);
+            }
+        }
+        return null;
+    }
+
+    private static MethodAccessor resolveSerializeForPayloadInstance(Object payload) {
+        if (SERIALIZE_PAYLOAD_METHOD != null) {
+            return SERIALIZE_PAYLOAD_METHOD;
+        }
+        return SERIALIZE_BY_CONCRETE_PAYLOAD
+                .computeIfAbsent(payload.getClass(), CustomPacketPayloadWrapper::lookupSerializeAccessorForConcrete)
+                .orElse(null);
+    }
+
+    private static Optional<MethodAccessor> lookupSerializeAccessorForConcrete(Class<?> concretePayload) {
+        Method method = findWritablePayloadMethod(concretePayload);
+        return Optional.ofNullable(method == null ? null : Accessors.getMethodAccessor(method));
+    }
+
+    private static byte[] extractPayloadBodyWithoutDirectBuf(Object payload) {
+        MethodAccessor serialize = resolveSerializeForPayloadInstance(payload);
+        if (serialize != null) {
+            ByteBuf buffer = Unpooled.buffer();
+            Object serializer = MinecraftReflection.getPacketDataSerializer(buffer);
+            serialize.invoke(payload, serializer);
+            return StreamSerializer.getDefault().getBytesAndRelease(buffer);
+        }
+        StructureModifier<Object> mod = new StructureModifier<>(payload.getClass()).withTarget(payload);
+        try {
+            return (byte[]) mod.withType(byte[].class).read(0);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Cannot extract CustomPacketPayload body from " + payload.getClass().getName(), e);
+        }
+    }
+
     // ====== api methods ======
 
     /**
@@ -333,12 +444,7 @@ public final class CustomPacketPayloadWrapper {
                     buf.resetReaderIndex();
                     return data;
                 })
-                .orElseGet(() -> {
-                    ByteBuf buffer = Unpooled.buffer();
-                    Object serializer = MinecraftReflection.getPacketDataSerializer(buffer);
-                    SERIALIZE_PAYLOAD_METHOD.invoke(payload, serializer);
-                    return StreamSerializer.getDefault().getBytesAndRelease(buffer);
-                });
+                .orElseGet(() -> extractPayloadBodyWithoutDirectBuf(payload));
 
         return new CustomPacketPayloadWrapper(messagePayload, id);
     }
