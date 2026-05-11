@@ -287,8 +287,8 @@ public class StructureCache {
 
         if (registryByteBuf.isPresent()) {
             ConstructorAccessor accessor = Accessors.getConstructorAccessor(FuzzyReflection.fromClass(serializerBase, true).getConstructor(FuzzyMethodContract.newBuilder()
-                    .parameterDerivedOf(ByteBuf.class)
-                    .parameterDerivedOf(MinecraftReflection.getRegistryAccessClass())
+                    .parameterExactType(ByteBuf.class)
+                    .parameterExactType(MinecraftReflection.getRegistryAccessClass())
                     .build()));
             TRICKED_DATA_SERIALIZER_BASE = (buf) -> accessor.invoke(buf, MinecraftRegistryAccess.get());
         } else {
