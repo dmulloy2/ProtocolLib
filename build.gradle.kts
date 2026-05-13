@@ -14,7 +14,7 @@ plugins {
 group = "net.dmulloy2"
 description = "Provides access to the Minecraft protocol"
 
-val mcVersion = "26.1"
+val mcVersion = "26.1.2"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val commitHash = System.getenv("COMMIT_SHA") ?: ""
 val isCI = commitHash.isNotEmpty()
