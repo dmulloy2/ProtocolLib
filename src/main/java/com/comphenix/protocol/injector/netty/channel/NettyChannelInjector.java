@@ -350,8 +350,9 @@ public class NettyChannelInjector implements Injector {
 
         // check if the name of the player is already known to the injector
         if (this.playerName != null) {
-            this.player = Bukkit.getPlayerExact(this.playerName);
-            if (this.player != null) {
+            Player bukkitPlayer = Bukkit.getPlayerExact(this.playerName);
+            if (bukkitPlayer != null) {
+                this.player = bukkitPlayer;
                 this.injectionFactory.cacheInjector(this.player, this);
             }
         }
