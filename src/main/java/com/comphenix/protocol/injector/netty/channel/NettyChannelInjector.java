@@ -243,7 +243,7 @@ public class NettyChannelInjector implements Injector {
             this.uninject();
 
             // remove any outgoing references
-            this.channel.attr(INJECTOR).remove();
+            this.channel.attr(INJECTOR).set(null);
 
             // cleanup
             this.savedMarkers.clear();

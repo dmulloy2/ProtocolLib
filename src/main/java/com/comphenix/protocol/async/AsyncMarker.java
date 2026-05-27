@@ -23,14 +23,18 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -64,7 +68,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     /**
      * The packet stream responsible for transmitting the packet when it's done processing.
      */
-    private transient PacketStream packetStream;
+    private final Injector injector;
 
     /**
      * Current list of async packet listeners.
@@ -86,7 +90,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     private volatile boolean processed;
 
     // Whether or not the packet has been sent
-    private volatile boolean transmitted;
+    private final AtomicBoolean transmitted = new AtomicBoolean(false);
 
     // Whether or not the asynchronous processing itself should be cancelled
     private volatile boolean asyncCancelled;
@@ -109,11 +113,8 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
      * Create a container for asyncronous packets.
      * @param initialTime - the current time in milliseconds since 01.01.1970 00:00.
      */
-    AsyncMarker(PacketStream packetStream, long sendingIndex, long initialTime, long timeoutDelta) {
-        if (packetStream == null)
-            throw new IllegalArgumentException("packetStream cannot be NULL");
-
-        this.packetStream = packetStream;
+    AsyncMarker(Injector injector, long sendingIndex, long initialTime, long timeoutDelta) {
+        this.injector = Objects.requireNonNull(injector, "injector is nul");
 
         // Timeout
         this.initialTime = initialTime;
@@ -180,16 +181,18 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
      * Retrieve the packet stream responsible for transmitting this packet.
      * @return The packet stream.
      */
+    @Deprecated
     public PacketStream getPacketStream() {
-        return packetStream;
+        return ProtocolLibrary.getProtocolManager();
     }
 
     /**
      * Sets the output packet stream responsible for transmitting this packet.
      * @param packetStream - new output packet stream.
      */
+    @Deprecated
     public void setPacketStream(PacketStream packetStream) {
-        this.packetStream = packetStream;
+        // NOOP
     }
 
     /**
@@ -285,7 +288,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
      * @return TRUE if it has been sent before, FALSE otherwise.
      */
     public boolean isTransmitted() {
-        return transmitted;
+        return transmitted.get();
     }
 
     /**
@@ -383,13 +386,18 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
      * @throws IOException If the packet couldn't be sent.
      */
     void sendPacket(PacketEvent event) throws IOException {
-        if (event.isServerPacket()) {
-            packetStream.sendServerPacket(event.getPlayer(), event.getPacket(), NetworkMarker.getNetworkMarker(event), false);
-        } else {
-            packetStream.receiveClientPacket(event.getPlayer(), event.getPacket(), NetworkMarker.getNetworkMarker(event),
-                    false);
+        if (!this.transmitted.compareAndSet(false, true)) {
+            return;
         }
-        transmitted = true;
+
+        Object handle = event.getPacket().getHandle();
+
+        if (event.isServerPacket()) {
+            NetworkMarker marker = NetworkMarker.getNetworkMarker(event);
+            this.injector.sendClientboundPacket(handle, marker, false);
+        } else {
+            this.injector.readServerboundPacket(handle);
+        }
     }
 
     /**
