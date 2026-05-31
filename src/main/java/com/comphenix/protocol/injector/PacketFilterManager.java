@@ -43,6 +43,7 @@ import com.comphenix.protocol.injector.PluginVerifier.VerificationResult;
 import com.comphenix.protocol.injector.collection.InboundPacketListenerSet;
 import com.comphenix.protocol.injector.collection.OutboundPacketListenerSet;
 import com.comphenix.protocol.injector.collection.PacketListenerSet;
+import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.netty.manager.NetworkManagerInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
@@ -151,29 +152,20 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
 
     @Override
     public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) {
-        if (!this.closed) {
-            // if we skip the packet events later when actually writing into the pipeline we at least notify all
-            // monitor listeners before doing so - they will not be able to change the event tho
-            if (!filters) {
-                // ensure we are on the main thread if any listener requires that
-                if (this.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread()) {
-                    NetworkMarker copy = marker; // okay fine
-                    ProtocolLibrary.getScheduler().scheduleSyncDelayedTask(
-                            () -> this.sendServerPacket(receiver, packet, copy, false), 1L);
-                    return;
-                }
-
-                // construct the event and post to all monitor listeners
+        if (this.closed) {
+            return;
+        }
+        
+        // A monitor listener should never modify a packet/event so we can simply invoke monitor listeners
+        // independently of our injector pipeline 
+        if (!filters) {
+            this.runMonitorListeners(packet, () -> {
                 PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
                 this.outboundListeners.invoke(event, ListenerPriority.MONITOR);
-
-                // update the marker of the event without accidentally constructing it
-                marker = NetworkMarker.getNetworkMarker(event);
-            }
-
-            // process outbound
-            this.networkManagerInjector.getInjector(receiver).sendClientboundPacket(packet.getHandle(), marker, filters);
+            });
         }
+
+        this.networkManagerInjector.getInjector(receiver).sendClientboundPacket(packet.getHandle(), marker, filters);
     }
 
     @Override
@@ -200,34 +192,40 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
 
     @Override
     public void receiveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters) {
-        if (!this.closed) {
-            // make sure we are on the main thread if any listener of the packet needs it
-            if (this.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread()) {
-                ProtocolLibrary.getScheduler().runTask(
-                        () -> this.receiveClientPacket(sender, packet, marker, filters));
+        if (this.closed) {
+            return;
+        }
+
+        // make sure we are on the main thread if any listener of the packet needs it
+        if (filters && this.requiresMainThread(packet)) {
+            ProtocolLibrary.getScheduler().runTask(
+                    () -> this.receiveClientPacket(sender, packet, marker, filters));
+            return;
+        }
+
+        Object nmsPacket = packet.getHandle();
+
+        if (filters) {
+            PacketEvent event = PacketEvent.fromClient(this, packet, marker, sender, false);
+            this.invokeInboundPacketListeners(event);
+
+            if (event.isCancelled()) {
                 return;
             }
 
-            Object nmsPacket = packet.getHandle();
-            // check to which listeners we need to post the packet
-            if (filters) {
-                // post to all listeners
-            	PacketEvent event = PacketEvent.fromClient(this.networkManagerInjector, packet, null, sender);
-                this.invokeInboundPacketListeners(event);
-                if (event.isCancelled()) {
-                    return;
-                }
-
-                // prevent possible de-sync
-                nmsPacket = event.getPacket().getHandle();
-            } else {
+            // Prevent possible de-sync if the packet was replaced by a listener.
+            nmsPacket = event.getPacket().getHandle();
+        } else {
+            // A monitor listener should never modify a packet/event so we can simply invoke monitor listeners
+            // independently of our injector pipeline 
+            this.runMonitorListeners(packet, () -> {
                 PacketEvent event = PacketEvent.fromClient(this, packet, marker, sender, false);
                 this.inboundListeners.invoke(event, ListenerPriority.MONITOR);
-            }
-
-            // post to the player inject, reset our cancel state change
-            this.networkManagerInjector.getInjector(sender).readServerboundPacket(nmsPacket);
+            });
         }
+
+        // post to the player inject, reset our cancel state change
+        this.networkManagerInjector.getInjector(sender).readServerboundPacket(nmsPacket);
     }
 
     @Override
@@ -516,12 +514,25 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
             this.postPacketToListeners(this.outboundListeners, event, true);
         }
     }
+    
+    private boolean requiresMainThread(PacketContainer packet) {
+        return this.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread();
+    }
+
+    private void runMonitorListeners(PacketContainer packet, Runnable notifyMonitor) {
+        if (this.requiresMainThread(packet)) {
+            ProtocolLibrary.getScheduler().runTask(notifyMonitor);
+        } else {
+            notifyMonitor.run();
+        }
+    }
 
     private void postPacketToListeners(PacketListenerSet listeners, PacketEvent event, boolean outbound) {
         try {
             // append async marker if any async listener for the packet was registered
             if (this.asyncFilterManager.hasAsynchronousListeners(event)) {
-                event.setAsyncMarker(this.asyncFilterManager.createAsyncMarker());
+                Injector injector = this.networkManagerInjector.getInjector(event.getPlayer());
+                event.setAsyncMarker(this.asyncFilterManager.createAsyncMarker(injector));
             }
 
             // post to sync listeners

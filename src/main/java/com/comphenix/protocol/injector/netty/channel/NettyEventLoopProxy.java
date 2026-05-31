@@ -267,6 +267,7 @@ final class NettyEventLoopProxy extends AbstractEventLoop {
         return this.delegate.register(channelPromise);
     }
 
+    @Deprecated
     @Override
     public ChannelFuture register(Channel channel, ChannelPromise promise) {
         return this.delegate.register(channel, promise);
