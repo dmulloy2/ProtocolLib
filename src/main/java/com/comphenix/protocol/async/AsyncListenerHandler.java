@@ -538,7 +538,7 @@ public class AsyncListenerHandler {
      */
     private void listenerLoop(int workerID) {
         // Danger, danger!
-        if (Thread.currentThread().getId() == mainThread.getId())
+        if (Thread.currentThread() == mainThread)
             throw new IllegalStateException("Do not call this method from the main thread.");
         if (cancelled)
             throw new IllegalStateException("Listener has been cancelled. Create a new listener instead.");

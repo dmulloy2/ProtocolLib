@@ -27,6 +27,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.collection.InboundPacketListenerSet;
 import com.comphenix.protocol.injector.collection.OutboundPacketListenerSet;
+import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.scheduler.ProtocolScheduler;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -274,7 +275,7 @@ public class AsyncFilterManager implements AsynchronousManager {
      * @return TRUE if we are, FALSE otherwise.
      */
     private boolean onMainThread() {
-        return Thread.currentThread().getId() == mainThread.getId();
+        return Thread.currentThread() == mainThread;
     }
     
     @Override
@@ -347,8 +348,8 @@ public class AsyncFilterManager implements AsynchronousManager {
      * Construct a asynchronous marker with all the default values.
      * @return Asynchronous marker.
      */
-    public AsyncMarker createAsyncMarker() {
-        return createAsyncMarker(AsyncMarker.DEFAULT_TIMEOUT_DELTA);
+    public AsyncMarker createAsyncMarker(Injector injector) {
+        return createAsyncMarker(injector, AsyncMarker.DEFAULT_TIMEOUT_DELTA);
     }
     
     /**
@@ -356,13 +357,13 @@ public class AsyncFilterManager implements AsynchronousManager {
      * @param timeoutDelta - how long (in ms) until the packet expire.
      * @return An async marker.
      */
-    public AsyncMarker createAsyncMarker(long timeoutDelta) {
-        return createAsyncMarker(timeoutDelta, currentSendingIndex.incrementAndGet());
+    public AsyncMarker createAsyncMarker(Injector injector, long timeoutDelta) {
+        return createAsyncMarker(injector, timeoutDelta, currentSendingIndex.incrementAndGet());
     }
     
     // Helper method
-    private AsyncMarker createAsyncMarker(long timeoutDelta, long sendingIndex) {
-        return new AsyncMarker(manager, sendingIndex, System.currentTimeMillis(), timeoutDelta);
+    private AsyncMarker createAsyncMarker(Injector injector, long timeoutDelta, long sendingIndex) {
+        return new AsyncMarker(injector, sendingIndex, System.currentTimeMillis(), timeoutDelta);
     }
     
     @Override
