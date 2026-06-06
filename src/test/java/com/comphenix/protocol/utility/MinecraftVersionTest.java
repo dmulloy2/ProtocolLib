@@ -23,11 +23,19 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class MinecraftVersionTest {
+    private static boolean bukkitInitialized;
+
     @BeforeAll
     public static void beforeAll() {
-        BukkitInitialization.initializeAll();
+        try {
+            BukkitInitialization.initializeAll();
+            bukkitInitialized = true;
+        } catch (Throwable ignored) {
+            bukkitInitialized = false;
+        }
     }
 
     @Test
@@ -48,11 +56,13 @@ class MinecraftVersionTest {
 
     @Test
     void testCurrent() {
+        assumeTrue(bukkitInitialized, "Bukkit test harness unavailable offline");
         assertEquals(MinecraftVersion.LATEST, MinecraftVersion.getCurrentVersion());
     }
 
     @Test
     void testCurrentProtocol() {
+        assumeTrue(bukkitInitialized, "Bukkit test harness unavailable offline");
         // MIN_VALUE is returned when the current version is not supported
         assertNotEquals(MinecraftProtocolVersion.getCurrentVersion(), Integer.MIN_VALUE);
     }
@@ -65,5 +75,7 @@ class MinecraftVersionTest {
 
         assertEquals(new MinecraftVersion(1, 7, 10), MinecraftVersion.fromServerVersion("git-Cauldron-Reloaded-1.7.10-1.1388.1.0 (MC: 1.7.10)"));
         assertEquals(new MinecraftVersion(1, 8, 8), MinecraftVersion.fromServerVersion("git-Bukkit-18fbb24 (MC: 1.8.8)"));
+        assertEquals("26.1.2", MinecraftVersion.extractVersion("26.1.2-DEV-168698e (MC: 26.1.2)"));
+        assertEquals(MinecraftVersion.v26_1_2, MinecraftVersion.fromServerVersion("26.1.2-DEV-168698e (MC: 26.1.2)"));
     }
 }

@@ -27,7 +27,9 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -59,7 +61,12 @@ import org.bukkit.Statistic;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;
+import io.papermc.paper.persistence.PersistentDataContainerView;
+import org.bukkit.NamespacedKey;
+import org.bukkit.persistence.PersistentDataAdapterContext;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -142,12 +149,17 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         return bedSpawnLocation;
     }
 
-    // @Override
+    @Override
+    public Location getRespawnLocation(boolean bed) {
+        return bed ? getBedSpawnLocation() : null;
+    }
+
+    @Override
     public long getLastLogin() {
         return lastLogin;
     }
 
-    // @Override
+    @Override
     public long getLastSeen() {
         return lastSeen;
     }
@@ -247,6 +259,11 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     }
 
     @Override
+    public @NotNull PersistentDataContainerView getPersistentDataContainer() {
+        return EmptyPersistentDataContainerView.INSTANCE;
+    }
+
+    @Override
     public String getName() {
         return name;
     }
@@ -281,6 +298,11 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 
     public void setBanned(boolean banned) {
         this.banned = banned;
+    }
+
+    @Override
+    public boolean isConnected() {
+        return online;
     }
 
     @Override
@@ -428,5 +450,59 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
      * looks at OfflinePlayer's methods first while still being a Player.
      */
     private interface PlayerUnion extends OfflinePlayer, Player {
+    }
+
+    private static final class EmptyPersistentDataContainerView implements PersistentDataContainerView {
+        private static final EmptyPersistentDataContainerView INSTANCE = new EmptyPersistentDataContainerView();
+
+        @Override
+        public <P, C> boolean has(NamespacedKey key, PersistentDataType<P, C> type) {
+            return false;
+        }
+
+        @Override
+        public boolean has(NamespacedKey key) {
+            return false;
+        }
+
+        @Override
+        public <P, C> C get(NamespacedKey key, PersistentDataType<P, C> type) {
+            return null;
+        }
+
+        @Override
+        public <P, C> C getOrDefault(NamespacedKey key, PersistentDataType<P, C> type, C defaultValue) {
+            return defaultValue;
+        }
+
+        @Override
+        public Set<NamespacedKey> getKeys() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return true;
+        }
+
+        @Override
+        public void copyTo(PersistentDataContainer other, boolean replace) {
+            // no-op
+        }
+
+        @Override
+        public PersistentDataAdapterContext getAdapterContext() {
+            return null;
+        }
+
+        @Override
+        public byte[] serializeToBytes() {
+            return new byte[0];
+        }
+
+        @Override
+        public int getSize() {
+            return 0;
+        }
     }
 }

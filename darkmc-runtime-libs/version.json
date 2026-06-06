@@ -1,0 +1,18 @@
+{
+    "id": "26.1.2",
+    "name": "26.1.2",
+    "world_version": 4790,
+    "series_id": "main",
+    "protocol_version": 775,
+    "pack_version": {
+        "resource_major": 84,
+        "resource_minor": 0,
+        "data_major": 101,
+        "data_minor": 1
+    },
+    "build_time": "2026-04-09T10:11:03+00:00",
+    "java_component": "java-runtime-epsilon",
+    "java_version": 25,
+    "stable": true,
+    "use_editor": false
+}

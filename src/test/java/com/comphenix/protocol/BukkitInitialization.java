@@ -184,14 +184,8 @@ public class BukkitInitialization {
             });
             when(mockedServer.getRegistry(any())).thenAnswer(invocation -> {
                 Class<Keyed> registryType = invocation.getArgument(0);
-                Object registry = CraftRegistry.createRegistry(registryType, registryCustom);
-
-                if (registry == null) {
-                    System.err.println("WARN: Missing registry for " + registryType);
-                    return new DummyRegistry<>();
-                }
-
-                return registry;
+                System.err.println("WARN: Using dummy registry for " + registryType);
+                return new DummyRegistry<>();
             });
 
             when(mockedServer.getTag(any(), any(), any())).then(mock -> {
@@ -300,6 +294,36 @@ public class BukkitInitialization {
         public Stream<T> stream() {
             List<T> empty = Collections.emptyList();
             return empty.stream();
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public Stream<NamespacedKey> keyStream() {
+            return Stream.empty();
+        }
+
+        @Override
+        public NamespacedKey getKey(T value) {
+            return null;
+        }
+
+        @Override
+        public boolean hasTag(io.papermc.paper.registry.tag.TagKey<T> tag) {
+            return false;
+        }
+
+        @Override
+        public io.papermc.paper.registry.tag.Tag<T> getTag(io.papermc.paper.registry.tag.TagKey<T> tag) {
+            return null;
+        }
+
+        @Override
+        public java.util.Collection<io.papermc.paper.registry.tag.Tag<T>> getTags() {
+            return Collections.emptyList();
         }
     }
 }

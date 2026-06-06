@@ -11,18 +11,23 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
-group = "net.dmulloy2"
-description = "Provides access to the Minecraft protocol"
+group = "io.darkmc.protocollib"
+description = "Provides access to the Minecraft protocol (DarkMC build)"
 
-val mcVersion = "26.1"
+val mcVersion = "26.1.2"
+val darkmcVersion = "26.1.2.local-SNAPSHOT"
+val darkmcPaperServer = file(
+    "${System.getenv("DARKMC_PAPER_SERVER") ?: "${rootDir}/../DarkMC-Paper/paper-server/build/libs/paper-server-26.1.2.local-SNAPSHOT.jar"}"
+)
+val darkmcRuntimeLibs = fileTree("darkmc-runtime-libs") {
+    include("*.jar")
+}
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val commitHash = System.getenv("COMMIT_SHA") ?: ""
 val isCI = commitHash.isNotEmpty()
 
 repositories {
-    if (!isCI) {
-        mavenLocal()
-    }
+    mavenLocal()
 
     mavenCentral()
 
@@ -32,6 +37,10 @@ repositories {
 
     maven {
         url = uri("https://hub.spigotmc.org/nexus/content/groups/public/")
+    }
+
+    maven {
+        url = uri("https://repo.papermc.io/repository/maven-public/")
     }
 
     maven {
@@ -46,8 +55,12 @@ repositories {
 
 dependencies {
     implementation("net.bytebuddy:byte-buddy:1.18.2")
-    compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
-    compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")//:remapped-mojang")
+    compileOnly("io.darkmc.paper:paper-api:$darkmcVersion")
+    compileOnly("com.mojang:authlib:7.0.63")
+    compileOnly("com.mojang:datafixerupper:9.0.19")
+    compileOnly(files(darkmcPaperServer))
+    compileOnly("com.google.code.findbugs:jsr305:3.0.2")
+    compileOnly("commons-lang:commons-lang:2.6")
     compileOnly("io.netty:netty-all:4.2.8.Final")
     compileOnly("net.kyori:adventure-text-serializer-gson:4.25.0")
     compileOnly("com.googlecode.json-simple:json-simple:1.1.1")
@@ -56,9 +69,8 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
     testImplementation("org.mockito:mockito-core:5.21.0")
-    testImplementation("io.netty:netty-common:4.2.8.Final")
-    testImplementation("io.netty:netty-transport:4.2.8.Final")
-    testImplementation("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")//:remapped-mojang")
+    testImplementation(darkmcRuntimeLibs)
+    testImplementation(files(darkmcPaperServer))
     testImplementation("net.kyori:adventure-text-serializer-gson:4.25.0")
     testImplementation("net.kyori:adventure-text-serializer-plain:4.25.0")
 }
@@ -86,6 +98,13 @@ tasks {
         testLogging {
             exceptionFormat = TestExceptionFormat.FULL
         }
+    }
+
+    configurations.named("testRuntimeClasspath") {
+        resolutionStrategy.force(
+            "org.slf4j:slf4j-api:2.0.17",
+            "com.mojang:logging:1.6.11"
+        )
     }
 
     shadowJar {
@@ -126,7 +145,7 @@ tasks {
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    if (!isSnapshot) signAllPublications()
 
     coordinates("$group", project.name, "$version")
 
