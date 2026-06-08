@@ -1229,6 +1229,10 @@ public final class MinecraftReflection {
      * @return The EntityUseAction class
      */
     public static Class<?> getEnumEntityUseActionClass() {
+        if (MinecraftVersion.v26_1.atOrAbove()) {
+            return PacketType.Play.Client.USE_ENTITY.getPacketClass();
+        }
+
         return getOrInferMinecraftClass("ServerboundInteractPacket.Action", () -> {
             Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
             FuzzyReflection fuzzyReflection = FuzzyReflection.fromClass(packetClass, true);
@@ -1255,10 +1259,18 @@ public final class MinecraftReflection {
      * @return a method accessor to get the actual use action
      */
     public static MethodAccessor getEntityUseActionEnumMethodAccessor() {
-        FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
-        return Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
-                .returnTypeExact(EnumWrappers.getEntityUseActionClass())
-                .build()));
+        if (MinecraftVersion.v26_1.atOrAbove()) {
+            return null;
+        }
+
+        try {
+            FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
+            return Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                    .returnTypeExact(EnumWrappers.getEntityUseActionClass())
+                    .build()));
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     /**
