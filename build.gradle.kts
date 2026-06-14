@@ -1,11 +1,9 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import io.github.patrick.gradle.remapper.RemapTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
     `java-library`
     `maven-publish`
-    `signing`
+    signing
     id("com.gradleup.shadow") version "9.4.0"
     id("io.github.patrick.remapper") version "1.4.3"
     id("com.vanniktech.maven.publish") version "0.36.0"
@@ -18,6 +16,7 @@ val mcVersion = "26.1"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val commitHash = System.getenv("COMMIT_SHA") ?: ""
 val isCI = commitHash.isNotEmpty()
+val isJitPack = System.getenv("JITPACK")?.equals("true", ignoreCase = true) ?: false
 
 repositories {
     if (!isCI) {
@@ -126,7 +125,9 @@ tasks {
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    if (!isJitPack) {
+        signAllPublications()
+    }
 
     coordinates("$group", project.name, "$version")
 
