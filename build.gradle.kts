@@ -16,7 +16,6 @@ val mcVersion = "26.1"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val commitHash = System.getenv("COMMIT_SHA") ?: ""
 val isCI = commitHash.isNotEmpty()
-val isJitPack = System.getenv("JITPACK")?.equals("true", ignoreCase = true) ?: false
 
 repositories {
     if (!isCI) {
@@ -125,7 +124,7 @@ tasks {
 
 mavenPublishing {
     publishToMavenCentral()
-    if (!isJitPack) {
+    if (!isSnapshot) {
         signAllPublications()
     }
 
