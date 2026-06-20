@@ -1119,6 +1119,15 @@ public final class MinecraftReflection {
     }
 
     /**
+     * Retrieve the NMS TeamColor class, added in 26.2.
+     *
+     * @return The TeamColor class.
+     */
+    public static Optional<Class<?>> getTeamColorClass() {
+        return getOptionalNMS("world.scores.TeamColor");
+    }
+
+    /**
      * Retrieve the Gson class used by Minecraft.
      *
      * @return The Gson class.
@@ -1481,6 +1490,18 @@ public final class MinecraftReflection {
     }
 
     /**
+     * Attempt to load a class by its fully-qualified canonical name, without prepending the
+     * Minecraft package. Unlike {@link #getMinecraftClass(String)}, this can resolve names that
+     * already include their package (e.g. {@code net.minecraft.network.protocol.game.XPacket}).
+     *
+     * @param className - the fully-qualified class name.
+     * @return Optional that may contain the class.
+     */
+    public static Optional<Class<?>> getOptionalClass(String className) {
+        return getClassSource().loadClass(className);
+    }
+
+    /**
      * Retrieve the class object of a specific CraftBukkit class.
      *
      * @param className - the specific CraftBukkit class.
@@ -1684,7 +1705,7 @@ public final class MinecraftReflection {
     }
 
     public static Class<?> getEntityTypes() {
-        return getMinecraftClass("world.entity.EntityTypes", "world.entity.EntityType", "EntityTypes");
+        return getMinecraftClass("world.entity.EntityType", "world.entity.EntityTypes", "EntityTypes");
     }
 
     public static Class<?> getParticleParam() {

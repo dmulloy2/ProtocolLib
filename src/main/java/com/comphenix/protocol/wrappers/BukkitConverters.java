@@ -70,6 +70,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.WorldType;
@@ -873,6 +874,13 @@ public class BukkitConverters {
         return ignoreNull(new EquivalentConverter<EntityType>() {
             @Override
             public Object getGeneric(EntityType specific) {
+                if (MinecraftVersion.v26_2.atOrAbove()) {
+                    // EntityType.byString was removed in 26.2, resolve through the registry instead
+                    WrappedRegistry registry = WrappedRegistry.getRegistry(MinecraftReflection.getEntityTypes());
+                    NamespacedKey key = specific.getKey();
+                    return registry.get(new MinecraftKey(key.getNamespace(), key.getKey()));
+                }
+
                 if (entityTypeFromName == null) {
                     Class<?> entityTypesClass = MinecraftReflection.getEntityTypes();
                     entityTypeFromName = Accessors.getMethodAccessor(

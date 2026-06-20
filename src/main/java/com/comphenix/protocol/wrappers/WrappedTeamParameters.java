@@ -3,6 +3,8 @@ package com.comphenix.protocol.wrappers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -90,12 +92,26 @@ public class WrappedTeamParameters extends AbstractWrapper {
 
     @NotNull
     public EnumWrappers.ChatFormatting getColor() {
+        if (MinecraftVersion.v26_2.atOrAbove()) {
+            Optional<?> optional = modifier.<Optional<?>>withType(Optional.class).read(0);
+            Object teamColor = optional != null ? optional.orElse(null) : null;
+            if (teamColor == null) {
+                return EnumWrappers.ChatFormatting.RESET;
+            }
+
+            return EnumWrappers.ChatFormatting.valueOf(((Enum<?>) teamColor).name());
+        }
+
         return modifier
                 .withType(EnumWrappers.getChatFormattingClass(), EnumWrappers.getChatFormattingConverter())
                 .read(0);
     }
 
     public int getOptions() {
+        if (MinecraftVersion.v26_2.atOrAbove()) {
+            return (byte) modifier.withType(byte.class).read(0);
+        }
+
         return (int) modifier.withType(int.class).read(0);
     }
 
@@ -210,9 +226,27 @@ public class WrappedTeamParameters extends AbstractWrapper {
                 wrapped.modifier.withType(String.class).writeSafely(1, collisionRule.toString());
             }
 
-            wrapped.modifier.withType(EnumWrappers.getChatFormattingClass()).write(0, EnumWrappers.getChatFormattingConverter().getGeneric(color));
-            wrapped.modifier.withType(int.class).write(0, options);
+            if (MinecraftVersion.v26_2.atOrAbove()) {
+                wrapped.modifier.withType(Optional.class).write(0, Optional.ofNullable(toNmsTeamColor(color)));
+                wrapped.modifier.withType(byte.class).write(0, (byte) options);
+            } else {
+                wrapped.modifier.withType(EnumWrappers.getChatFormattingClass()).write(0, EnumWrappers.getChatFormattingConverter().getGeneric(color));
+                wrapped.modifier.withType(int.class).write(0, options);
+            }
             return wrapped;
+        }
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        private static Object toNmsTeamColor(EnumWrappers.ChatFormatting color) {
+            Class<?> teamColorClass = MinecraftReflection.getTeamColorClass()
+                    .orElseThrow(() -> new IllegalStateException("TeamColor class doesn't exist on this server version"));
+
+            try {
+                return Enum.valueOf((Class) teamColorClass, color.name());
+            } catch (IllegalArgumentException ex) {
+                // formatting-only values (e.g. RESET) don't map to a team color
+                return null;
+            }
         }
     }
 }

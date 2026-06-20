@@ -412,8 +412,8 @@ public class PacketRegistry {
     private static Class<?> searchForPacket(List<String> classNames) {
         for (String name : classNames) {
             try {
-                Class<?> clazz = MinecraftReflection.getMinecraftClass(name);
-                if (MinecraftReflection.getPacketClass().isAssignableFrom(clazz)
+                Class<?> clazz = resolvePacketClassName(name);
+                if (clazz != null && MinecraftReflection.getPacketClass().isAssignableFrom(clazz)
                         && !Modifier.isAbstract(clazz.getModifiers())) {
                     return clazz;
                 }
@@ -422,6 +422,22 @@ public class PacketRegistry {
         }
 
         return null;
+    }
+
+    /**
+     * Resolve a single packet class name. Fully-qualified names (those already containing their
+     * package, e.g. {@code net.minecraft.network.protocol.game.XPacket}) are loaded directly, since
+     * {@link MinecraftReflection#getMinecraftClass(String)} would otherwise prepend the Minecraft
+     * package and fail to find them. Relative names continue to be resolved against the Minecraft
+     * package.
+     */
+    private static Class<?> resolvePacketClassName(String name) {
+        Optional<Class<?>> direct = MinecraftReflection.getOptionalClass(name);
+        if (direct.isPresent()) {
+            return direct.get();
+        }
+
+        return MinecraftReflection.getMinecraftClass(name);
     }
 
     /**
