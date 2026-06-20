@@ -1436,8 +1436,46 @@ public class BukkitConverters {
         });
     }
 
-    private static MethodAccessor damageTypeToNms = null;
-    private static MethodAccessor damageTypeFromNms = null;
+    // Lazily-resolved CraftDamageType reflection. volatile + DCL keeps the publish safe
+    // and avoids re-running fuzzy lookups in concurrent injection paths.
+    private static volatile MethodAccessor damageTypeToNms = null;
+    private static volatile MethodAccessor damageTypeFromNms = null;
+
+    private static FuzzyReflection craftDamageTypeFuzzy() {
+        return FuzzyReflection.fromClass(getCraftBukkitClass("damage.CraftDamageType"), false);
+    }
+
+    private static MethodAccessor resolveDamageTypeToNms() {
+        MethodAccessor accessor = damageTypeToNms;
+        if (accessor != null) return accessor;
+        synchronized (BukkitConverters.class) {
+            accessor = damageTypeToNms;
+            if (accessor != null) return accessor;
+            accessor = Accessors.getMethodAccessor(craftDamageTypeFuzzy().getMethod(FuzzyMethodContract.newBuilder()
+                    .parameterExactArray(org.bukkit.damage.DamageType.class)
+                    .returnTypeExact(MinecraftReflection.getDamageTypeClass())
+                    .requireModifier(Modifier.STATIC)
+                    .build()));
+            damageTypeToNms = accessor;
+            return accessor;
+        }
+    }
+
+    private static MethodAccessor resolveDamageTypeFromNms() {
+        MethodAccessor accessor = damageTypeFromNms;
+        if (accessor != null) return accessor;
+        synchronized (BukkitConverters.class) {
+            accessor = damageTypeFromNms;
+            if (accessor != null) return accessor;
+            accessor = Accessors.getMethodAccessor(craftDamageTypeFuzzy().getMethod(FuzzyMethodContract.newBuilder()
+                    .parameterExactArray(MinecraftReflection.getDamageTypeClass())
+                    .returnTypeExact(org.bukkit.damage.DamageType.class)
+                    .requireModifier(Modifier.STATIC)
+                    .build()));
+            damageTypeFromNms = accessor;
+            return accessor;
+        }
+    }
 
     public static EquivalentConverter<org.bukkit.damage.DamageType> getDamageTypeConverter() {
         return ignoreNull(new EquivalentConverter<org.bukkit.damage.DamageType>() {
@@ -1449,30 +1487,12 @@ public class BukkitConverters {
 
             @Override
             public Object getGeneric(org.bukkit.damage.DamageType specific) {
-                if (damageTypeToNms == null) {
-                    Class<?> craftDamageType = getCraftBukkitClass("damage.CraftDamageType");
-                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftDamageType, false);
-                    damageTypeToNms = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
-                            .parameterExactArray(org.bukkit.damage.DamageType.class)
-                            .returnTypeExact(MinecraftReflection.getDamageTypeClass())
-                            .requireModifier(Modifier.STATIC)
-                            .build()));
-                }
-                return damageTypeToNms.invoke(null, specific);
+                return resolveDamageTypeToNms().invoke(null, specific);
             }
 
             @Override
             public org.bukkit.damage.DamageType getSpecific(Object generic) {
-                if (damageTypeFromNms == null) {
-                    Class<?> craftDamageType = getCraftBukkitClass("damage.CraftDamageType");
-                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftDamageType, false);
-                    damageTypeFromNms = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
-                            .parameterExactArray(MinecraftReflection.getDamageTypeClass())
-                            .returnTypeExact(org.bukkit.damage.DamageType.class)
-                            .requireModifier(Modifier.STATIC)
-                            .build()));
-                }
-                return (org.bukkit.damage.DamageType) damageTypeFromNms.invoke(null, generic);
+                return (org.bukkit.damage.DamageType) resolveDamageTypeFromNms().invoke(null, generic);
             }
         });
     }

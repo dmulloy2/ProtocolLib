@@ -2,8 +2,13 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.WrappedLastSeenMessagesUpdate;
 import com.comphenix.protocol.wrappers.WrappedMessageSignature;
 import java.time.Instant;
+import java.util.BitSet;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -14,24 +19,35 @@ import net.dmulloy2.protocol.AbstractPacket;
  *   <li>{@code String message} – the chat message text</li>
  *   <li>{@code Instant timeStamp} – timestamp at which the message was sent</li>
  *   <li>{@code long salt} – random salt used for message signing</li>
- *   <li>{@code MessageSignature signature} – optional message signature (not exposed)</li>
- *   <li>{@code LastSeenMessages lastSeenMessages} – acknowledgement state (not exposed)</li>
+ *   <li>{@code MessageSignature signature} – optional message signature</li>
+ *   <li>{@code LastSeenMessages.Update lastSeenMessages} – acknowledgement state</li>
  * </ul>
  */
 public class WrappedServerboundChatPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Client.CHAT;
 
+    private static final Class<?> LAST_SEEN_MESSAGES_UPDATE_CLASS =
+            MinecraftReflection.getMinecraftClass("network.chat.LastSeenMessages$Update");
+
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(String.class)
+            .withParam(Instant.class)
+            .withParam(long.class)
+            .withParam(MinecraftReflection.getMessageSignatureClass(), BukkitConverters.getWrappedMessageSignatureConverter())
+            .withParam(LAST_SEEN_MESSAGES_UPDATE_CLASS, WrappedLastSeenMessagesUpdate.CONVERTER);
+
     public WrappedServerboundChatPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
     public WrappedServerboundChatPacket(String message, Instant timeStamp, long salt, WrappedMessageSignature signature) {
-        this();
-        setMessage(message);
-        setTimeStamp(timeStamp);
-        setSalt(salt);
-        setSignature(signature);
+        this(message, timeStamp, salt, signature, new WrappedLastSeenMessagesUpdate(0, new BitSet(), (byte) 0));
+    }
+
+    public WrappedServerboundChatPacket(String message, Instant timeStamp, long salt,
+            WrappedMessageSignature signature, WrappedLastSeenMessagesUpdate lastSeenMessages) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(message, timeStamp, salt, signature, lastSeenMessages)));
     }
 
     public WrappedServerboundChatPacket(PacketContainer packet) {
@@ -94,7 +110,15 @@ public class WrappedServerboundChatPacket extends AbstractPacket {
         handle.getMessageSignatures().write(0, signature);
     }
 
-    // TODO: missing field 'lastSeenMessages' (NMS type: LastSeenMessages.Update)
-    //   Holds a sequence int and a BitSet of acknowledged message IDs.
-    //   No dedicated ProtocolLib accessor exists; use handle.getModifier().read(N) for the raw Update object.
+    public WrappedLastSeenMessagesUpdate getLastSeenMessages() {
+        return handle.getModifier()
+                .withType(LAST_SEEN_MESSAGES_UPDATE_CLASS, WrappedLastSeenMessagesUpdate.CONVERTER)
+                .read(0);
+    }
+
+    public void setLastSeenMessages(WrappedLastSeenMessagesUpdate lastSeenMessages) {
+        handle.getModifier()
+                .withType(LAST_SEEN_MESSAGES_UPDATE_CLASS, WrappedLastSeenMessagesUpdate.CONVERTER)
+                .write(0, lastSeenMessages);
+    }
 }

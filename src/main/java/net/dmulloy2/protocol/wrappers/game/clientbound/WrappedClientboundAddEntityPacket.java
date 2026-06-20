@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import java.util.UUID;
@@ -14,13 +15,15 @@ import org.bukkit.util.Vector;
 /**
  * Wrapper for {@code ClientboundAddEntityPacket} (Play phase, clientbound).
  *
- * <p>NMS canonical constructor (most parameters, used by {@link EquivalentConstructor}):
- * <pre>ClientboundAddEntityPacket(int id, UUID uuid, double x, double y, double z,
- *     float xRot, float yRot, EntityType&lt;?&gt; type, int data, Vec3 movement, double yHeadRot)</pre>
- * Note: {@code xRot}, {@code yRot}, and {@code yHeadRot} are passed as floating-point degrees
- * and packed to bytes internally by NMS ({@code Mth.packDegrees}).
- * Use {@link #getPitchByte()}, {@link #getYawByte()}, and {@link #getHeadYawByte()} to read
- * the stored packed values, or {@link #byteToAngle(byte)} to convert back to degrees.
+ * <p>The all-args constructor invokes the canonical NMS constructor through
+ * {@link EquivalentConstructor}, so values are populated by NMS exactly as if
+ * the server had constructed the packet itself.
+ *
+ * <p>The wrapper accepts pitch/yaw/head-yaw as <em>packed bytes</em> (the on-the-wire
+ * representation, 256 units = 360°) for parity with the field-level getters/setters;
+ * NMS internally stores them the same way and we round-trip through
+ * {@link #byteToAngle(byte)} on the way in. Use {@link #byteToAngle(byte)} /
+ * {@link #angleToByte(float)} when you need degrees.
  *
  * <p>Packet fields (NMS declaration order):
  * <ul>
@@ -39,23 +42,35 @@ public class WrappedClientboundAddEntityPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.SPAWN_ENTITY;
 
+    // NMS canonical ctor on Spigot 26.1:
+    //   ClientboundAddEntityPacket(int id, UUID uuid, double x, double y, double z,
+    //       float xRot, float yRot, EntityType<?> type, int data, Vec3 movement, double yHeadRot)
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(UUID.class)
+            .withParam(double.class)
+            .withParam(double.class)
+            .withParam(double.class)
+            .withParam(float.class)
+            .withParam(float.class)
+            .withParam(MinecraftReflection.getMinecraftClass("world.entity.EntityType"),
+                    BukkitConverters.getEntityTypeConverter())
+            .withParam(int.class)
+            .withParam(MinecraftReflection.getVec3DClass(), BukkitConverters.getVectorConverter())
+            .withParam(double.class);
+
     public WrappedClientboundAddEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
     }
 
-    public WrappedClientboundAddEntityPacket(int entityId, UUID entityUUID, EntityType entityType, double x, double y, double z, Vector velocity, byte pitchByte, byte yawByte, byte headYawByte, int data) {
-        this();
-        setEntityId(entityId);
-        setEntityUUID(entityUUID);
-        setEntityType(entityType);
-        setX(x);
-        setY(y);
-        setZ(z);
-        setVelocity(velocity);
-        setPitchByte(pitchByte);
-        setYawByte(yawByte);
-        setHeadYawByte(headYawByte);
-        setData(data);
+    public WrappedClientboundAddEntityPacket(int entityId, UUID entityUUID, EntityType entityType,
+            double x, double y, double z, Vector velocity,
+            byte pitchByte, byte yawByte, byte headYawByte, int data) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(
+                entityId, entityUUID, x, y, z,
+                byteToAngle(pitchByte), byteToAngle(yawByte),
+                entityType, data, velocity,
+                (double) byteToAngle(headYawByte))));
     }
 
     public WrappedClientboundAddEntityPacket(PacketContainer packet) {
@@ -77,6 +92,15 @@ public class WrappedClientboundAddEntityPacket extends AbstractPacket {
     /** Resolves the live entity in the given world via entity ID. */
     public Entity getEntity(World world) {
         return handle.getEntityModifier(world).read(0);
+    }
+
+    /**
+     * Convenience setter that copies both the entity ID and UUID from a Bukkit entity.
+     * Does not set the entity type, position, velocity, or rotations — set those separately.
+     */
+    public void setEntity(Entity entity) {
+        setEntityId(entity.getEntityId());
+        setEntityUUID(entity.getUniqueId());
     }
 
     // -------------------------------------------------------------------------
@@ -146,18 +170,19 @@ public class WrappedClientboundAddEntityPacket extends AbstractPacket {
 
     /**
      * Converts a packed byte angle to degrees, matching NMS {@code Mth.unpackDegrees}.
-     * Formula: {@code (packed & 0xFF) * 360f / 256f}
+     * Treats {@code packed} as a signed byte: {@code (byte * 360) / 256.0f}.
      */
     public static float byteToAngle(byte packed) {
-        return (packed & 0xFF) * 360.0f / 256.0f;
+        return (packed * 360) / 256.0f;
     }
 
     /**
      * Converts degrees to a packed byte angle, matching NMS {@code Mth.packDegrees}.
-     * Formula: {@code (byte)(int)(degrees * 256f / 360f)}
+     * Uses {@code Math.floor} (not int truncation) so negative angles round toward
+     * negative infinity, matching NMS exactly.
      */
     public static byte angleToByte(float degrees) {
-        return (byte) (int) (degrees * 256.0f / 360.0f);
+        return (byte) (int) Math.floor(degrees * 256.0f / 360.0f);
     }
 
     // -------------------------------------------------------------------------

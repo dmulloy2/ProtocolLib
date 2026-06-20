@@ -3,8 +3,12 @@ package net.dmulloy2.protocol.wrappers.configuration.serverbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.WrappedKnownPack;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundSelectKnownPacksPacketTest {
@@ -16,8 +20,14 @@ class WrappedServerboundSelectKnownPacksPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        // Packet has no fields; no all-args constructor.
-        assertEquals(PacketType.Configuration.Client.SELECT_KNOWN_PACKS, new WrappedServerboundSelectKnownPacksPacket().getHandle().getType());
+        List<WrappedKnownPack> knownPacks = List.of(
+                new WrappedKnownPack("minecraft", "core", "1.21"),
+                new WrappedKnownPack("example", "extras", "2"));
+
+        WrappedServerboundSelectKnownPacksPacket wrapper = new WrappedServerboundSelectKnownPacksPacket(knownPacks);
+
+        assertEquals(PacketType.Configuration.Client.SELECT_KNOWN_PACKS, wrapper.getHandle().getType());
+        assertEquals(knownPacks, wrapper.getKnownPacks());
     }
 
     @Test
@@ -28,9 +38,14 @@ class WrappedServerboundSelectKnownPacksPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Configuration.Client.SELECT_KNOWN_PACKS);
+        PacketContainer container = new WrappedServerboundSelectKnownPacksPacket(List.of()).getHandle();
         WrappedServerboundSelectKnownPacksPacket wrapper = new WrappedServerboundSelectKnownPacksPacket(container);
+        List<WrappedKnownPack> knownPacks = List.of(new WrappedKnownPack("minecraft", "vanilla", "1.21.6"));
+
+        wrapper.setKnownPacks(knownPacks);
+
         assertEquals(PacketType.Configuration.Client.SELECT_KNOWN_PACKS, wrapper.getHandle().getType());
+        assertEquals(knownPacks, wrapper.getKnownPacks());
     }
 
     @Test

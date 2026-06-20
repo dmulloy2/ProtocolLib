@@ -3,6 +3,7 @@ package net.dmulloy2.protocol;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
+import java.util.Objects;
 import org.bukkit.entity.Player;
 
 /**
@@ -16,6 +17,9 @@ public abstract class AbstractPacket {
     protected AbstractPacket(PacketContainer handle, PacketType type) {
         if (handle == null) {
             throw new IllegalArgumentException("Packet handle cannot be null");
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("Packet type cannot be null");
         }
         if (!handle.getType().equals(type)) {
             throw new IllegalArgumentException(
@@ -43,5 +47,23 @@ public abstract class AbstractPacket {
      */
     public void receivePacket(Player player) {
         ProtocolLibrary.getProtocolManager().receiveClientPacket(player, getHandle());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AbstractPacket other = (AbstractPacket) o;
+        return Objects.equals(handle, other.handle);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(handle);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{handle=" + handle + "}";
     }
 }

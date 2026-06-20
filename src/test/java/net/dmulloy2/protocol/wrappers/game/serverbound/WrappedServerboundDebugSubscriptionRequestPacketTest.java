@@ -5,6 +5,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedServerboundDebugSubscriptionRequestPacketTest {
@@ -16,8 +19,11 @@ class WrappedServerboundDebugSubscriptionRequestPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        // Packet has no fields; no all-args constructor.
-        assertEquals(PacketType.Play.Client.DEBUG_SUBSCRIPTION_REQUEST, new WrappedServerboundDebugSubscriptionRequestPacket().getHandle().getType());
+        WrappedServerboundDebugSubscriptionRequestPacket wrapper =
+                new WrappedServerboundDebugSubscriptionRequestPacket(Set.of());
+
+        assertEquals(PacketType.Play.Client.DEBUG_SUBSCRIPTION_REQUEST, wrapper.getHandle().getType());
+        assertEquals(Set.of(), wrapper.getSubscriptions());
     }
 
     @Test
@@ -28,9 +34,12 @@ class WrappedServerboundDebugSubscriptionRequestPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Client.DEBUG_SUBSCRIPTION_REQUEST);
+        PacketContainer container = new WrappedServerboundDebugSubscriptionRequestPacket(Set.of()).getHandle();
         WrappedServerboundDebugSubscriptionRequestPacket wrapper = new WrappedServerboundDebugSubscriptionRequestPacket(container);
+        wrapper.setSubscriptions(Set.of());
+
         assertEquals(PacketType.Play.Client.DEBUG_SUBSCRIPTION_REQUEST, wrapper.getHandle().getType());
+        assertEquals(Set.of(), wrapper.getSubscriptions());
     }
 
     @Test

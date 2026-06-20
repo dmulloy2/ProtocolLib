@@ -101,6 +101,8 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.BrandPayload;
 import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket.AttributeSnapshot;
@@ -421,6 +423,17 @@ public class PacketContainerTest {
 
         PacketContainer cloned = SerializableCloner.clone(payload);
         Assertions.assertNotSame(payload, cloned);
+    }
+
+    @Test
+    public void testRegisteredCustomPayloadDoesNotReturnEmptyPayload() {
+        BrandPayload payload = new BrandPayload("Hello World!");
+        ClientboundCustomPayloadPacket handle = new ClientboundCustomPayloadPacket(payload);
+        PacketContainer container = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD, handle);
+
+        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
+                () -> container.getCustomPacketPayloads().read(0));
+        assertTrue(exception.getMessage().contains(BrandPayload.class.getName()));
     }
 
 	/*

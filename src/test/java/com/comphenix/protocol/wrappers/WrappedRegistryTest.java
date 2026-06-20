@@ -31,6 +31,16 @@ public class WrappedRegistryTest {
         validate(MinecraftReflection.getMobEffectListClass(), PotionEffectType.REGENERATION.getKey());
     }
 
+    @Test
+    void testNamedDynamicRegistryIsCached() {
+        WrappedRegistry first = WrappedRegistry.getGameRuleRegistry();
+        WrappedRegistry second = WrappedRegistry.getGameRuleRegistry();
+
+        assertNotNull(first);
+        assertSame(first, second);
+        assertNotNull(first.getRegistryKey());
+    }
+
     void validate(Class<?> registryType, NamespacedKey key) {
         WrappedRegistry registry = WrappedRegistry.getRegistry(registryType);
         assertNotNull(registry);
@@ -48,4 +58,3 @@ public class WrappedRegistryTest {
         assertEquals(soundId, registry.getId(entryKey));
     }
 }
-

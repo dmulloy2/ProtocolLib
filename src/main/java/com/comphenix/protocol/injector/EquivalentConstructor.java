@@ -16,7 +16,7 @@ public class EquivalentConstructor {
     private final PacketType packetType;
     private final List<Tuple<Class<?>, Object>> converters = new ArrayList<>();
 
-    private ConstructorAccessor constructorAccessor;
+    private volatile ConstructorAccessor constructorAccessor;
 
     public EquivalentConstructor(PacketType packetType) {
         this.packetType = packetType;
@@ -39,18 +39,12 @@ public class EquivalentConstructor {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public Object create(Object... args) {
-        if (constructorAccessor == null) {
-            Class<?>[] params = new Class<?>[converters.size()];
-            for (int i = 0; i < converters.size(); i++) {
-                params[i] = converters.get(i).first();
-            }
-
-            Constructor<?> ctor = FuzzyReflection.fromClass(packetType.getPacketClass(), true)
-                        .getConstructor(FuzzyMethodContract.newBuilder().parameterExactArray(params).build());
-            constructorAccessor = Accessors.getConstructorAccessor(ctor);
+        if (args.length != converters.size()) {
+            throw new IllegalArgumentException("Expected " + converters.size() + " args, got " + args.length);
         }
 
-        Object[] convertedArgs = new Object[args.length];
+        ConstructorAccessor accessor = getConstructorAccessor();
+        Object[] convertedArgs = new Object[converters.size()];
 
         int i = 0;
         for (Tuple<Class<?>, Object> entry : converters) {
@@ -65,6 +59,32 @@ public class EquivalentConstructor {
             i++;
         }
 
-        return constructorAccessor.invoke(convertedArgs);
+        return accessor.invoke(convertedArgs);
+    }
+
+    private ConstructorAccessor getConstructorAccessor() {
+        ConstructorAccessor accessor = constructorAccessor;
+        if (accessor == null) {
+            synchronized (this) {
+                accessor = constructorAccessor;
+                if (accessor != null) {
+                    return accessor;
+                }
+
+                constructorAccessor = accessor = createConstructorAccessor();
+            }
+        }
+        return accessor;
+    }
+
+    private ConstructorAccessor createConstructorAccessor() {
+        Class<?>[] params = new Class<?>[converters.size()];
+        for (int i = 0; i < converters.size(); i++) {
+            params[i] = converters.get(i).first();
+        }
+
+        Constructor<?> ctor = FuzzyReflection.fromClass(packetType.getPacketClass(), true)
+                    .getConstructor(FuzzyMethodContract.newBuilder().parameterExactArray(params).build());
+        return Accessors.getConstructorAccessor(ctor);
     }
 }

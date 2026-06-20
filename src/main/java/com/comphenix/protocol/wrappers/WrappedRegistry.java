@@ -1,5 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -17,7 +18,9 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -30,8 +33,12 @@ public class WrappedRegistry {
     // map of NMS class to ResourceKey for dynamic (datapack) registries
     private static final Map<Class<?>, Object> DYNAMIC_REGISTRY_KEYS;
 
+    // ResourceKeys to try when generic metadata is unavailable or incomplete
+    private static final Set<Object> DYNAMIC_REGISTRY_FALLBACK_KEYS;
+
     // cache of dynamically resolved registries
     private static final Map<Class<?>, WrappedRegistry> DYNAMIC_REGISTRY_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Object, WrappedRegistry> DYNAMIC_REGISTRY_KEY_CACHE = new ConcurrentHashMap<>();
 
     // RegistryAccess.lookup(ResourceKey) -> Optional<Registry>
     private static final MethodAccessor REGISTRY_ACCESS_LOOKUP;
@@ -91,7 +98,8 @@ public class WrappedRegistry {
                             }
                         }
                     }
-                } catch (ReflectiveOperationException ignored) {
+                } catch (ReflectiveOperationException ex) {
+                    ProtocolLogger.debug("Failed to inspect built-in registry field " + field, ex);
                 }
             }
         }
@@ -101,44 +109,38 @@ public class WrappedRegistry {
         // Build dynamic registry key map from Registries class (ResourceKey<Registry<T>> fields)
         // These cover datapack registries like DamageType that are not in BuiltInRegistries
         Map<Class<?>, Object> dynKeyMap = new HashMap<>();
+        // LinkedHashSet so the generics-stripped fallback iterates in declaration order
+        // on Registries, giving deterministic resolution across JVM runs.
+        Set<Object> dynKeyFallbacks = new LinkedHashSet<>();
         try {
             Class<?> registriesClass = MinecraftReflection.getNullableNMS("core.registries.Registries");
+            Class<?> resourceKeyClass = MinecraftReflection.getResourceKey();
             if (registriesClass != null) {
                 for (Field field : registriesClass.getFields()) {
                     if (!Modifier.isStatic(field.getModifiers())) continue;
-                    // looking for ResourceKey<Registry<T>> fields
-                    Type genType = field.getGenericType();
-                    if (!(genType instanceof ParameterizedType)) continue;
-                    ParameterizedType outer = (ParameterizedType) genType;
-                    // outer raw type = ResourceKey
-                    if (outer.getActualTypeArguments().length != 1) continue;
-                    Type innerType = outer.getActualTypeArguments()[0];
-                    if (!(innerType instanceof ParameterizedType)) continue;
-                    ParameterizedType registryType = (ParameterizedType) innerType;
-                    // registryType raw type should be Registry/IRegistry
-                    if (!(registryType.getRawType() instanceof Class<?>)) continue;
-                    Class<?> rawRegistry = (Class<?>) registryType.getRawType();
-                    if (iRegistry != null && !iRegistry.isAssignableFrom(rawRegistry)) continue;
-                    if (registryType.getActualTypeArguments().length != 1) continue;
-                    Type entryType = registryType.getActualTypeArguments()[0];
-                    Class<?> entryClass = null;
-                    if (entryType instanceof Class<?>) {
-                        entryClass = (Class<?>) entryType;
-                    } else if (entryType instanceof ParameterizedType) {
-                        Type raw = ((ParameterizedType) entryType).getRawType();
-                        if (raw instanceof Class<?>) entryClass = (Class<?>) raw;
+                    if (!resourceKeyClass.isAssignableFrom(field.getType())) continue;
+
+                    Object registryKey;
+                    try {
+                        registryKey = field.get(null);
+                    } catch (ReflectiveOperationException ex) {
+                        ProtocolLogger.debug("Failed to read dynamic registry key field " + field, ex);
+                        continue;
                     }
+                    dynKeyFallbacks.add(registryKey);
+
+                    // looking for ResourceKey<Registry<T>> fields
+                    Class<?> entryClass = getRegistryEntryClass(field, iRegistry);
                     if (entryClass != null && !regMap.containsKey(entryClass)) {
-                        try {
-                            dynKeyMap.put(entryClass, field.get(null));
-                        } catch (ReflectiveOperationException ignored) {
-                        }
+                        dynKeyMap.put(entryClass, registryKey);
                     }
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            ProtocolLogger.debug("Failed to inspect dynamic registry keys", ex);
         }
         DYNAMIC_REGISTRY_KEYS = ImmutableMap.copyOf(dynKeyMap);
+        DYNAMIC_REGISTRY_FALLBACK_KEYS = Collections.unmodifiableSet(dynKeyFallbacks);
 
         // Set up RegistryAccess.lookup(ResourceKey) -> Optional<Registry>
         MethodAccessor registryAccessLookup = null;
@@ -148,13 +150,14 @@ public class WrappedRegistry {
                 registryAccessLookup = Accessors.getMethodAccessor(
                         FuzzyReflection.fromClass(registryAccessClass, false).getMethod(
                                 FuzzyMethodContract.newBuilder()
-                                        .parameterCount(1)
+                                        .parameterExactArray(MinecraftReflection.getResourceKey())
                                         .returnTypeExact(Optional.class)
                                         .build()
                         )
                 );
             }
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            ProtocolLogger.debug("Failed to find RegistryAccess.lookup(ResourceKey)", ex);
         }
         REGISTRY_ACCESS_LOOKUP = registryAccessLookup;
 
@@ -190,11 +193,38 @@ public class WrappedRegistry {
                         .returnTypeExact(MinecraftReflection.getHolderClass())
                         .requireModifier(Modifier.PUBLIC)
                         .build()));
-            } catch (IllegalArgumentException ignored) {
+            } catch (IllegalArgumentException ex) {
+                ProtocolLogger.debug("Failed to find Registry.getHolder method", ex);
             }
         }
 
         GET_HOLDER = getHolder;
+    }
+
+    @Nullable
+    private static Class<?> getRegistryEntryClass(Field field, Class<?> iRegistry) {
+        Type genType = field.getGenericType();
+        if (!(genType instanceof ParameterizedType)) return null;
+        ParameterizedType outer = (ParameterizedType) genType;
+        if (outer.getActualTypeArguments().length != 1) return null;
+
+        Type innerType = outer.getActualTypeArguments()[0];
+        if (!(innerType instanceof ParameterizedType)) return null;
+        ParameterizedType registryType = (ParameterizedType) innerType;
+        if (!(registryType.getRawType() instanceof Class<?>)) return null;
+
+        Class<?> rawRegistry = (Class<?>) registryType.getRawType();
+        if (iRegistry != null && !iRegistry.isAssignableFrom(rawRegistry)) return null;
+        if (registryType.getActualTypeArguments().length != 1) return null;
+
+        Type entryType = registryType.getActualTypeArguments()[0];
+        if (entryType instanceof Class<?>) {
+            return (Class<?>) entryType;
+        } else if (entryType instanceof ParameterizedType) {
+            Type raw = ((ParameterizedType) entryType).getRawType();
+            if (raw instanceof Class<?>) return (Class<?>) raw;
+        }
+        return null;
     }
 
     private final Object handle;
@@ -237,6 +267,10 @@ public class WrappedRegistry {
     }
 
     public Object getHolder(Object generic) {
+        if (GET_HOLDER == null) {
+            throw new UnsupportedOperationException(
+                    "Registry holder conversion is not available on this Minecraft version");
+        }
         return GET_HOLDER.invoke(handle, generic);
     }
 
@@ -252,6 +286,10 @@ public class WrappedRegistry {
         return getRegistry(MinecraftReflection.getSoundEffectClass());
     }
 
+    // Sentinel for negative dynamic-registry lookups. ConcurrentHashMap forbids null
+    // values, so we cache this to avoid re-walking every fallback registry on every miss.
+    private static final WrappedRegistry MISS_SENTINEL = new WrappedRegistry(new Object());
+
     public static WrappedRegistry getRegistry(Class<?> type) {
         WrappedRegistry registry = REGISTRY.get(type);
         if (registry != null) {
@@ -259,23 +297,61 @@ public class WrappedRegistry {
         }
 
         // Fall back to dynamic (datapack) registry lookup via RegistryAccess
-        return DYNAMIC_REGISTRY_CACHE.computeIfAbsent(type, t -> {
+        WrappedRegistry cached = DYNAMIC_REGISTRY_CACHE.computeIfAbsent(type, t -> {
             Object resourceKey = DYNAMIC_REGISTRY_KEYS.get(t);
-            if (resourceKey == null || REGISTRY_ACCESS_LOOKUP == null) {
-                return null;
+            WrappedRegistry dynamicRegistry = lookupDynamicRegistry(resourceKey);
+            if (dynamicRegistry != null) {
+                return dynamicRegistry;
             }
 
+            WrappedRegistry byValueType = findDynamicRegistryByValueType(t);
+            return byValueType != null ? byValueType : MISS_SENTINEL;
+        });
+        return cached == MISS_SENTINEL ? null : cached;
+    }
+
+    @Nullable
+    private static WrappedRegistry findDynamicRegistryByValueType(Class<?> type) {
+        for (Object resourceKey : DYNAMIC_REGISTRY_FALLBACK_KEYS) {
+            WrappedRegistry registry = lookupDynamicRegistry(resourceKey);
+            if (registry != null && registryContainsValueType(registry.handle, type)) {
+                return registry;
+            }
+        }
+        return null;
+    }
+
+    private static boolean registryContainsValueType(Object registryHandle, Class<?> type) {
+        if (!(registryHandle instanceof Iterable<?> iterable)) {
+            return false;
+        }
+
+        for (Object entry : iterable) {
+            if (type.isInstance(entry)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    private static WrappedRegistry lookupDynamicRegistry(@Nullable Object resourceKey) {
+        if (resourceKey == null || REGISTRY_ACCESS_LOOKUP == null) {
+            return null;
+        }
+
+        return DYNAMIC_REGISTRY_KEY_CACHE.computeIfAbsent(resourceKey, key -> {
             Object registryAccess = MinecraftRegistryAccess.get();
             if (registryAccess == null) {
                 return null;
             }
 
-            Optional<?> optRegistry = (Optional<?>) REGISTRY_ACCESS_LOOKUP.invoke(registryAccess, resourceKey);
-            if (optRegistry == null || !optRegistry.isPresent()) {
+            Optional<?> optRegistry = (Optional<?>) REGISTRY_ACCESS_LOOKUP.invoke(registryAccess, key);
+            if (optRegistry == null || optRegistry.isEmpty()) {
                 return null;
             }
 
-            return new WrappedRegistry(optRegistry.get(), resourceKey);
+            return new WrappedRegistry(optRegistry.get(), key);
         });
     }
 
@@ -393,17 +469,9 @@ public class WrappedRegistry {
             Class<?> registriesClass = MinecraftReflection.getMinecraftClass(registriesClassName);
             Object regKey = registriesClass.getField(fieldName).get(null);
 
-            // Try the dynamic cache first (covers datapack registries and game_rule)
-            if (REGISTRY_ACCESS_LOOKUP != null) {
-                Object registryAccess = MinecraftRegistryAccess.get();
-                if (registryAccess != null) {
-                    Optional<?> opt = (Optional<?>) REGISTRY_ACCESS_LOOKUP.invoke(registryAccess, regKey);
-                    if (opt != null && opt.isPresent()) {
-                        return new WrappedRegistry(opt.get(), regKey);
-                    }
-                }
-            }
-        } catch (Exception ignored) {
+            return lookupDynamicRegistry(regKey);
+        } catch (Exception ex) {
+            ProtocolLogger.debug("Failed to resolve registry key " + registriesClassName + "." + fieldName, ex);
         }
         return null;
     }

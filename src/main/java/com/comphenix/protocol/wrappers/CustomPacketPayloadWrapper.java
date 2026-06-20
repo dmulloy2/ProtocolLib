@@ -46,6 +46,8 @@ public final class CustomPacketPayloadWrapper {
     private static final ConstructorAccessor PAYLOAD_WRAPPER_CONSTRUCTOR;
 
     private static final MethodAccessor GET_ID_PAYLOAD_METHOD;
+    private static final MethodAccessor GET_TYPE_PAYLOAD_METHOD;
+    private static final MethodAccessor GET_ID_PAYLOAD_TYPE_METHOD;
     private static final MethodAccessor SERIALIZE_PAYLOAD_METHOD;
 
     /** True when running on MC 1.21.5+ where DiscardedPayload is used instead of the ByteBuddy proxy. */
@@ -61,6 +63,8 @@ public final class CustomPacketPayloadWrapper {
             // MC 1.21.5+: CustomPacketPayload no longer has id(); DiscardedPayload is the fallback payload
             // MC < 1.21.5: CustomPacketPayload.id() returns Identifier directly
             Method getPayloadId = null;
+            Method getPayloadType = null;
+            Method getPayloadTypeId = null;
             boolean useDiscardedPayload = false;
             try {
                 getPayloadId = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
@@ -69,13 +73,14 @@ public final class CustomPacketPayloadWrapper {
                         .parameterCount(0)
                         .build());
             } catch (IllegalArgumentException ignored) {
-                // New API: id() lives on DiscardedPayload, not on CustomPacketPayload
-                Class<?> discardedPayloadClass = MinecraftReflection.getMinecraftClass(
-                        "network.protocol.common.custom.DiscardedPayload");
-                getPayloadId = discardedPayloadClass.getMethod("id");
+                // New API: CustomPacketPayload.type().id() exposes the identifier for every payload type.
+                getPayloadType = CUSTOM_PACKET_PAYLOAD_CLASS.getMethod("type");
+                getPayloadTypeId = getPayloadType.getReturnType().getMethod("id");
                 useDiscardedPayload = true;
             }
-            GET_ID_PAYLOAD_METHOD = Accessors.getMethodAccessor(getPayloadId);
+            GET_ID_PAYLOAD_METHOD = getPayloadId != null ? Accessors.getMethodAccessor(getPayloadId) : null;
+            GET_TYPE_PAYLOAD_METHOD = getPayloadType != null ? Accessors.getMethodAccessor(getPayloadType) : null;
+            GET_ID_PAYLOAD_TYPE_METHOD = getPayloadTypeId != null ? Accessors.getMethodAccessor(getPayloadTypeId) : null;
             USE_DISCARDED_PAYLOAD = useDiscardedPayload;
 
             // serialize method may not exist in new API
@@ -203,8 +208,7 @@ public final class CustomPacketPayloadWrapper {
      * @return a wrapper holding the minecraft key and payload of the given custom payload instance.
      */
     public static CustomPacketPayloadWrapper fromUnknownPayload(Object payload) {
-        Object messageId = GET_ID_PAYLOAD_METHOD.invoke(payload);
-        MinecraftKey id = MinecraftKey.getConverter().getSpecific(messageId);
+        MinecraftKey id = getPayloadId(payload);
 
         // we read and retain the underlying buffer in case the class uses a buffer to store the data
         // this way, when passing the packet to further handling, the buffer is not released and can be re-used
@@ -218,7 +222,10 @@ public final class CustomPacketPayloadWrapper {
                 })
                 .orElseGet(() -> {
                     if (SERIALIZE_PAYLOAD_METHOD == null) {
-                        return new byte[0];
+                        throw new UnsupportedOperationException(
+                                "Cannot extract raw custom payload bytes from " + payload.getClass().getName()
+                                        + ": payload has no ByteBuf field and this Minecraft version does not "
+                                        + "expose CustomPacketPayload serialization");
                     }
                     ByteBuf buffer = Unpooled.buffer();
                     Object serializer = MinecraftReflection.getPacketDataSerializer(buffer);
@@ -227,6 +234,17 @@ public final class CustomPacketPayloadWrapper {
                 });
 
         return new CustomPacketPayloadWrapper(messagePayload, id);
+    }
+
+    private static MinecraftKey getPayloadId(Object payload) {
+        Object messageId;
+        if (GET_ID_PAYLOAD_METHOD != null) {
+            messageId = GET_ID_PAYLOAD_METHOD.invoke(payload);
+        } else {
+            Object payloadType = GET_TYPE_PAYLOAD_METHOD.invoke(payload);
+            messageId = GET_ID_PAYLOAD_TYPE_METHOD.invoke(payloadType);
+        }
+        return MinecraftKey.getConverter().getSpecific(messageId);
     }
 
     /**

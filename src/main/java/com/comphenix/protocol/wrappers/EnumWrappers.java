@@ -725,6 +725,7 @@ public abstract class EnumWrappers {
     }
 
     public enum RelativeArgument {
+        // Order must match the NMS Relative enum exactly.
         X, Y, Z, Y_ROT, X_ROT, DELTA_X, DELTA_Y, DELTA_Z, ROTATE_DELTA
     }
 

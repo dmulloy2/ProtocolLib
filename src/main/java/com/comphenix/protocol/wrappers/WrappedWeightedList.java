@@ -22,21 +22,18 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  */
 public class WrappedWeightedList<T> {
 
-    // ── NMS reflection handles (lazily initialised) ──────────────────────
+    // ── NMS reflection handles (eagerly resolved at class load) ──────────
 
-    private static Class<?> WEIGHTED_LIST_CLASS;
-    private static Class<?> WEIGHTED_CLASS;
+    private static final Class<?> WEIGHTED_LIST_CLASS;
+    private static final Class<?> WEIGHTED_CLASS;
 
-    private static MethodAccessor WEIGHTED_LIST_OF;   // static WeightedList.of(List<Weighted>)
-    private static MethodAccessor WEIGHTED_LIST_UNWRAP; // WeightedList.unwrap() → List<Weighted>
-    private static ConstructorAccessor WEIGHTED_CTOR; // new Weighted(Object value, int weight)
-    private static MethodAccessor WEIGHTED_VALUE;     // Weighted.value()
-    private static MethodAccessor WEIGHTED_WEIGHT;    // Weighted.weight()
+    private static final MethodAccessor WEIGHTED_LIST_OF;     // static WeightedList.of(List<Weighted>)
+    private static final MethodAccessor WEIGHTED_LIST_UNWRAP; // WeightedList.unwrap() → List<Weighted>
+    private static final ConstructorAccessor WEIGHTED_CTOR;   // new Weighted(Object value, int weight)
+    private static final MethodAccessor WEIGHTED_VALUE;       // Weighted.value()
+    private static final MethodAccessor WEIGHTED_WEIGHT;      // Weighted.weight()
 
-    private static synchronized void ensureReflection() {
-        if (WEIGHTED_LIST_CLASS != null) {
-            return;
-        }
+    static {
         WEIGHTED_LIST_CLASS = MinecraftReflection.getMinecraftClass("util.random.WeightedList");
         WEIGHTED_CLASS = MinecraftReflection.getMinecraftClass("util.random.Weighted");
 
@@ -52,7 +49,6 @@ public class WrappedWeightedList<T> {
      * Returns the NMS {@code WeightedList} class.
      */
     public static Class<?> getNmsClass() {
-        ensureReflection();
         return WEIGHTED_LIST_CLASS;
     }
 
@@ -69,10 +65,34 @@ public class WrappedWeightedList<T> {
     }
 
     /**
-     * Returns a mutable view of the entries in this weighted list.
+     * Returns a mutable view of the entries in this weighted list. Mutations are
+     * reflected on this wrapper.
      */
     public List<Entry<T>> getEntries() {
         return entries;
+    }
+
+    /**
+     * Replaces all entries with the given list. The argument is copied; subsequent
+     * modifications to it are not reflected on this wrapper.
+     */
+    public void setEntries(List<Entry<T>> entries) {
+        this.entries.clear();
+        this.entries.addAll(entries);
+    }
+
+    /**
+     * Appends a single entry.
+     */
+    public void addEntry(Entry<T> entry) {
+        this.entries.add(entry);
+    }
+
+    /**
+     * Appends a single value/weight entry.
+     */
+    public void addEntry(T value, int weight) {
+        this.entries.add(new Entry<>(value, weight));
     }
 
     // ── Entry record ─────────────────────────────────────────────────────
@@ -82,38 +102,15 @@ public class WrappedWeightedList<T> {
      *
      * @param <T> the Bukkit-side element type
      */
-    public static class Entry<T> {
-        private final T value;
-        private final int weight;
-
-        public Entry(T value, int weight) {
-            this.value = value;
-            this.weight = weight;
-        }
-
+    public record Entry<T>(T value, int weight) {
+        /** Backwards-compatible accessor for callers that used {@code getValue()}. */
         public T getValue() {
             return value;
         }
 
+        /** Backwards-compatible accessor for callers that used {@code getWeight()}. */
         public int getWeight() {
             return weight;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Entry<?> entry)) return false;
-            return weight == entry.weight && Objects.equals(value, entry.value);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(value, weight);
-        }
-
-        @Override
-        public String toString() {
-            return "Entry{value=" + value + ", weight=" + weight + "}";
         }
     }
 
@@ -135,8 +132,6 @@ public class WrappedWeightedList<T> {
             @Override
             @SuppressWarnings("unchecked")
             public WrappedWeightedList<T> getSpecific(Object generic) {
-                ensureReflection();
-
                 List<Object> nmsWeightedEntries = (List<Object>) WEIGHTED_LIST_UNWRAP.invoke(generic);
                 List<Entry<T>> entries = new ArrayList<>(nmsWeightedEntries.size());
                 for (Object nmsWeighted : nmsWeightedEntries) {
@@ -150,7 +145,6 @@ public class WrappedWeightedList<T> {
 
             @Override
             public Object getGeneric(WrappedWeightedList<T> specific) {
-                ensureReflection();
 
                 List<Object> nmsWeightedEntries = new ArrayList<>(specific.entries.size());
                 for (Entry<T> entry : specific.entries) {

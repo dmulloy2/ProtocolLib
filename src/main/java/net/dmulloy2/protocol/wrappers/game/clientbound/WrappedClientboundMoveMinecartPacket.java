@@ -2,7 +2,12 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.EquivalentConstructor;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.WrappedMinecartStep;
 import net.dmulloy2.protocol.AbstractPacket;
+
+import java.util.List;
 
 /**
  * Wrapper for {@code ClientboundMoveMinecartPacket} (game phase, clientbound).
@@ -17,8 +22,16 @@ public class WrappedClientboundMoveMinecartPacket extends AbstractPacket {
 
     public static final PacketType TYPE = PacketType.Play.Server.MOVE_MINECART;
 
+    private static final EquivalentConstructor CONSTRUCTOR = new EquivalentConstructor(TYPE)
+            .withParam(int.class)
+            .withParam(List.class, BukkitConverters.getListConverter(WrappedMinecartStep.CONVERTER));
+
     public WrappedClientboundMoveMinecartPacket() {
         super(new PacketContainer(TYPE), TYPE);
+    }
+
+    public WrappedClientboundMoveMinecartPacket(int entityId, List<WrappedMinecartStep> lerpSteps) {
+        this(new PacketContainer(TYPE, CONSTRUCTOR.create(entityId, lerpSteps)));
     }
 
     public WrappedClientboundMoveMinecartPacket(PacketContainer packet) {
@@ -33,8 +46,11 @@ public class WrappedClientboundMoveMinecartPacket extends AbstractPacket {
         handle.getIntegers().write(0, entityId);
     }
 
-    // TODO: missing field 'lerpSteps' (NMS type: List<NewMinecartBehavior.MinecartStep>)
-    //   Each MinecartStep holds position (Vec3), movement (Vec3), yRot (float), xRot (float), weight (float).
-    //   No ProtocolLib accessor exists; use handle.getModifier().read(1) for the raw List,
-    //   or add a dedicated WrappedMinecartStep class with AutoWrapper.
+    public List<WrappedMinecartStep> getLerpSteps() {
+        return handle.getLists(WrappedMinecartStep.CONVERTER).read(0);
+    }
+
+    public void setLerpSteps(List<WrappedMinecartStep> lerpSteps) {
+        handle.getLists(WrappedMinecartStep.CONVERTER).write(0, lerpSteps);
+    }
 }

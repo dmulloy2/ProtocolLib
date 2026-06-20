@@ -16,13 +16,10 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  */
 public class WrappedExplosionParticleInfo {
 
-    private static Class<?> NMS_CLASS;
-    private static ConstructorAccessor NMS_CTOR;
+    private static final Class<?> NMS_CLASS;
+    private static final ConstructorAccessor NMS_CTOR;
 
-    private static synchronized void ensureReflection() {
-        if (NMS_CLASS != null) {
-            return;
-        }
+    static {
         NMS_CLASS = MinecraftReflection.getMinecraftClass("core.particles.ExplosionParticleInfo");
         NMS_CTOR = Accessors.getConstructorAccessor(
                 NMS_CLASS,
@@ -35,7 +32,6 @@ public class WrappedExplosionParticleInfo {
      * Returns the NMS {@code ExplosionParticleInfo} class.
      */
     public static Class<?> getNmsClass() {
-        ensureReflection();
         return NMS_CLASS;
     }
 
@@ -97,7 +93,6 @@ public class WrappedExplosionParticleInfo {
      * Returns an {@link EquivalentConverter} between {@code WrappedExplosionParticleInfo}
      * and the NMS {@code ExplosionParticleInfo} record.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public static EquivalentConverter<WrappedExplosionParticleInfo> getConverter() {
         return new EquivalentConverter<>() {
 
@@ -109,8 +104,7 @@ public class WrappedExplosionParticleInfo {
 
             @Override
             public Object getGeneric(WrappedExplosionParticleInfo specific) {
-                ensureReflection();
-                EquivalentConverter particleConverter = BukkitConverters.getParticleConverter();
+                EquivalentConverter<WrappedParticle> particleConverter = BukkitConverters.getParticleConverter();
                 Object nmsParticle = particleConverter.getGeneric(specific.particle);
                 return NMS_CTOR.invoke(nmsParticle, specific.scaling, specific.speed);
             }
@@ -144,4 +138,3 @@ public class WrappedExplosionParticleInfo {
                 + ", scaling=" + scaling + ", speed=" + speed + "}";
     }
 }
-

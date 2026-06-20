@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import org.bukkit.Material;
@@ -92,6 +93,18 @@ public class AutoWrapperTest {
         assertEquals(67f, wrapped.y, 0f);
     }
 
+    @Test
+    public void testUnwrapIgnoresNetworkBufferConstructors() {
+        WrappedSingleField wrapper = new WrappedSingleField();
+        wrapper.value = "expected";
+
+        SingleFieldWithDecoder nms = (SingleFieldWithDecoder) AutoWrapper
+                .wrap(WrappedSingleField.class, SingleFieldWithDecoder.class)
+                .unwrap(wrapper);
+
+        assertEquals("expected", nms.value);
+    }
+
     private AutoWrapper<WrappedAdvancementDisplay> displayWrapper() {
         return AutoWrapper
                 .wrap(WrappedAdvancementDisplay.class, "advancements.AdvancementDisplay", "advancements.DisplayInfo")
@@ -150,5 +163,21 @@ public class AutoWrapperTest {
         public boolean hidden;
         public float x;
         public float y;
+    }
+
+    public static final class WrappedSingleField {
+        public String value;
+    }
+
+    public static final class SingleFieldWithDecoder {
+        private String value;
+
+        public SingleFieldWithDecoder(String value) {
+            this.value = value;
+        }
+
+        public SingleFieldWithDecoder(FriendlyByteBuf buf, Object ignored) {
+            throw new AssertionError("Network buffer constructor should not be used");
+        }
     }
 }

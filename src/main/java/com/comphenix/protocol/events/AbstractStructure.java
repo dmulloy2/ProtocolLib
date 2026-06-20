@@ -64,7 +64,6 @@ import com.comphenix.protocol.wrappers.WrappedRemoteChatSessionData;
 import com.comphenix.protocol.wrappers.WrappedSaltedSignature;
 import com.comphenix.protocol.wrappers.WrappedServerPing;
 import com.comphenix.protocol.wrappers.WrappedStatistic;
-import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
 import com.comphenix.protocol.wrappers.WrappedTeamParameters;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.WrappedWeightedList;
@@ -845,8 +844,9 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Retrieve a read/write structure for {@code Holder<DamageType>} fields.
-     * @return A modifier for DamageType Holder fields.
+     * Retrieve a read/write structure for Bukkit {@code DamageType} values
+     * stored in NMS {@code Holder<DamageType>} fields.
+     * @return A modifier for Bukkit DamageType values.
      */
     public StructureModifier<org.bukkit.damage.DamageType> getDamageTypes() {
         return getHolders(MinecraftReflection.getDamageTypeClass(), BukkitConverters.getDamageTypeConverter());

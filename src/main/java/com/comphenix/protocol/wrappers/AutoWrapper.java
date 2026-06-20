@@ -172,12 +172,7 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
                 // argument and would call methods on it during construction, so they're unsafe to
                 // invoke with default values.
                 Constructor<?>[] ctors = nmsClass.getDeclaredConstructors();
-                Constructor<?> chosen = ctors[0];
-                for (int i = 1; i < ctors.length; i++) {
-                    if (ctors[i].getParameterCount() > chosen.getParameterCount()) {
-                        chosen = ctors[i];
-                    }
-                }
+                Constructor<?> chosen = selectConstructor(ctors);
                 nmsInstanceCreator = Accessors.getConstructorAccessor(chosen);
                 Class<?>[] paramTypes = chosen.getParameterTypes();
                 nmsDefaultArgs = new Object[paramTypes.length];
@@ -188,6 +183,48 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
                 }
             }
         }
+    }
+
+    private Constructor<?> selectConstructor(Constructor<?>[] ctors) {
+        Constructor<?> fallback = null;
+        for (Constructor<?> ctor : ctors) {
+            if (isNetworkBufferConstructor(ctor)) {
+                continue;
+            }
+
+            if (ctor.getParameterCount() == nmsAccessors.length) {
+                return ctor;
+            }
+
+            if (fallback == null || ctor.getParameterCount() > fallback.getParameterCount()) {
+                fallback = ctor;
+            }
+        }
+
+        if (fallback != null) {
+            return fallback;
+        }
+
+        throw new InvalidWrapperException(nmsClass.getSimpleName()
+                + " has no safe constructor for default instantiation", null);
+    }
+
+    private boolean isNetworkBufferConstructor(Constructor<?> ctor) {
+        Class<?> packetDataSerializer = MinecraftReflection.getPacketDataSerializerClass();
+        Class<?> registryByteBuf = MinecraftReflection.getRegistryFriendlyByteBufClass().orElse(null);
+        for (Class<?> param : ctor.getParameterTypes()) {
+            // Only treat the parameter as a network buffer if it's the buffer type itself or a subtype.
+            // Using the reverse direction (param.isAssignableFrom(...)) would also exclude legitimate
+            // ctors taking ByteBuf / Object / etc. as record components.
+            if (packetDataSerializer.isAssignableFrom(param)) {
+                return true;
+            }
+
+            if (registryByteBuf != null && registryByteBuf.isAssignableFrom(param)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ---- Equivalent conversion

@@ -5,6 +5,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class WrappedClientboundSetTimePacketTest {
@@ -18,11 +21,12 @@ class WrappedClientboundSetTimePacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedClientboundSetTimePacket w = new WrappedClientboundSetTimePacket(123456789L);
+        WrappedClientboundSetTimePacket w = new WrappedClientboundSetTimePacket(123456789L, Map.of());
 
         assertEquals(PacketType.Play.Server.UPDATE_TIME, w.getHandle().getType());
 
         assertEquals(123456789L, w.getWorldAge());
+        assertEquals(Map.of(), w.getClockUpdates());
     }
 
     @Test
@@ -42,10 +46,13 @@ class WrappedClientboundSetTimePacketTest {
         assertEquals(123456789L, wrapper.getWorldAge());
 
         wrapper.setWorldAge(987654321L);
+        wrapper.setClockUpdates(Map.of());
 
         assertEquals(987654321L, wrapper.getWorldAge());
+        assertEquals(Map.of(), wrapper.getClockUpdates());
 
         assertEquals(987654321L, source.getWorldAge());
+        assertEquals(Map.of(), source.getClockUpdates());
     }
 
     @Test
