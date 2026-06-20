@@ -14,6 +14,7 @@ description = "Provides access to the Minecraft protocol"
 
 val mcVersion = "26.1"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
+val isJitPack = System.getenv("JITPACK")?.equals("true", ignoreCase = true) ?: false
 val commitHash = System.getenv("COMMIT_SHA") ?: ""
 val isCI = commitHash.isNotEmpty()
 
@@ -124,7 +125,7 @@ tasks {
 
 mavenPublishing {
     publishToMavenCentral()
-    if (!isSnapshot) {
+    if (!isSnapshot && !isJitPack) {
         signAllPublications()
     }
 
