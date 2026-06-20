@@ -5,14 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.EnumWrappers.TeamCollisionRule;
 import com.comphenix.protocol.wrappers.EnumWrappers.TeamVisibility;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
 import net.minecraft.world.scores.Team;
+import net.minecraft.world.scores.TeamColor;
 
 public class WrappedTeamParametersTest {
     @BeforeAll
@@ -47,12 +49,12 @@ public class WrappedTeamParametersTest {
         assertEquals(1, wrapped.getOptions());
 
         ClientboundSetPlayerTeamPacket.Parameters handle = (ClientboundSetPlayerTeamPacket.Parameters) wrapped.getHandle();
-        assertEquals(handle.getDisplayName(), displayName);
-        assertEquals(handle.getPlayerPrefix(), prefix);
-        assertEquals(handle.getPlayerSuffix(), suffix);
-        assertEquals(handle.getNametagVisibility(), Team.Visibility.ALWAYS);
-        assertEquals(handle.getCollisionRule(), Team.CollisionRule.NEVER);
-        assertEquals(handle.getColor(), ChatFormatting.RED);
-        assertEquals(handle.getOptions(), 1);
+        assertEquals(handle.displayName(), displayName);
+        assertEquals(handle.playerPrefix(), prefix);
+        assertEquals(handle.playerSuffix(), suffix);
+        assertEquals(handle.nameTagVisibility(), Team.Visibility.ALWAYS);
+        assertEquals(handle.collisionRule(), Team.CollisionRule.NEVER);
+        assertEquals(handle.color(), Optional.of(TeamColor.RED));
+        assertEquals(handle.options(), 1);
     }
 }

@@ -46,7 +46,7 @@ public class WrappedDataWatcherTest {
     public static void prepare() {
         BukkitInitialization.initializeAll();
 
-        ThrownEgg nmsEgg = new ThrownEgg(null, 0, 0, 0, net.minecraft.world.item.ItemStack.EMPTY);
+        ThrownEgg nmsEgg = new ThrownEgg(BukkitInitialization.getMockServerLevel(), 0, 0, 0, net.minecraft.world.item.ItemStack.EMPTY);
         mockEntity = new CraftEgg(null, nmsEgg);
     }
 

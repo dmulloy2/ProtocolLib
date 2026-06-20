@@ -79,6 +79,15 @@ public class BukkitInitialization {
     private boolean initialized;
     private boolean packaged;
 
+    private static ServerLevel mockServerLevel;
+
+    /**
+     * @return the mocked NMS server level set up during initialization, usable as a Level for constructing test entities
+     */
+    public static ServerLevel getMockServerLevel() {
+        return mockServerLevel;
+    }
+
     private BukkitInitialization() {
         System.out.println("Created new BukkitInitialization on " + Thread.currentThread().getName());
     }
@@ -246,6 +255,7 @@ public class BukkitInitialization {
 
             CraftWorld world = mock(CraftWorld.class);
             when(world.getHandle()).thenReturn(nmsWorld);
+            mockServerLevel = nmsWorld;
 
             List<World> worlds = Collections.singletonList(world);
             when(mockedServer.getWorlds()).thenReturn(worlds);

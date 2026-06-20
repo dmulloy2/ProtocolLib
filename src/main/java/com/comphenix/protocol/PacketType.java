@@ -506,7 +506,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             public static final PacketType STRUCT =                       new PacketType(PROTOCOL, SENDER, 0x3B, "SetStructureBlock", "Struct");
             public static final PacketType SET_TEST_BLOCK =               new PacketType(PROTOCOL, SENDER, 0x3C, "SetTestBlock");
             public static final PacketType UPDATE_SIGN =                  new PacketType(PROTOCOL, SENDER, 0x3D, "SignUpdate", "UpdateSign", "CPacketUpdateSign");
-            public static final PacketType SPECTATE_ENTITY =              new PacketType(PROTOCOL, SENDER, 0x3E, "SpectateEntity");
+            public static final PacketType SPECTATE_ENTITY =              new PacketType(PROTOCOL, SENDER, 0x3E, "SpectatorAction", "SpectateEntity");
             public static final PacketType ARM_ANIMATION =                new PacketType(PROTOCOL, SENDER, 0x3F, "Swing", "ArmAnimation", "CPacketAnimation");
             public static final PacketType SPECTATE =                     new PacketType(PROTOCOL, SENDER, 0x40, "TeleportToEntity", "Spectate", "CPacketSpectate");
             public static final PacketType TEST_INSTANCE_BLOCK_ACTION =   new PacketType(PROTOCOL, SENDER, 0x41, "TestInstanceBlockAction");
