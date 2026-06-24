@@ -59,7 +59,7 @@ public final class ServerPingRecord implements ServerPingImpl {
                 PLAYER_SAMPLE_CLASS = MinecraftReflection.getServerPingPlayerSampleClass();
                 SERVER_DATA_CLASS = MinecraftReflection.getServerPingServerDataClass();
 
-                PING_CTOR = Accessors.getConstructorAccessor(SERVER_PING.getConstructors()[0]);
+                PING_CTOR = Accessors.getConstructorAccessor(SERVER_PING, MinecraftReflection.getIChatBaseComponentClass(), Optional.class, Optional.class, Optional.class, boolean.class);
 
                 DATA_WRAPPER = AutoWrapper.wrap(ServerData.class, SERVER_DATA_CLASS);
                 SAMPLE_WRAPPER = AutoWrapper.wrap(PlayerSample.class, PLAYER_SAMPLE_CLASS);
