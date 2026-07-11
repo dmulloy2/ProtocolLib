@@ -354,8 +354,13 @@ public final class CustomPacketPayloadWrapper {
             synchronized (CustomPacketPayloadWrapper.class) {
                 c = serializerArgumentClassCache;
                 if (c == null) {
-                    Object sample = MinecraftReflection.getPacketDataSerializer(Unpooled.buffer());
-                    serializerArgumentClassCache = c = sample.getClass();
+                    ByteBuf buffer = Unpooled.buffer();
+                    try {
+                        Object sample = MinecraftReflection.getPacketDataSerializer(buffer);
+                        serializerArgumentClassCache = c = sample.getClass();
+                    } finally {
+                        buffer.release();
+                    }
                 }
             }
         }
