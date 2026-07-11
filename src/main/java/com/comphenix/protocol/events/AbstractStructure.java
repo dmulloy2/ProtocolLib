@@ -598,9 +598,7 @@ public abstract class AbstractStructure {
      */
     public StructureModifier<List<PlayerInfoData>> getPlayerInfoDataLists() {
         // Convert to and from the ProtocolLib wrapper
-        return structureModifier.withType(
-                Collection.class,
-                BukkitConverters.getListConverter(PlayerInfoData.getConverter()));
+        return getLists(PlayerInfoData.getConverter());
     }
 
     /**

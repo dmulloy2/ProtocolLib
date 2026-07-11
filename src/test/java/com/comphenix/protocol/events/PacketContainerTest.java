@@ -848,14 +848,14 @@ public class PacketContainerTest {
                 new WrappedGameProfile(new UUID(0, 0), "system"),
                 null,
                 (WrappedRemoteChatSessionData) null);
-        updatePlayerInfoActions.getPlayerInfoDataLists().write(1, Collections.singletonList(data));
+        StructureModifier<List<PlayerInfoData>> playerInfoDataLists = updatePlayerInfoActions.getPlayerInfoDataLists();
+        Assertions.assertEquals(1, playerInfoDataLists.size());
+        playerInfoDataLists.write(0, Collections.singletonList(data));
 
         Set<EnumWrappers.PlayerInfoAction> readActions = updatePlayerInfoActions.getPlayerInfoActions().read(0);
-        Assertions.assertTrue(readActions.contains(EnumWrappers.PlayerInfoAction.ADD_PLAYER));
-        Assertions.assertTrue(readActions.contains(EnumWrappers.PlayerInfoAction.UPDATE_LATENCY));
-        Assertions.assertTrue(readActions.contains(EnumWrappers.PlayerInfoAction.UPDATE_LISTED));
+        Assertions.assertEquals(actions, readActions);
 
-        Collection<PlayerInfoData> readData = updatePlayerInfoActions.getPlayerInfoDataLists().read(1);
+        Collection<PlayerInfoData> readData = playerInfoDataLists.read(0);
         Assertions.assertEquals(1, readData.size());
 
         PlayerInfoData firstData = readData.iterator().next();
