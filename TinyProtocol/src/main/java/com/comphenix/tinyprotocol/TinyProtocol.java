@@ -64,7 +64,7 @@ public abstract class TinyProtocol {
 
     // Packets we have to intercept
     private static final Class<?> PACKET_LOGIN_IN_START = Reflection.getClass("{nms}.PacketLoginInStart", "net.minecraft.network.protocol.login.PacketLoginInStart");
-    private static final FieldAccessor<GameProfile> getGameProfile = Reflection.getField(PACKET_LOGIN_IN_START, GameProfile.class, 0);
+    private static final FieldAccessor<String> getPlayerName = new PlayerNameAccessor();
 
     // Speedup channel lookup
     private Map<String, Channel> channelLookup = new MapMaker().weakValues().makeMap();
@@ -493,6 +493,59 @@ public abstract class TinyProtocol {
     }
 
     /**
+     * Get the player name from the login start packet.
+     * This fixes the issue from 1.19 where the GameProfile field has been removed from this login packet.
+     *
+     * @author gamerover98
+     */
+    private static class PlayerNameAccessor implements FieldAccessor<String> {
+
+        private FieldAccessor<String> getPlayerName;
+        private FieldAccessor<GameProfile> getGameProfile;
+
+        PlayerNameAccessor() {
+            try {
+                this.getGameProfile = Reflection.getField(PACKET_LOGIN_IN_START, GameProfile.class, 0);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                // nothing to do.
+            }
+
+            try {
+                //HOT-FIX for 1.19+
+                this.getPlayerName = Reflection.getField(PACKET_LOGIN_IN_START, String.class, 0);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                // nothing to do.
+            }
+
+            if (getGameProfile == null && getPlayerName == null) {
+                throw new UnsupportedOperationException("The current server version is not supported by TinyProtocol");
+            }
+        }
+
+        @Override
+        public String get(Object target) {
+            if (getPlayerName != null) {
+                String playerName = getPlayerName.get(target);
+                return playerName.substring(0, Math.min(16, playerName.length()));
+            }
+
+            return getGameProfile.get(target).getName();
+        }
+
+        @Override
+        public void set(Object target, Object value) {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public boolean hasField(Object target) {
+            return getPlayerName != null
+                    ? getPlayerName.hasField(target)
+                    : getGameProfile.hasField(target);
+        }
+    }
+
+    /**
      * Channel handler that is inserted into the player's channel pipeline, allowing us to intercept sent and received packets.
      * 
      * @author Kristian
@@ -533,8 +586,7 @@ public abstract class TinyProtocol {
 
         private void handleLoginStart(Channel channel, Object packet) {
             if (PACKET_LOGIN_IN_START.isInstance(packet)) {
-                GameProfile profile = getGameProfile.get(packet);
-                channelLookup.put(profile.getName(), channel);
+                channelLookup.put(getPlayerName.get(packet), channel);
             }
         }
     }
