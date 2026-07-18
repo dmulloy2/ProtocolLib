@@ -68,6 +68,7 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ComponentConverter;
@@ -753,50 +754,72 @@ public class PacketContainerTest {
         assertEquals(2, (int) packet.getGameStateIDs().read(0));
     }
 
-    // @Test
-    // TODO: needs to be fixed for 26.1
+    @Test
     public void testUseEntity() {
         PacketContainer packet = new PacketContainer(PacketType.Play.Client.USE_ENTITY);
 
         WrappedEnumEntityUseAction action;
         WrappedEnumEntityUseAction clone;
-        // test attack
-        packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.attack());
-        action = packet.getEnumEntityUseActions().read(0);
-        // attack's handle should always be the same
-        assertEquals(WrappedEnumEntityUseAction.attack(), action);
-        assertEquals(EntityUseAction.ATTACK, action.getAction());
-        // hand & position should not be available
-        assertThrows(IllegalArgumentException.class, action::getHand);
-        assertThrows(IllegalArgumentException.class, action::getPosition);
-        // test cloning
-        clone = action.deepClone();
-        assertSame(WrappedEnumEntityUseAction.attack(), clone);
+        if (MinecraftVersion.v26_1.atOrAbove()) {
+            packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interact(Hand.OFF_HAND));
+            action = packet.getEnumEntityUseActions().read(0);
+            assertEquals(EntityUseAction.INTERACT_AT, action.getAction());
+            assertEquals(Hand.OFF_HAND, action.getHand());
+            assertEquals(new Vector(), action.getPosition());
+            clone = action.deepClone();
+            assertEquals(EntityUseAction.INTERACT_AT, clone.getAction());
+            assertEquals(Hand.OFF_HAND, clone.getHand());
+            assertEquals(new Vector(), clone.getPosition());
 
-        // test interact
-        packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interact(Hand.OFF_HAND));
-        action = packet.getEnumEntityUseActions().read(0);
-        assertEquals(EntityUseAction.INTERACT, action.getAction());
-        assertEquals(Hand.OFF_HAND, action.getHand());
-        // position should not be available
-        assertThrows(IllegalArgumentException.class, action::getPosition);
-        // test cloning
-        clone = action.deepClone();
-        assertEquals(EntityUseAction.INTERACT, clone.getAction());
-        assertEquals(Hand.OFF_HAND, clone.getHand());
+            Vector position = new Vector(1, 199, 4);
+            packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interactAt(Hand.MAIN_HAND, position));
+            action = packet.getEnumEntityUseActions().read(0);
+            assertEquals(EntityUseAction.INTERACT_AT, action.getAction());
+            assertEquals(Hand.MAIN_HAND, action.getHand());
+            assertEquals(position, action.getPosition());
+            clone = action.deepClone();
+            assertEquals(EntityUseAction.INTERACT_AT, clone.getAction());
+            assertEquals(Hand.MAIN_HAND, clone.getHand());
+            assertEquals(position, clone.getPosition());
+        } else {
+            // test attack
+            packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.attack());
+            action = packet.getEnumEntityUseActions().read(0);
+            // attack's handle should always be the same
+            assertEquals(WrappedEnumEntityUseAction.attack(), action);
+            assertEquals(EntityUseAction.ATTACK, action.getAction());
+            // hand & position should not be available
+            assertThrows(IllegalArgumentException.class, action::getHand);
+            assertThrows(IllegalArgumentException.class, action::getPosition);
+            // test cloning
+            clone = action.deepClone();
+            assertSame(WrappedEnumEntityUseAction.attack(), clone);
 
-        // test interact_at
-        Vector position = new Vector(1, 199, 4);
-        packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interactAt(Hand.MAIN_HAND, position));
-        action = packet.getEnumEntityUseActions().read(0);
-        assertEquals(EntityUseAction.INTERACT_AT, action.getAction());
-        assertEquals(Hand.MAIN_HAND, action.getHand());
-        assertEquals(position, action.getPosition());
-        // test cloning
-        clone = action.deepClone();
-        assertEquals(EntityUseAction.INTERACT_AT, clone.getAction());
-        assertEquals(Hand.MAIN_HAND, clone.getHand());
-        assertEquals(position, clone.getPosition());
+            // test interact
+            packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interact(Hand.OFF_HAND));
+            action = packet.getEnumEntityUseActions().read(0);
+            assertEquals(EntityUseAction.INTERACT, action.getAction());
+            assertEquals(Hand.OFF_HAND, action.getHand());
+            // position should not be available
+            assertThrows(IllegalArgumentException.class, action::getPosition);
+            // test cloning
+            clone = action.deepClone();
+            assertEquals(EntityUseAction.INTERACT, clone.getAction());
+            assertEquals(Hand.OFF_HAND, clone.getHand());
+
+            // test interact_at
+            Vector position = new Vector(1, 199, 4);
+            packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interactAt(Hand.MAIN_HAND, position));
+            action = packet.getEnumEntityUseActions().read(0);
+            assertEquals(EntityUseAction.INTERACT_AT, action.getAction());
+            assertEquals(Hand.MAIN_HAND, action.getHand());
+            assertEquals(position, action.getPosition());
+            // test cloning
+            clone = action.deepClone();
+            assertEquals(EntityUseAction.INTERACT_AT, clone.getAction());
+            assertEquals(Hand.MAIN_HAND, clone.getHand());
+            assertEquals(position, clone.getPosition());
+        }
     }
 
     @Test
