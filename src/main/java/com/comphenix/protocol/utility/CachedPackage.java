@@ -88,20 +88,27 @@ final class CachedPackage {
      * @throws RuntimeException If we are unable to find the given class.
      */
     public Optional<Class<?>> getPackageClass(String className, String... aliases) {
-        return cache.computeIfAbsent(className, x -> {
-            Optional<Class<?>> clazz = resolveClass(className);
-            if (clazz.isPresent()) {
-                return clazz;
-            }
+        // Fast path: a plain get on cache hit. computeIfAbsent(className, x -> {...}) allocated a
+        // fresh capturing lambda (capturing className + aliases) on EVERY call — even hits — which,
+        // on the per-packet isBundlePacket() path, was a large source of allocation. The negative
+        // result (class absent on this version) is cached too, so this stays a single get afterwards.
+        Optional<Class<?>> cached = cache.get(className);
+        if (cached != null) {
+            return cached;
+        }
 
+        Optional<Class<?>> clazz = resolveClass(className);
+        if (!clazz.isPresent()) {
             for (String alias : aliases) {
-                clazz = resolveClass(alias);
-                if (clazz.isPresent()) {
-                    return clazz;
+                Optional<Class<?>> aliasClazz = resolveClass(alias);
+                if (aliasClazz.isPresent()) {
+                    clazz = aliasClazz;
+                    break;
                 }
             }
+        }
 
-            return Optional.empty();
-        });
+        cache.put(className, clazz);
+        return clazz;
     }
 }
