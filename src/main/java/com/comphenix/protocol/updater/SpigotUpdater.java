@@ -16,8 +16,6 @@
  */
 package com.comphenix.protocol.updater;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.utility.Closer;
 import org.bukkit.plugin.Plugin;
 
@@ -44,7 +42,7 @@ public final class SpigotUpdater extends Updater {
         waitForThread();
 
         this.type = type;
-        this.thread = new Thread(new SpigotUpdateRunnable());
+        this.thread = new Thread(new SpigotUpdateRunnable(this));
         this.thread.start();
     }
 
@@ -54,36 +52,8 @@ public final class SpigotUpdater extends Updater {
         return String.format(result.toString(), remoteVersion, plugin.getDescription().getVersion(), RESOURCE_URL);
     }
 
-    private class SpigotUpdateRunnable implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                String version = getSpigotVersion();
-                remoteVersion = version;
-
-                if (versionCheck(version)) {
-                    result = UpdateResult.SPIGOT_UPDATE_AVAILABLE;
-                } else {
-                    result = UpdateResult.NO_UPDATE;
-                }
-            } catch (Throwable ex) {
-                if (ProtocolLibrary.getConfig().isDebug()) {
-                    ProtocolLibrary.getErrorReporter().reportDetailed(
-                            SpigotUpdater.this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(ex).callerParam(this));
-                } else {
-                    // People don't care
-                    // plugin.getLogger().log(Level.WARNING, "Failed to check for updates: " + ex);
-                }
-
-                ProtocolLibrary.disableUpdates();
-            } finally {
-                // Invoke the listeners on the main thread
-                for (Runnable listener : listeners) {
-                    ProtocolLibrary.getScheduler().runTask(listener);
-                }
-            }
-        }
+    void setRemoteVersion(String remoteVersion) {
+        this.remoteVersion = remoteVersion;
     }
 
     private static final String RESOURCE_URL = "https://www.spigotmc.org/resources/protocollib.1997/";
