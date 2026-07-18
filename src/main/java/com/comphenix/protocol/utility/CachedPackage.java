@@ -88,20 +88,23 @@ final class CachedPackage {
      * @throws RuntimeException If we are unable to find the given class.
      */
     public Optional<Class<?>> getPackageClass(String className, String... aliases) {
-        return cache.computeIfAbsent(className, x -> {
-            Optional<Class<?>> clazz = resolveClass(className);
-            if (clazz.isPresent()) {
-                return clazz;
-            }
+        Optional<Class<?>> cached = cache.get(className);
+        if (cached != null) {
+            return cached;
+        }
 
+        Optional<Class<?>> clazz = resolveClass(className);
+        if (!clazz.isPresent()) {
             for (String alias : aliases) {
-                clazz = resolveClass(alias);
-                if (clazz.isPresent()) {
-                    return clazz;
+                Optional<Class<?>> aliasClazz = resolveClass(alias);
+                if (aliasClazz.isPresent()) {
+                    clazz = aliasClazz;
+                    break;
                 }
             }
+        }
 
-            return Optional.empty();
-        });
+        cache.put(className, clazz);
+        return clazz;
     }
 }
