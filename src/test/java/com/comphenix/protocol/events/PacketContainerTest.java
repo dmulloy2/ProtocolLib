@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,6 +69,7 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ComponentConverter;
@@ -753,16 +755,60 @@ public class PacketContainerTest {
         assertEquals(2, (int) packet.getGameStateIDs().read(0));
     }
 
-    // @Test
-    // TODO: needs to be fixed for 26.1
+    @Test
     public void testUseEntity() {
+        if (MinecraftVersion.v26_1.atOrAbove()) {
+            testUseEntityWithoutActionClass();
+        } else {
+            testUseEntityWithActionClass();
+        }
+    }
+
+    private void testUseEntityWithoutActionClass() {
+        PacketContainer packet = new PacketContainer(PacketType.Play.Client.USE_ENTITY);
+        packet.getIntegers().write(0, 42);
+        packet.getBooleans().write(0, true);
+
+        StructureModifier<WrappedEnumEntityUseAction> actionModifier = packet.getEnumEntityUseActions();
+        assertEquals(1, actionModifier.size());
+        assertEquals(1, actionModifier.getFields().size());
+        assertSame(packet.getHandle(), actionModifier.getTarget());
+        assertSame(packet.getHandle().getClass(), actionModifier.getTargetType());
+        actionModifier.getField(0);
+        actionModifier.writeDefaults();
+        assertNull(actionModifier.readSafely(1));
+        actionModifier.writeSafely(1, WrappedEnumEntityUseAction.interact(Hand.MAIN_HAND));
+        assertThrows(UnsupportedOperationException.class, WrappedEnumEntityUseAction::attack);
+
+        Vector position = new Vector(1, 199, 4);
+        packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interactAt(Hand.MAIN_HAND, position));
+        WrappedEnumEntityUseAction action = packet.getEnumEntityUseActions().read(0);
+        assertEquals(EntityUseAction.INTERACT_AT, action.getAction());
+        assertEquals(Hand.MAIN_HAND, action.getHand());
+        assertEquals(position, action.getPosition());
+        assertEquals(42, packet.getIntegers().read(0));
+        assertTrue(packet.getBooleans().read(0));
+
+        WrappedEnumEntityUseAction clone = action.deepClone();
+        assertEquals(EntityUseAction.INTERACT_AT, clone.getAction());
+        assertEquals(Hand.MAIN_HAND, clone.getHand());
+        assertEquals(position, clone.getPosition());
+        assertEquals(action, clone);
+        assertEquals(action.hashCode(), clone.hashCode());
+
+        packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interact(Hand.OFF_HAND));
+        action = packet.getEnumEntityUseActions().read(0);
+        assertEquals(EntityUseAction.INTERACT_AT, action.getAction());
+        assertEquals(Hand.OFF_HAND, action.getHand());
+        assertEquals(new Vector(), action.getPosition());
+    }
+
+    private void testUseEntityWithActionClass() {
         PacketContainer packet = new PacketContainer(PacketType.Play.Client.USE_ENTITY);
 
-        WrappedEnumEntityUseAction action;
-        WrappedEnumEntityUseAction clone;
         // test attack
         packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.attack());
-        action = packet.getEnumEntityUseActions().read(0);
+        WrappedEnumEntityUseAction action = packet.getEnumEntityUseActions().read(0);
         // attack's handle should always be the same
         assertEquals(WrappedEnumEntityUseAction.attack(), action);
         assertEquals(EntityUseAction.ATTACK, action.getAction());
@@ -770,7 +816,7 @@ public class PacketContainerTest {
         assertThrows(IllegalArgumentException.class, action::getHand);
         assertThrows(IllegalArgumentException.class, action::getPosition);
         // test cloning
-        clone = action.deepClone();
+        WrappedEnumEntityUseAction clone = action.deepClone();
         assertSame(WrappedEnumEntityUseAction.attack(), clone);
 
         // test interact

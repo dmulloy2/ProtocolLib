@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,7 +29,9 @@ import org.jetbrains.annotations.NotNull;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.StreamSerializer;
@@ -662,9 +665,87 @@ public abstract class AbstractStructure {
      * @return A modifier for EntityUseAction class fields.
      */
     public StructureModifier<WrappedEnumEntityUseAction> getEnumEntityUseActions() {
+        if (MinecraftVersion.v26_1.atOrAbove()) {
+            return new EntityUseActionModifier(handle);
+        }
+
         return structureModifier.withType(
                 MinecraftReflection.getEnumEntityUseActionClass(),
                 WrappedEnumEntityUseAction.CONVERTER);
+    }
+
+    private static final class EntityUseActionModifier extends StructureModifier<WrappedEnumEntityUseAction> {
+        private final StructureModifier<Object> packetModifier;
+
+        private EntityUseActionModifier(Object target) {
+            Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
+            this.packetModifier = new StructureModifier<>(packetClass).withTarget(target);
+            List<FieldAccessor> fields = this.packetModifier
+                    .withType(MinecraftReflection.getVec3DClass())
+                    .getFields();
+            this.initialize(
+                    packetClass,
+                    MinecraftReflection.getVec3DClass(),
+                    fields,
+                    Map.of(),
+                    null,
+                    new HashMap<>());
+            this.target = target;
+        }
+
+        @Override
+        public WrappedEnumEntityUseAction read(int fieldIndex) {
+            this.checkEntityUseActionIndex(fieldIndex);
+            return WrappedEnumEntityUseAction.fromHandle(this.target);
+        }
+
+        @Override
+        public WrappedEnumEntityUseAction readSafely(int fieldIndex) {
+            return fieldIndex == 0 && this.target != null
+                    ? WrappedEnumEntityUseAction.fromHandle(this.target)
+                    : null;
+        }
+
+        @Override
+        public StructureModifier<WrappedEnumEntityUseAction> write(
+                int fieldIndex,
+                WrappedEnumEntityUseAction value
+        ) {
+            this.checkEntityUseActionIndex(fieldIndex);
+            Preconditions.checkNotNull(value, "value cannot be null");
+
+            this.packetModifier
+                    .withType(EnumWrappers.getHandClass(), EnumWrappers.getHandConverter())
+                    .write(0, value.getHand());
+            this.packetModifier
+                    .withType(MinecraftReflection.getVec3DClass(), BukkitConverters.getVectorConverter())
+                    .write(0, value.getPosition());
+            return this;
+        }
+
+        @Override
+        public StructureModifier<WrappedEnumEntityUseAction> writeSafely(
+                int fieldIndex,
+                WrappedEnumEntityUseAction value
+        ) {
+            return fieldIndex == 0 ? this.write(fieldIndex, value) : this;
+        }
+
+        @Override
+        public StructureModifier<WrappedEnumEntityUseAction> withTarget(Object target) {
+            return new EntityUseActionModifier(target);
+        }
+
+        private void checkEntityUseActionIndex(int fieldIndex) {
+            if (this.target == null) {
+                throw new IllegalStateException("Cannot access a modifier with no packet handle");
+            }
+            if (fieldIndex != 0) {
+                throw FieldAccessException.fromFormat(
+                        "Field index %d is out of bounds for length 1",
+                        fieldIndex);
+            }
+        }
     }
 
     /**

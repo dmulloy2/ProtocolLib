@@ -1235,9 +1235,13 @@ public final class MinecraftReflection {
     /**
      * Retrieves the entity use action class in 1.17.
      *
-     * @return The EntityUseAction class
+     * @return The EntityUseAction class, or {@code null} if it was removed in 26.1
      */
     public static Class<?> getEnumEntityUseActionClass() {
+        if (MinecraftVersion.v26_1.atOrAbove()) {
+            return null;
+        }
+
         return getOrInferMinecraftClass("ServerboundInteractPacket.Action", () -> {
             Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
             FuzzyReflection fuzzyReflection = FuzzyReflection.fromClass(packetClass, true);
@@ -1261,10 +1265,15 @@ public final class MinecraftReflection {
     /**
      * Get a method accessor to get the actual use action out of the wrapping EnumEntityUseAction in 1.17.
      *
-     * @return a method accessor to get the actual use action
+     * @return a method accessor to get the actual use action, or {@code null} if it was removed in 26.1
      */
     public static MethodAccessor getEntityUseActionEnumMethodAccessor() {
-        FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
+        Class<?> actionClass = MinecraftReflection.getEnumEntityUseActionClass();
+        if (actionClass == null) {
+            return null;
+        }
+
+        FuzzyReflection fuzzy = FuzzyReflection.fromClass(actionClass, true);
         return Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
                 .returnTypeExact(EnumWrappers.getEntityUseActionClass())
                 .build()));
