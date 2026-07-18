@@ -1,38 +1,69 @@
-Contributing to ProtocolLib
-===========================
-This page will detail specific things that must be done if you intend to contribute to this project.
+# Contributing to ProtocolLib
 
-## Updating ProtocolLib to a New Protocol Version
-#### Before we get started:
-1. **When do we need to update the protocol version?**
-    _A Minecraft protocol version is a number for each specification of the Minecraft protocol.
-    This means it is incremented when there is a change to the [Protocol Specification](http://wiki.vg/Protocol),
-    but not necessarily for each Minecraft version update. If the latest Minecraft version contains a protocol change,
-    that means ProtocolLib needs to be updated._
-2. **When do we need to update other parts of ProtocolLib?**
-    _When the package version guard changes. The package version guard is the version string inserted
-    into the package identifier for CraftBukkit and net.minecraft.server (e.g. v1_9_R2). It is incremented
-    by Spigot if there is a major breaking change in the internal server code. This is to encourage plugins
-    that interact directly with CraftBukkit/nms code to update more specifically. However, since most of
-    ProtocolLib uses reflection, and the structure of packet classes is generally static, one will have
-    to go through the code and change imports from nms/CraftBukkit._
+ProtocolLib supports a wide range of Minecraft versions through reflection and compatibility wrappers. Changes to packet
+registration, reflection, or public wrappers can affect plugins on versions other than the one currently used for
+development, so keep changes focused and preserve existing behavior unless a break is unavoidable.
 
-#### Ready? Let's get started!
-1. Read the [Protocol Changes](http://wiki.vg/Protocol_History). Always make sure the list is both
-complete and correct. If you're unsure, don't hesitate to ask in #mcdevs (the people who maintain wiki.vg) on [libera.chat](http://libera.chat)
-or #spigot on [irc.spi.gt](http://irc.spi.gt) ([webchat](https://irc.spi.gt/iris/?channels=spigot)).
-2. Search for usages of the now-defunct NMS package guard and change them.
-3. The class `com.comphenix.protocol.PacketType` contains a list of all the packets. If any packets were added or removed
-(or had their ID changed), make sure to update this list. If a packet was removed
-in favor of usage of another packet, instead of removing it, move it to the bottom of the list
-in its section, add a deprecation warning to it, and redirect it to the packet that replaced it.
-4. `mvn` in the root directory to build the project.
-5. If tests fail in the maven build, go through the tests to make sure you removed references to any removed packets
-and changed the NMS version guards.
-6. Increment the package version in `com.comphenix.protocol.utility.Constants`.
-7. `com.comphenix.protocol.ProtocolLibrary` contains several constants that must be updated, including the Minecraft version
-and the release date.
-8. `com.comphenix.protocol.utility.MinecraftProtocolVersion` contains a map of all the protocol version integers.
-If the protocol version has been incremented, add a new line to the map.
-9. `mvn` in root directory again. If it builds successfully, test on the appropriate version of a Spigot server. If
-the build fails, debug!
+## Building ProtocolLib
+
+Use the Gradle wrapper from the repository root. The build uses the Java 25 toolchain and resolves the current Spigot
+server dependency from the CodeMC repository.
+
+```shell
+./gradlew test
+./gradlew build shadowJar
+```
+
+`shadowJar` produces `build/libs/ProtocolLib.jar` with the required Byte Buddy classes included.
+
+## Updating ProtocolLib for a Minecraft Release
+
+Start by reviewing the [Java Edition protocol](https://minecraft.wiki/w/Java_Edition_protocol) and the corresponding
+server classes. The server packet classes and codecs are authoritative when documentation and implementation differ.
+
+### 1. Update version metadata
+
+- Update `mcVersion` in `build.gradle.kts`.
+- Add the release to `MinecraftVersion` and update `MinecraftVersion.LATEST`.
+- Update `ProtocolLibrary.MAXIMUM_MINECRAFT_VERSION` and `ProtocolLibrary.MINECRAFT_LAST_RELEASE_DATE`.
+- Update `MinecraftProtocolVersion` if the release changed the protocol number.
+
+### 2. Reconcile packet types
+
+`PacketType` must contain a matching definition for every packet in the current server protocol registries. Compare the
+serverbound and clientbound packet classes and codecs against every protocol phase, including configuration.
+
+- Add new, renamed, or split packets and update their current IDs and aliases.
+- Do not remove an existing public `PacketType` constant. Move removed types to the deprecated section and document their
+  replacement when one exists.
+- Represent split packets as separate packet types instead of redirecting incompatible packet shapes.
+- Run the packet registry tests after changing packet definitions. A missing definition can prevent later packets in the
+  same protocol registry from being registered.
+
+### 3. Update reflection and wrappers
+
+- Inspect changed fields, constructors, records, nested classes, and stream codecs instead of relying only on class names.
+- Prefer structural or type-based reflection where names are unstable.
+- Put version checks at the narrowest compatibility boundary and leave the older path unchanged.
+- If an NMS concept was removed, report it as unsupported or absent rather than treating a different class as equivalent.
+- Preserve packet fields that are unrelated to the value being changed.
+- Keep converters symmetric and preserve wrapper cloning and equality semantics.
+- A custom `StructureModifier` must maintain the complete modifier contract, including safe reads and writes, field count,
+  metadata, introspection, defaults, and `withTarget()`.
+
+### 4. Add regression coverage
+
+- Initialize the test environment with `BukkitInitialization` when tests access CraftBukkit or NMS classes.
+- Exercise the actual packet structure supplied by the current Spigot dependency.
+- Cover both sides of a version guard when feasible.
+- Re-enable previously disabled tests when the underlying incompatibility is fixed.
+- Run targeted tests while developing, followed by `./gradlew test`.
+- Before declaring a Minecraft release supported, build the shaded plugin and test it on the corresponding server.
+
+## Pull Request Expectations
+
+- Keep the change limited to the reported problem or release update.
+- Include regression tests for packet, reflection, converter, or wrapper behavior changes.
+- Preserve public API signatures and binary compatibility where possible.
+- Clearly document any unavoidable compatibility change.
+- Do not hide reflection failures with broad exception handling or silent fallbacks.
