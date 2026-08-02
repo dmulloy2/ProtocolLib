@@ -5,7 +5,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
 import java.util.HashSet;
-import java.util.Set;
+import org.bukkit.util.Vector;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,12 +21,13 @@ class WrappedClientboundTeleportEntityPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedClientboundTeleportEntityPacket w = new WrappedClientboundTeleportEntityPacket(3, new WrappedPositionMoveRotation(4.0, 5.0, 6.0, 90.0f, 45.0f), new HashSet<>(), true);
+        WrappedClientboundTeleportEntityPacket w =
+                new WrappedClientboundTeleportEntityPacket(3, position(4, 5, 6, 90, 45), new HashSet<>(), true);
 
         assertEquals(PacketType.Play.Server.ENTITY_TELEPORT, w.getHandle().getType());
 
         assertEquals(3, w.getEntityId());
-        assertEquals(new WrappedPositionMoveRotation(4.0, 5.0, 6.0, 90.0f, 45.0f), w.getChange());
+        assertEquals(position(4, 5, 6, 90, 45), w.getChange());
         assertEquals(new HashSet<>(), w.getRelatives());
         assertTrue(w.isOnGround());
     }
@@ -40,28 +41,29 @@ class WrappedClientboundTeleportEntityPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundTeleportEntityPacket source = new WrappedClientboundTeleportEntityPacket(3, new WrappedPositionMoveRotation(4.0, 5.0, 6.0, 90.0f, 45.0f), new HashSet<>(), true);
+        WrappedClientboundTeleportEntityPacket source =
+                new WrappedClientboundTeleportEntityPacket(3, position(4, 5, 6, 90, 45), new HashSet<>(), true);
         Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundTeleportEntityPacket wrapper = new WrappedClientboundTeleportEntityPacket(container);
 
         assertEquals(3, wrapper.getEntityId());
-        assertEquals(new WrappedPositionMoveRotation(4.0, 5.0, 6.0, 90.0f, 45.0f), wrapper.getChange());
+        assertEquals(position(4, 5, 6, 90, 45), wrapper.getChange());
         assertEquals(new HashSet<>(), wrapper.getRelatives());
         assertTrue(wrapper.isOnGround());
 
         wrapper.setEntityId(9);
-        wrapper.setChange(new WrappedPositionMoveRotation(10.0, 20.0, 30.0, 270.0f, -45.0f));
+        wrapper.setChange(position(10, 20, 30, 270, -45));
         wrapper.setRelatives(new HashSet<>());
         wrapper.setOnGround(false);
 
         assertEquals(9, wrapper.getEntityId());
-        assertEquals(new WrappedPositionMoveRotation(10.0, 20.0, 30.0, 270.0f, -45.0f), wrapper.getChange());
+        assertEquals(position(10, 20, 30, 270, -45), wrapper.getChange());
         assertEquals(new HashSet<>(), wrapper.getRelatives());
         assertFalse(wrapper.isOnGround());
 
         assertEquals(9, source.getEntityId());
-        assertEquals(new WrappedPositionMoveRotation(10.0, 20.0, 30.0, 270.0f, -45.0f), source.getChange());
+        assertEquals(position(10, 20, 30, 270, -45), source.getChange());
         assertEquals(new HashSet<>(), source.getRelatives());
         assertFalse(source.isOnGround());
     }
@@ -71,5 +73,14 @@ class WrappedClientboundTeleportEntityPacketTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundTeleportEntityPacket(
                         new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
+    }
+
+    private static WrappedPositionMoveRotation position(
+            double x, double y, double z, float yaw, float pitch) {
+        return WrappedPositionMoveRotation.create(
+                new Vector(x, y, z),
+                new Vector(),
+                yaw,
+                pitch);
     }
 }

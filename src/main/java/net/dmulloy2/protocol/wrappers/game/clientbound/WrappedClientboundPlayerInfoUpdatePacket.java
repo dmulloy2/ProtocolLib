@@ -44,10 +44,10 @@ public class WrappedClientboundPlayerInfoUpdatePacket extends AbstractPacket {
     }
 
     public List<PlayerInfoData> getEntries() {
-        return handle.getPlayerInfoDataLists().read(1);
+        return handle.getPlayerInfoDataLists().read(0);
     }
 
     public void setEntries(List<PlayerInfoData> entries) {
-        handle.getPlayerInfoDataLists().write(1, entries);
+        handle.getPlayerInfoDataLists().write(0, entries);
     }
 }

@@ -5,7 +5,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
 import java.util.HashSet;
-import java.util.Set;
+import org.bukkit.util.Vector;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,12 +21,13 @@ class WrappedClientboundPlayerPositionPacketTest {
 
     @Test
     void testAllArgsCreate() {
-        WrappedClientboundPlayerPositionPacket w = new WrappedClientboundPlayerPositionPacket(3, new WrappedPositionMoveRotation(4.0, 5.0, 6.0, 90.0f, 45.0f), new HashSet<>());
+        WrappedClientboundPlayerPositionPacket w =
+                new WrappedClientboundPlayerPositionPacket(3, position(4, 5, 6, 90, 45), new HashSet<>());
 
         assertEquals(PacketType.Play.Server.POSITION, w.getHandle().getType());
 
         assertEquals(3, w.getId());
-        assertEquals(new WrappedPositionMoveRotation(4.0, 5.0, 6.0, 90.0f, 45.0f), w.getChange());
+        assertEquals(position(4, 5, 6, 90, 45), w.getChange());
         assertEquals(new HashSet<>(), w.getRelatives());
     }
 
@@ -39,25 +40,26 @@ class WrappedClientboundPlayerPositionPacketTest {
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundPlayerPositionPacket source = new WrappedClientboundPlayerPositionPacket(3, new WrappedPositionMoveRotation(4.0, 5.0, 6.0, 90.0f, 45.0f), new HashSet<>());
+        WrappedClientboundPlayerPositionPacket source =
+                new WrappedClientboundPlayerPositionPacket(3, position(4, 5, 6, 90, 45), new HashSet<>());
         Object nmsPacket = source.getHandle().getHandle();
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundPlayerPositionPacket wrapper = new WrappedClientboundPlayerPositionPacket(container);
 
         assertEquals(3, wrapper.getId());
-        assertEquals(new WrappedPositionMoveRotation(4.0, 5.0, 6.0, 90.0f, 45.0f), wrapper.getChange());
+        assertEquals(position(4, 5, 6, 90, 45), wrapper.getChange());
         assertEquals(new HashSet<>(), wrapper.getRelatives());
 
         wrapper.setId(9);
-        wrapper.setChange(new WrappedPositionMoveRotation(10.0, 20.0, 30.0, 270.0f, -45.0f));
+        wrapper.setChange(position(10, 20, 30, 270, -45));
         wrapper.setRelatives(new HashSet<>());
 
         assertEquals(9, wrapper.getId());
-        assertEquals(new WrappedPositionMoveRotation(10.0, 20.0, 30.0, 270.0f, -45.0f), wrapper.getChange());
+        assertEquals(position(10, 20, 30, 270, -45), wrapper.getChange());
         assertEquals(new HashSet<>(), wrapper.getRelatives());
 
         assertEquals(9, source.getId());
-        assertEquals(new WrappedPositionMoveRotation(10.0, 20.0, 30.0, 270.0f, -45.0f), source.getChange());
+        assertEquals(position(10, 20, 30, 270, -45), source.getChange());
         assertEquals(new HashSet<>(), source.getRelatives());
     }
 
@@ -66,5 +68,14 @@ class WrappedClientboundPlayerPositionPacketTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundPlayerPositionPacket(
                         new PacketContainer(PacketType.Play.Server.EXPERIENCE)));
+    }
+
+    private static WrappedPositionMoveRotation position(
+            double x, double y, double z, float yaw, float pitch) {
+        return WrappedPositionMoveRotation.create(
+                new Vector(x, y, z),
+                new Vector(),
+                yaw,
+                pitch);
     }
 }

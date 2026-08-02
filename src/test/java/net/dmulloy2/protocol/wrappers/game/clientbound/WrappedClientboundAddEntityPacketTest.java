@@ -66,7 +66,7 @@ class WrappedClientboundAddEntityPacketTest {
                 3.14, 100.0, -2.5,
                 /* xRot */ WrappedClientboundAddEntityPacket.byteToAngle((byte) 1),
                 /* yRot */ WrappedClientboundAddEntityPacket.byteToAngle((byte) 7),
-                net.minecraft.world.entity.EntityType.PIG, 7, new Vec3(1.0, 2.0, 3.0),
+                net.minecraft.world.entity.EntityTypes.PIG, 7, new Vec3(1.0, 2.0, 3.0),
                 /* yHeadRot */ WrappedClientboundAddEntityPacket.byteToAngle((byte) 3));
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedClientboundAddEntityPacket wrapper = new WrappedClientboundAddEntityPacket(container);

@@ -3,7 +3,8 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import net.minecraft.network.protocol.game.ServerboundSpectateEntityPacket;
+import java.util.OptionalInt;
+import net.minecraft.network.protocol.game.ServerboundSpectatorActionPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,9 +24,10 @@ class WrappedServerboundSpectateEntityPacketTest {
 
         assertEquals(PacketType.Play.Client.SPECTATE_ENTITY, w.getHandle().getType());
 
-        ServerboundSpectateEntityPacket p = (ServerboundSpectateEntityPacket) w.getHandle().getHandle();
+        ServerboundSpectatorActionPacket p =
+                (ServerboundSpectatorActionPacket) w.getHandle().getHandle();
 
-        assertEquals(3, p.entityId());
+        assertEquals(OptionalInt.of(3), p.spectateEntityId());
     }
 
     @Test
@@ -34,14 +36,16 @@ class WrappedServerboundSpectateEntityPacketTest {
 
         assertEquals(PacketType.Play.Client.SPECTATE_ENTITY, w.getHandle().getType());
 
-        ServerboundSpectateEntityPacket p = (ServerboundSpectateEntityPacket) w.getHandle().getHandle();
+        ServerboundSpectatorActionPacket p =
+                (ServerboundSpectatorActionPacket) w.getHandle().getHandle();
 
-        assertEquals(0, p.entityId());
+        assertEquals(OptionalInt.empty(), p.spectateEntityId());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundSpectateEntityPacket nmsPacket = new ServerboundSpectateEntityPacket(3);
+        ServerboundSpectatorActionPacket nmsPacket =
+                new ServerboundSpectatorActionPacket(OptionalInt.of(3));
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSpectateEntityPacket wrapper = new WrappedServerboundSpectateEntityPacket(container);
 
@@ -49,7 +53,10 @@ class WrappedServerboundSpectateEntityPacketTest {
 
         wrapper.setEntityId(9);
 
-        assertEquals(9, nmsPacket.entityId());
+        assertEquals(OptionalInt.of(9), nmsPacket.spectateEntityId());
+
+        wrapper.setOptionalEntityId(OptionalInt.empty());
+        assertEquals(OptionalInt.empty(), nmsPacket.spectateEntityId());
     }
 
     @Test

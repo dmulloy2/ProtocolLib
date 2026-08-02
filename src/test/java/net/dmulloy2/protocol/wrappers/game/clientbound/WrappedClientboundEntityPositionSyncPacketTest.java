@@ -4,6 +4,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
+import org.bukkit.util.Vector;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,10 +17,10 @@ class WrappedClientboundEntityPositionSyncPacketTest {
     @Test
     void testAllArgsCreate() {
         WrappedClientboundEntityPositionSyncPacket w = new WrappedClientboundEntityPositionSyncPacket(
-                5, new WrappedPositionMoveRotation(1.0, 2.0, 3.0, 0.0f, 0.0f), true);
+                5, position(1, 2, 3, 0, 0), true);
         assertEquals(PacketType.Play.Server.ENTITY_POSITION_SYNC, w.getHandle().getType());
         assertEquals(5, w.getId());
-        assertEquals(new WrappedPositionMoveRotation(1.0, 2.0, 3.0, 0.0f, 0.0f), w.getValues());
+        assertEquals(position(1, 2, 3, 0, 0), w.getValues());
         assertTrue(w.isOnGround());
     }
 
@@ -32,17 +33,17 @@ class WrappedClientboundEntityPositionSyncPacketTest {
     @Test
     void testModifyExistingPacket() {
         WrappedClientboundEntityPositionSyncPacket src = new WrappedClientboundEntityPositionSyncPacket(
-                5, new WrappedPositionMoveRotation(1.0, 2.0, 3.0, 0.0f, 0.0f), true);
+                5, position(1, 2, 3, 0, 0), true);
         PacketContainer container = PacketContainer.fromPacket(src.getHandle().getHandle());
         WrappedClientboundEntityPositionSyncPacket wrapper = new WrappedClientboundEntityPositionSyncPacket(container);
         assertEquals(5, wrapper.getId());
-        assertEquals(new WrappedPositionMoveRotation(1.0, 2.0, 3.0, 0.0f, 0.0f), wrapper.getValues());
+        assertEquals(position(1, 2, 3, 0, 0), wrapper.getValues());
         assertTrue(wrapper.isOnGround());
         wrapper.setId(9);
-        wrapper.setValues(new WrappedPositionMoveRotation(10.0, 20.0, 30.0, 270.0f, -45.0f));
+        wrapper.setValues(position(10, 20, 30, 270, -45));
         wrapper.setOnGround(false);
         assertEquals(9, wrapper.getId());
-        assertEquals(new WrappedPositionMoveRotation(10.0, 20.0, 30.0, 270.0f, -45.0f), wrapper.getValues());
+        assertEquals(position(10, 20, 30, 270, -45), wrapper.getValues());
         assertFalse(wrapper.isOnGround());
     }
 
@@ -51,5 +52,14 @@ class WrappedClientboundEntityPositionSyncPacketTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new WrappedClientboundEntityPositionSyncPacket(
                         new PacketContainer(PacketType.Play.Server.CHAT)));
+    }
+
+    private static WrappedPositionMoveRotation position(
+            double x, double y, double z, float yaw, float pitch) {
+        return WrappedPositionMoveRotation.create(
+                new Vector(x, y, z),
+                new Vector(),
+                yaw,
+                pitch);
     }
 }
