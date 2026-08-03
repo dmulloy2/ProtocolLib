@@ -58,6 +58,7 @@ public class IntegerMap<T> {
      * @return The old associated value, or NULL.
      */
     public T remove(int key) {
+        if (key < 0 || key >= array.length) return null;
         T old = array[key];
         array[key] = null;
 
