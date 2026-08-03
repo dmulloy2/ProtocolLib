@@ -666,7 +666,7 @@ public abstract class AbstractStructure {
      */
     public StructureModifier<WrappedEnumEntityUseAction> getEnumEntityUseActions() {
         if (MinecraftVersion.v26_1.atOrAbove()) {
-            return new EntityUseActionModifier(handle);
+            return new EntityUseActionModifier(structureModifier);
         }
 
         return structureModifier.withType(
@@ -677,20 +677,19 @@ public abstract class AbstractStructure {
     private static final class EntityUseActionModifier extends StructureModifier<WrappedEnumEntityUseAction> {
         private final StructureModifier<Object> packetModifier;
 
-        private EntityUseActionModifier(Object target) {
-            Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
-            this.packetModifier = new StructureModifier<>(packetClass).withTarget(target);
+        private EntityUseActionModifier(StructureModifier<Object> packetModifier) {
+            this.packetModifier = packetModifier;
             List<FieldAccessor> fields = this.packetModifier
                     .withType(MinecraftReflection.getVec3DClass())
                     .getFields();
             this.initialize(
-                    packetClass,
+                    packetModifier.getTargetType(),
                     MinecraftReflection.getVec3DClass(),
                     fields,
                     Map.of(),
                     null,
                     new HashMap<>());
-            this.target = target;
+            this.target = packetModifier.getTarget();
         }
 
         @Override
@@ -733,7 +732,7 @@ public abstract class AbstractStructure {
 
         @Override
         public StructureModifier<WrappedEnumEntityUseAction> withTarget(Object target) {
-            return new EntityUseActionModifier(target);
+            return new EntityUseActionModifier(this.packetModifier.withTarget(target));
         }
 
         private void checkEntityUseActionIndex(int fieldIndex) {
