@@ -1,6 +1,7 @@
 package com.comphenix.protocol.injector.netty.channel;
 
 import java.net.SocketAddress;
+import java.util.UUID;
 
 import org.bukkit.entity.Player;
 
@@ -65,6 +66,16 @@ final class EmptyInjector implements Injector {
     @Override
     public Player getPlayer() {
         return this.player;
+    }
+
+    @Override
+    public String getPlayerName() {
+        return this.player != null ? this.player.getName() : null;
+    }
+
+    @Override
+    public UUID getPlayerUniqueId() {
+        return this.player != null ? this.player.getUniqueId() : null;
     }
 
     @Override

@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '25'
           cache: 'gradle'
 
       - name: Run gradle build lifecycle
@@ -27,4 +27,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ProtocolLib
-          path: build/libs/ProtocolLib.jar
+          path: |
+            build/libs/ProtocolLib.jar
+            build/libs/ProtocolLib-Spigot.jar

@@ -1,10 +1,7 @@
-import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-
 plugins {
     `java-library`
     `maven-publish`
     signing
-    id("com.gradleup.shadow") version "9.4.0"
     id("io.github.patrick.remapper") version "1.4.3"
     id("com.vanniktech.maven.publish") version "0.36.0"
 }
@@ -12,7 +9,7 @@ plugins {
 group = "net.dmulloy2"
 description = "Provides access to the Minecraft protocol"
 
-val mcVersion = "26.2"
+val mcVersion: String by project
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val isJitPack = System.getenv("JITPACK")?.equals("true", ignoreCase = true) ?: false
 val commitHash = System.getenv("COMMIT_SHA") ?: ""
@@ -46,20 +43,11 @@ repositories {
 dependencies {
     implementation("net.bytebuddy:byte-buddy:1.18.2")
     compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
-    compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")//:remapped-mojang")
+    compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")
     compileOnly("io.netty:netty-all:4.2.8.Final")
     compileOnly("net.kyori:adventure-text-serializer-gson:4.25.0")
     compileOnly("com.googlecode.json-simple:json-simple:1.1.1")
-
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:6.0.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.1")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
-    testImplementation("org.mockito:mockito-core:5.21.0")
-    testImplementation("io.netty:netty-common:4.2.8.Final")
-    testImplementation("io.netty:netty-transport:4.2.8.Final")
-    testImplementation("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")//:remapped-mojang")
-    testImplementation("net.kyori:adventure-text-serializer-gson:4.25.0")
-    testImplementation("net.kyori:adventure-text-serializer-plain:4.25.0")
+    compileOnly("commons-lang:commons-lang:2.6")
 }
 
 java {
@@ -68,48 +56,21 @@ java {
     }
 }
 
-tasks {
-    processResources {
-        val fullVersion = if (isSnapshot && isCI) "${version}-${commitHash.take(7)}" else version
-
-        eachFile {
-            expand("version" to fullVersion)
-        }
-    }
-
+sourceSets {
     test {
-        useJUnitPlatform()
-        testLogging {
-            exceptionFormat = TestExceptionFormat.FULL
-        }
+        java.setSrcDirs(emptyList<String>())
+        resources.setSrcDirs(emptyList<String>())
+    }
+}
+
+tasks {
+    test {
+        dependsOn(":paper:test")
     }
 
-    shadowJar {
-        dependencies {
-            include(dependency("net.bytebuddy:byte-buddy:.*"))
-        }
-        relocate("net.bytebuddy", "com.comphenix.net.bytebuddy")
-
-        manifest {
-            attributes(
-                "paperweight-mappings-namespace" to "mojang"
-            )
-        }
-
-        archiveFileName = "ProtocolLib.jar"
+    check {
+        dependsOn(":paper:check", ":spigot:check")
     }
-
-    /*remap {
-        dependsOn("shadowJar")
-
-        inputTask.set(getByName<ShadowJar>("shadowJar"))
-        version.set(mcVersion)
-        action.set(RemapTask.Action.MOJANG_TO_SPIGOT)
-    }
-
-    assemble {
-        dependsOn("remap")
-    }*/
 
     javadoc {
         options.encoding = "UTF-8"
@@ -119,6 +80,12 @@ tasks {
         options.encoding = "UTF-8"
         options.release.set(17)
     }
+}
+
+tasks.register("shadowJar") {
+    group = "build"
+    description = "Builds the Paper and Spigot plugin distributions."
+    dependsOn(":paper:shadowJar", ":spigot:shadowJar")
 }
 
 mavenPublishing {

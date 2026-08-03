@@ -49,9 +49,10 @@ import java.util.logging.Logger;
 
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.comphenix.protocol.internal.PlatformProvider;
 
 /**
  * The main entry point for ProtocolLib.
@@ -444,14 +445,7 @@ public class ProtocolLib extends JavaPlugin {
                 return;
             }
 
-            PluginCommand command = this.getCommand(name);
-
-            // Try to load the command
-            if (command != null) {
-                command.setExecutor(executor);
-            } else {
-                throw new RuntimeException("plugin.yml might be corrupt.");
-            }
+            PlatformProvider.get().registerCommand(this, name, executor);
         } catch (RuntimeException e) {
             reporter.reportWarning(this,
                     Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).messageParam(name, e.getMessage()).error(e));

@@ -15,6 +15,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.ListenerManager;
 import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.channel.InjectionFactory;
+import com.comphenix.protocol.internal.PlatformProvider;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
@@ -23,6 +24,7 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.Pair;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 
 public class NetworkManagerInjector {
@@ -36,7 +38,9 @@ public class NetworkManagerInjector {
     private final InjectionFactory injectionFactory;
 
     // netty handler
+    private final InjectionChannelInboundHandler injectionHandler;
     private final InjectionChannelInitializer pipelineInjectorHandler;
+    private Runnable paperChannelInitializerCleanup;
 
     // status of this injector
     private boolean closed = false;
@@ -47,19 +51,32 @@ public class NetworkManagerInjector {
         this.injectionFactory = new InjectionFactory(plugin, reporter, listenerManager);
 
         // hooking netty handlers
-        InjectionChannelInboundHandler injectionHandler = new InjectionChannelInboundHandler(
+        this.injectionHandler = new InjectionChannelInboundHandler(
                 this.errorReporter,
                 this.injectionFactory);
-        this.pipelineInjectorHandler = new InjectionChannelInitializer(INBOUND_INJECT_HANDLER_NAME, injectionHandler);
+        this.pipelineInjectorHandler = new InjectionChannelInitializer(
+                INBOUND_INJECT_HANDLER_NAME,
+                this.injectionHandler);
     }
 
     public Injector getInjector(Player player) {
     	return this.injectionFactory.fromPlayer(player);
     }
 
+    public boolean isUsingPaperChannelInitializer() {
+        return this.paperChannelInitializerCleanup != null;
+    }
+
     @SuppressWarnings("unchecked")
     public void inject() {
         if (this.closed || this.injected) {
+            return;
+        }
+
+        PlatformProvider platformProvider = PlatformProvider.get();
+        if (platformProvider.hasEarlyChannelInitialization()) {
+            this.paperChannelInitializerCleanup = platformProvider.registerChannelInitializer(this::injectChannel);
+            this.injected = true;
             return;
         }
 
@@ -125,6 +142,10 @@ public class NetworkManagerInjector {
         this.injected = true;
     }
 
+    private void injectChannel(Channel channel) {
+        channel.pipeline().addLast(INBOUND_INJECT_HANDLER_NAME, this.injectionHandler);
+    }
+
     public void close() {
         if (this.closed || !this.injected) {
             return;
@@ -153,6 +174,13 @@ public class NetworkManagerInjector {
 
         // clear up
         this.overriddenLists.clear();
-        this.injectionFactory.close();
+        try {
+            if (this.paperChannelInitializerCleanup != null) {
+                this.paperChannelInitializerCleanup.run();
+            }
+        } finally {
+            this.paperChannelInitializerCleanup = null;
+            this.injectionFactory.close();
+        }
     }
 }

@@ -1436,6 +1436,142 @@ public class BukkitConverters {
         });
     }
 
+    // Lazily-resolved CraftDamageType reflection. volatile + DCL keeps the publish safe
+    // and avoids re-running fuzzy lookups in concurrent injection paths.
+    private static volatile MethodAccessor damageTypeToNms = null;
+    private static volatile MethodAccessor damageTypeFromNms = null;
+    private static volatile MethodAccessor damageTypeHolderValue = null;
+    private static boolean damageTypeToNmsReturnsHolder;
+    private static boolean damageTypeFromNmsAcceptsHolder;
+    private static final Map<Object, Object> damageTypeHolders = new ConcurrentHashMap<>();
+
+    private static FuzzyReflection craftDamageTypeFuzzy() {
+        return FuzzyReflection.fromClass(getCraftBukkitClass("damage.CraftDamageType"), false);
+    }
+
+    private static MethodAccessor resolveDamageTypeToNms() {
+        MethodAccessor accessor = damageTypeToNms;
+        if (accessor != null) return accessor;
+        synchronized (BukkitConverters.class) {
+            accessor = damageTypeToNms;
+            if (accessor != null) return accessor;
+            try {
+                accessor = Accessors.getMethodAccessor(craftDamageTypeFuzzy().getMethod(FuzzyMethodContract.newBuilder()
+                        .parameterExactArray(org.bukkit.damage.DamageType.class)
+                        .returnTypeExact(MinecraftReflection.getDamageTypeClass())
+                        .requireModifier(Modifier.STATIC)
+                        .build()));
+            } catch (IllegalArgumentException exception) {
+                accessor = Accessors.getMethodAccessor(craftDamageTypeFuzzy().getMethod(FuzzyMethodContract.newBuilder()
+                        .parameterExactArray(org.bukkit.damage.DamageType.class)
+                        .returnTypeExact(MinecraftReflection.getHolderClass())
+                        .requireModifier(Modifier.STATIC)
+                        .build()));
+                damageTypeToNmsReturnsHolder = true;
+            }
+            damageTypeToNms = accessor;
+            return accessor;
+        }
+    }
+
+    private static MethodAccessor resolveDamageTypeFromNms() {
+        MethodAccessor accessor = damageTypeFromNms;
+        if (accessor != null) return accessor;
+        synchronized (BukkitConverters.class) {
+            accessor = damageTypeFromNms;
+            if (accessor != null) return accessor;
+            try {
+                accessor = Accessors.getMethodAccessor(craftDamageTypeFuzzy().getMethod(FuzzyMethodContract.newBuilder()
+                        .parameterExactArray(MinecraftReflection.getDamageTypeClass())
+                        .returnTypeExact(org.bukkit.damage.DamageType.class)
+                        .requireModifier(Modifier.STATIC)
+                        .build()));
+            } catch (IllegalArgumentException exception) {
+                accessor = Accessors.getMethodAccessor(craftDamageTypeFuzzy().getMethod(FuzzyMethodContract.newBuilder()
+                        .parameterExactArray(MinecraftReflection.getHolderClass())
+                        .returnTypeExact(org.bukkit.damage.DamageType.class)
+                        .requireModifier(Modifier.STATIC)
+                        .build()));
+                damageTypeFromNmsAcceptsHolder = true;
+            }
+            damageTypeFromNms = accessor;
+            return accessor;
+        }
+    }
+
+    private static Object getHolderValue(Object holder) {
+        MethodAccessor accessor = damageTypeHolderValue;
+        if (accessor == null) {
+            synchronized (BukkitConverters.class) {
+                accessor = damageTypeHolderValue;
+                if (accessor == null) {
+                    accessor = Accessors.getMethodAccessor(
+                            FuzzyReflection.fromClass(MinecraftReflection.getHolderClass(), false)
+                                    .getMethod(FuzzyMethodContract.newBuilder()
+                                            .parameterCount(0)
+                                            .banModifier(Modifier.STATIC)
+                                            .returnTypeExact(Object.class)
+                                            .build()));
+                    damageTypeHolderValue = accessor;
+                }
+            }
+        }
+        return accessor.invoke(holder);
+    }
+
+    private static Object getDamageTypeHolder(Object generic) {
+        Object holder = damageTypeHolders.get(generic);
+        if (holder != null) {
+            return holder;
+        }
+
+        MethodAccessor accessor = resolveDamageTypeToNms();
+        if (!damageTypeToNmsReturnsHolder) {
+            throw new IllegalStateException("CraftDamageType accepts holders but does not produce them");
+        }
+
+        for (org.bukkit.damage.DamageType damageType : org.bukkit.Registry.DAMAGE_TYPE) {
+            Object candidate = accessor.invoke(null, damageType);
+            Object candidateValue = getHolderValue(candidate);
+            damageTypeHolders.putIfAbsent(candidateValue, candidate);
+            if (Objects.equal(candidateValue, generic)) {
+                return candidate;
+            }
+        }
+
+        throw new IllegalArgumentException("Unable to resolve a holder for damage type " + generic);
+    }
+
+    public static EquivalentConverter<org.bukkit.damage.DamageType> getDamageTypeConverter() {
+        return ignoreNull(new EquivalentConverter<org.bukkit.damage.DamageType>() {
+
+            @Override
+            public Class<org.bukkit.damage.DamageType> getSpecificType() {
+                return org.bukkit.damage.DamageType.class;
+            }
+
+            @Override
+            public Object getGeneric(org.bukkit.damage.DamageType specific) {
+                Object generic = resolveDamageTypeToNms().invoke(null, specific);
+                if (damageTypeToNmsReturnsHolder) {
+                    Object value = getHolderValue(generic);
+                    damageTypeHolders.putIfAbsent(value, generic);
+                    return value;
+                }
+                return generic;
+            }
+
+            @Override
+            public org.bukkit.damage.DamageType getSpecific(Object generic) {
+                MethodAccessor accessor = resolveDamageTypeFromNms();
+                if (damageTypeFromNmsAcceptsHolder) {
+                    generic = getDamageTypeHolder(generic);
+                }
+                return (org.bukkit.damage.DamageType) accessor.invoke(null, generic);
+            }
+        });
+    }
+
     private static Class<?> dimensionManager;
     private static FauxEnumConverter<Dimension> dimensionConverter;
     private static FauxEnumConverter<DimensionImpl> dimensionImplConverter;

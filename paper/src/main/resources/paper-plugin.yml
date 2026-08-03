@@ -1,0 +1,22 @@
+name: ProtocolLib
+version: ${version}
+description: Provides read/write access to the Minecraft protocol.
+authors: [dmulloy2]
+
+main: com.comphenix.protocol.ProtocolLib
+load: STARTUP
+api-version: "26.2"
+folia-supported: true
+
+permissions:
+  protocol.*:
+    description: Gives access to everything.
+    children:
+      protocol.admin: true
+      protocol.info: true
+  protocol.admin:
+    description: Able to initiate the update process and configure debug mode.
+    default: op
+  protocol.info:
+    description: Can read update notifications and error reports.
+    default: op

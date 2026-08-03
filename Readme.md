@@ -18,12 +18,15 @@ lead to more subtle bugs.
 * [JavaDoc](https://dmulloy2.net/ProtocolLib/javadoc/)
 * [Protocol Wiki](https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg_merge/Protocol)
 
+`ProtocolLib.jar` is the primary Paper plugin. Spigot servers must use the compatibility artifact,
+`ProtocolLib-Spigot.jar`. The Maven artifact is the platform-neutral library shared by both distributions.
+
 ### Compilation
 
 ProtocolLib is built with [Gradle](https://gradle.org/). If you have it installed, just run
 `./gradlew build` in the root project folder. Other gradle targets you may be interested in 
 include `clean`, `test`, and `shadowJar`. `shadowJar` will create a jar with all dependencies
-(ByteBuddy) included.
+(ByteBuddy) included for both Paper and Spigot.
 
 ### A new API
 

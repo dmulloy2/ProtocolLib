@@ -19,6 +19,7 @@ package com.comphenix.protocol.injector.temporary;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -132,7 +133,16 @@ public class TemporaryPlayerFactory {
                 if (methodName.equals("isOnline")) {
                     return injector.isConnected();
                 } else if (methodName.equals("getName")) {
+                    String playerName = injector.getPlayerName();
+                    if (playerName != null) {
+                        return playerName;
+                    }
                     return "UNKNOWN[" + injector.getAddress() + "]";
+                } else if (methodName.equals("getUniqueId")) {
+                    UUID playerUniqueId = injector.getPlayerUniqueId();
+                    if (playerUniqueId != null) {
+                        return playerUniqueId;
+                    }
                 }
 
                 // Ignore all other methods
@@ -184,14 +194,16 @@ public class TemporaryPlayerFactory {
      *   <li>getPlayer()</li>
      *   <li>getAddress()</li>
      *   <li>getServer()</li>
+     *   <li>getName()</li>
+     *   <li>getUniqueId(), when supplied by the login protocol</li>
      *   <li>chat(String)</li>
      *   <li>sendMessage(String)</li>
      *   <li>sendMessage(String[])</li>
      *   <li>kickPlayer(String)</li>
      * </ul>
      * <p>
-     * Note that a temporary player has not yet been assigned a name, and thus cannot be
-     * uniquely identified. Use the address instead.
+     * Before the login start packet is received, the player has no profile information
+     * and can only be identified by its address.
      *
      * @return A temporary player instance.
      */

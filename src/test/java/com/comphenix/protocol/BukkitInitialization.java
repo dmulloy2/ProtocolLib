@@ -3,16 +3,19 @@ package com.comphenix.protocol;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.MoreExecutors;
+import io.papermc.paper.configuration.GlobalConfiguration;
+import io.papermc.paper.configuration.WorldConfiguration;
+import io.papermc.paper.registry.PaperRegistryAccess;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
@@ -23,12 +26,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.ServerPacksSource;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
@@ -37,10 +40,13 @@ import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagLoader;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.DataPackConfig;
+import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import org.apache.logging.log4j.LogManager;
@@ -126,13 +132,25 @@ public class BukkitInitialization {
             // Minecraft Data Init
             SharedConstants.tryDetectVersion(); // .tryDetectVersion()
             Bootstrap.bootStrap(); // .bootStrap()
+            Bootstrap.validate();
 
             PackRepository repo = ServerPacksSource.createVanillaTrustedRepository();
-            repo.reload();
+            MinecraftServer.configurePackRepository(
+                    repo,
+                    new WorldDataConfiguration(
+                            new DataPackConfig(
+                                    FeatureFlags.REGISTRY.toNames(FeatureFlags.REGISTRY.allFlags())
+                                            .stream()
+                                            .map(Identifier::getPath)
+                                            .toList(),
+                                    List.of()),
+                            FeatureFlags.REGISTRY.allFlags()),
+                    true,
+                    false);
 
             ResourceManager resourceManager = new MultiPackResourceManager(
                 PackType.SERVER_DATA,
-                repo.getAvailablePacks().stream().map(Pack::open).collect(Collectors.toList())
+                repo.openAllSelected()
             );
 
             LayeredRegistryAccess<RegistryLayer> layeredAccess1 = RegistryLayer.createRegistryAccess();
@@ -143,13 +161,40 @@ public class BukkitInitialization {
             RegistryAccess.Frozen access2;
 
             try {
-                access2 = RegistryDataLoader.load(resourceManager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES, Executors.newSingleThreadExecutor()).get();
+                access2 = RegistryDataLoader.load(
+                        resourceManager,
+                        list1,
+                        RegistryDataLoader.WORLDGEN_REGISTRIES,
+                        Util.backgroundExecutor()).get();
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
-            
-            LayeredRegistryAccess<RegistryLayer> layeredAccess2 = layeredAccess1.replaceFrom(RegistryLayer.WORLDGEN, access2);
+
+            LayeredRegistryAccess<RegistryLayer> layeredAccess2 =
+                    layeredAccess1.replaceFrom(RegistryLayer.WORLDGEN, access2);
+            List<HolderLookup.RegistryLookup<?>> dimensionLookups =
+                    Stream.concat(list1.stream(), access2.listRegistries()).toList();
+            RegistryAccess.Frozen dimensions = RegistryDataLoader.load(
+                    resourceManager,
+                    dimensionLookups,
+                    RegistryDataLoader.DIMENSION_REGISTRIES,
+                    Util.backgroundExecutor()).join();
+            layeredAccess2 = layeredAccess2.replaceFrom(RegistryLayer.DIMENSIONS, dimensions);
+
+            try {
+                Class.forName(Registry.class.getName());
+            } catch (ClassNotFoundException exception) {
+                throw new RuntimeException(exception);
+            }
+
             RegistryAccess.Frozen registryCustom = layeredAccess2.compositeAccess().freeze();
+            PaperRegistryAccess paperRegistryAccess = PaperRegistryAccess.instance();
+            GlobalConfiguration globalConfiguration = new GlobalConfiguration();
+            globalConfiguration.collisions = globalConfiguration.new Collisions();
+            Accessors.getMethodAccessor(
+                    GlobalConfiguration.class,
+                    "set",
+                    GlobalConfiguration.class).invoke(null, globalConfiguration);
 
             ReloadableServerResources dataPackResources = ReloadableServerResources.loadResources(
                 resourceManager,
@@ -177,6 +222,13 @@ public class BukkitInitialization {
             DedicatedServer mockedGameServer = mock(DedicatedServer.class);
 
             when(mockedGameServer.registryAccess()).thenReturn(registryCustom);
+            try {
+                FieldAccessor serverInstance = Accessors.getFieldAccessor(
+                        MinecraftServer.class.getDeclaredField("SERVER"));
+                serverInstance.set(null, mockedGameServer);
+            } catch (NoSuchFieldException exception) {
+                throw new RuntimeException(exception);
+            }
 
             when(mockedServer.getLogger()).thenReturn(java.util.logging.Logger.getLogger("Minecraft"));
             when(mockedServer.getName()).thenReturn("Mock Server");
@@ -193,7 +245,7 @@ public class BukkitInitialization {
             });
             when(mockedServer.getRegistry(any())).thenAnswer(invocation -> {
                 Class<Keyed> registryType = invocation.getArgument(0);
-                Object registry = CraftRegistry.createRegistry(registryType, registryCustom);
+                Object registry = paperRegistryAccess.getRegistry(registryType);
 
                 if (registry == null) {
                     System.err.println("WARN: Missing registry for " + registryType);
@@ -245,6 +297,18 @@ public class BukkitInitialization {
 
             ServerLevel nmsWorld = mock(ServerLevel.class);
             SpigotWorldConfig mockWorldConfig = mock(SpigotWorldConfig.class);
+            ConstructorAccessor worldConfigurationConstructor = Accessors.getConstructorAccessor(
+                    WorldConfiguration.class,
+                    SpigotWorldConfig.class,
+                    Identifier.class);
+            WorldConfiguration worldConfiguration = (WorldConfiguration) worldConfigurationConstructor.invoke(
+                    mockWorldConfig,
+                    Identifier.parse("minecraft:test"));
+            worldConfiguration.entities = worldConfiguration.new Entities();
+            worldConfiguration.entities.spawning =
+                    worldConfiguration.entities.new Spawning();
+            worldConfiguration.entities.spawning.despawnTime = new Reference2ObjectOpenHashMap<>();
+            when(nmsWorld.paperConfig()).thenReturn(worldConfiguration);
 
             try {
                 FieldAccessor spigotConfig = Accessors.getFieldAccessor(nmsWorld.getClass().getField("spigotConfig"));
@@ -310,6 +374,36 @@ public class BukkitInitialization {
         public Stream<T> stream() {
             List<T> empty = Collections.emptyList();
             return empty.stream();
+        }
+
+        @Override
+        public Stream<NamespacedKey> keyStream() {
+            return Stream.empty();
+        }
+
+        @Override
+        public NamespacedKey getKey(T value) {
+            return null;
+        }
+
+        @Override
+        public boolean hasTag(io.papermc.paper.registry.tag.TagKey<T> key) {
+            return false;
+        }
+
+        @Override
+        public io.papermc.paper.registry.tag.Tag<T> getTag(io.papermc.paper.registry.tag.TagKey<T> key) {
+            return null;
+        }
+
+        @Override
+        public java.util.Collection<io.papermc.paper.registry.tag.Tag<T>> getTags() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public int size() {
+            return 0;
         }
     }
 }
