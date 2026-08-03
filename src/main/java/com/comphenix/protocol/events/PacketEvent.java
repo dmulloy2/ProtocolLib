@@ -391,6 +391,8 @@ public class PacketEvent extends EventObject implements Cancellable {
      *     <li>getPlayer</li>
      *     <li>getAddress</li>
      *     <li>getServer</li>
+     *     <li>getName, after the login start packet</li>
+     *     <li>getUniqueId, when supplied by the login protocol</li>
      *     <li>chat</li>
      *     <li>sendMessage</li>
      *     <li>kickPlayer</li>

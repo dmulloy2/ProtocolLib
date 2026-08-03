@@ -928,6 +928,10 @@ public final class MinecraftReflection {
         return getMinecraftClass("world.effect.MobEffectList", "MobEffectList", "world.effect.MobEffect", "world.effect.MobEffects");
     }
 
+    public static Class<?> getDamageTypeClass() {
+        return getMinecraftClass("world.damagesource.DamageType");
+    }
+
     public static Class<?> getSoundEffectClass() {
         return getNullableNMS("sounds.SoundEffect", "sounds.SoundEvent", "SoundEffect", "sounds.SoundEvents");
     }

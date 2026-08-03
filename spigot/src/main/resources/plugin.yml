@@ -1,7 +1,7 @@
 name: ProtocolLib
 version: ${version}
 description: Provides read/write access to the Minecraft protocol.
-authors: [dmulloy2, comphenix]
+authors: [dmulloy2]
 
 main: com.comphenix.protocol.ProtocolLib
 load: STARTUP

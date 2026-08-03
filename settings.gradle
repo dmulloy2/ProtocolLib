@@ -3,3 +3,5 @@
  */
 
 rootProject.name = 'ProtocolLib'
+
+include 'paper', 'spigot'

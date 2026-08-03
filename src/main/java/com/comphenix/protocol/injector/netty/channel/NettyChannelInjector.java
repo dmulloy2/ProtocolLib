@@ -4,7 +4,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.SocketAddress;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +33,7 @@ import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.temporary.TemporaryPlayer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
@@ -100,6 +103,7 @@ public class NettyChannelInjector implements Injector {
 
     // information about the player belonging to this injector
     private String playerName;
+    private UUID playerUniqueId;
     private Player player;
 
     // lazy initialized fields, if we don't need them we don't bother about them
@@ -115,6 +119,10 @@ public class NettyChannelInjector implements Injector {
     ) {
         // bukkit stuff
         this.player = player;
+        if (player != null && !(player instanceof TemporaryPlayer)) {
+            this.playerName = player.getName();
+            this.playerUniqueId = player.getUniqueId();
+        }
 
         // protocol lib stuff
         this.errorReporter = errorReporter;
@@ -362,11 +370,22 @@ public class NettyChannelInjector implements Injector {
     }
 
     @Override
+    public String getPlayerName() {
+        return this.playerName;
+    }
+
+    @Override
+    public UUID getPlayerUniqueId() {
+        return this.playerUniqueId;
+    }
+
+    @Override
     public void setPlayer(Player player) {
         this.injectionFactory.invalidate(this.player, this.playerName);
 
         this.player = player;
         this.playerName = player.getName();
+        this.playerUniqueId = player.getUniqueId();
 
         this.injectionFactory.cacheInjector(player, this);
         this.injectionFactory.cacheInjector(player.getName(), this);
@@ -421,13 +440,18 @@ public class NettyChannelInjector implements Injector {
         // process login packets for the player name
         if (packet.getType() == PacketType.Login.Client.START) {
             String username;
+            UUID uniqueId;
             if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
                 // 1.19 replaced the gameprofile with username and uuid field
                 username = packet.getStrings().readSafely(0);
+                uniqueId = readLoginUniqueId(packet);
             } else {
                 WrappedGameProfile profile = packet.getGameProfiles().readSafely(0);
                 username = profile != null ? profile.getName() : null;
+                uniqueId = profile != null ? profile.getUUID() : null;
             }
+
+            this.playerUniqueId = uniqueId;
 
             if (username != null) {
                 this.playerName = username;
@@ -441,6 +465,22 @@ public class NettyChannelInjector implements Injector {
         } else {
             ctx.fireChannelRead(packet.getHandle());
         }
+    }
+
+    private static UUID readLoginUniqueId(PacketContainer packet) {
+        UUID uniqueId = packet.getUUIDs().readSafely(0);
+        if (uniqueId != null) {
+            return uniqueId;
+        }
+
+        StructureModifier<Optional> optionals = packet.getModifier().withType(Optional.class);
+        for (int i = 0; i < optionals.size(); i++) {
+            Optional<?> optional = optionals.readSafely(i);
+            if (optional != null && optional.orElse(null) instanceof UUID optionalUniqueId) {
+                return optionalUniqueId;
+            }
+        }
+        return null;
     }
 
     private void processInboundInternal(ChannelHandlerContext ctx, PacketContainer packetContainer) {

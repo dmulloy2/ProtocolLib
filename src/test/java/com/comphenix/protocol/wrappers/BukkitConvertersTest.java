@@ -13,6 +13,7 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -61,6 +62,14 @@ public class BukkitConvertersTest {
 
         assertEquals(wrapped.left(), nmsEither.left());
         assertEquals(wrapped.right(), nmsEither.right());
+    }
+
+    @Test
+    public void testDamageType() {
+        EquivalentConverter<DamageType> converter = BukkitConverters.getDamageTypeConverter();
+        Object generic = converter.getGeneric(DamageType.FALL);
+
+        assertEquals(DamageType.FALL, converter.getSpecific(generic));
     }
 
     @Test

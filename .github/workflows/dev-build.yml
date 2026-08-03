@@ -16,7 +16,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '25'
           cache: 'gradle'
 
       - name: Run gradle build lifecycle
@@ -27,7 +27,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ProtocolLib
-          path: build/libs/ProtocolLib.jar
+          path: |
+            build/libs/ProtocolLib.jar
+            build/libs/ProtocolLib-Spigot.jar
 
       - name: Create or update GitHub pre-release
         env:
@@ -41,3 +43,4 @@ jobs:
           NEW_NOTES="$RELEASE_NOTES"$'\n'"* [$SHORT_HASH] $COMMIT_MSG"
           gh release edit dev-build --notes "$NEW_NOTES" --repo ${{ github.repository }}
           gh release upload dev-build build/libs/ProtocolLib.jar#ProtocolLib.jar --clobber --repo ${{ github.repository }}
+          gh release upload dev-build build/libs/ProtocolLib-Spigot.jar#ProtocolLib-Spigot.jar --clobber --repo ${{ github.repository }}

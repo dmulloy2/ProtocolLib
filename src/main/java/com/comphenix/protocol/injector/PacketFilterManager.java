@@ -426,13 +426,19 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
             this.injected = true;
             this.networkManagerInjector.inject();
 
+            // Paper disables reconfiguration when any PlayerLoginEvent listener is registered.
+            if (!this.networkManagerInjector.isUsingPaperChannelInitializer()) {
+                manager.registerEvents(new Listener() {
+
+                    @EventHandler(priority = EventPriority.LOWEST)
+                    public void handleLogin(PlayerLoginEvent event) {
+                        networkManagerInjector.getInjector(event.getPlayer()).inject();
+                    }
+                }, plugin);
+            }
+
             // all listeners we need, this is a bit messy, but it makes the job correctly
             manager.registerEvents(new Listener() {
-
-                @EventHandler(priority = EventPriority.LOWEST)
-                public void handleLogin(PlayerLoginEvent event) {
-                	networkManagerInjector.getInjector(event.getPlayer()).inject();
-                }
 
                 @EventHandler(priority = EventPriority.LOWEST)
                 public void handleJoin(PlayerJoinEvent event) {

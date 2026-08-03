@@ -1,6 +1,7 @@
 package com.comphenix.protocol.injector.netty;
 
 import java.net.SocketAddress;
+import java.util.UUID;
 
 import org.bukkit.entity.Player;
 
@@ -66,6 +67,24 @@ public interface Injector {
      * @return The current player.
      */
     Player getPlayer();
+
+    /**
+     * Retrieve the player name captured during login.
+     *
+     * @return The player name, or NULL if it is not known yet.
+     */
+    default String getPlayerName() {
+        return null;
+    }
+
+    /**
+     * Retrieve the player UUID captured during login.
+     *
+     * @return The player UUID, or NULL if it is not available.
+     */
+    default UUID getPlayerUniqueId() {
+        return null;
+    }
 
     /**
      * Set the current player instance.

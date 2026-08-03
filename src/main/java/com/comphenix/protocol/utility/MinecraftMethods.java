@@ -57,21 +57,25 @@ public final class MinecraftMethods {
     }
     
     public static Function<ByteBuf, Object> getFriendlyBufBufConstructor() {
-    	if (friendlyBufBufConstructor == null) {
-    		Optional<Class<?>> registryByteBuf = MinecraftReflection.getRegistryFriendlyByteBufClass();
-    		
-    		if (registryByteBuf.isPresent()) {
-    			ConstructorAccessor accessor = Accessors.getConstructorAccessor(FuzzyReflection.fromClass(registryByteBuf.get()).getConstructor(FuzzyMethodContract.newBuilder()
-    					.parameterDerivedOf(ByteBuf.class)
-    					.parameterDerivedOf(MinecraftReflection.getRegistryAccessClass())
-    					.build()));
-    			friendlyBufBufConstructor = (byteBuf) -> accessor.invoke(byteBuf, MinecraftRegistryAccess.get());
-    		} else {
-    			ConstructorAccessor accessor = Accessors.getConstructorAccessor(MinecraftReflection.getPacketDataSerializerClass(), ByteBuf.class);
-    			friendlyBufBufConstructor = (byteBuf) -> accessor.invoke(byteBuf);
-    		}
-    	}
-    	return friendlyBufBufConstructor;
+        if (friendlyBufBufConstructor == null) {
+            Optional<Class<?>> registryByteBuf = MinecraftReflection.getRegistryFriendlyByteBufClass();
+
+            if (registryByteBuf.isPresent()) {
+                ConstructorAccessor accessor = Accessors.getConstructorAccessor(
+                        FuzzyReflection.fromClass(registryByteBuf.get()).getConstructor(
+                                FuzzyMethodContract.newBuilder()
+                                        .parameterExactType(ByteBuf.class, 0)
+                                        .parameterExactType(MinecraftReflection.getRegistryAccessClass(), 1)
+                                        .build()));
+                friendlyBufBufConstructor = byteBuf -> accessor.invoke(byteBuf, MinecraftRegistryAccess.get());
+            } else {
+                ConstructorAccessor accessor = Accessors.getConstructorAccessor(
+                        MinecraftReflection.getPacketDataSerializerClass(),
+                        ByteBuf.class);
+                friendlyBufBufConstructor = byteBuf -> accessor.invoke(byteBuf);
+            }
+        }
+        return friendlyBufBufConstructor;
     }
 
     /**

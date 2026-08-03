@@ -6,15 +6,17 @@ development, so keep changes focused and preserve existing behavior unless a bre
 
 ## Building ProtocolLib
 
-Use the Gradle wrapper from the repository root. The build uses the Java 25 toolchain and resolves the current Spigot
-server dependency from the CodeMC repository.
+Use the Gradle wrapper from the repository root. The root project builds the platform-neutral library published to
+Maven. The `paper` module compiles and tests it against Paper's development bundle and produces the primary plugin,
+`build/libs/ProtocolLib.jar`. The `spigot` compatibility module produces `build/libs/ProtocolLib-Spigot.jar`.
 
 ```shell
 ./gradlew test
 ./gradlew build shadowJar
 ```
 
-`shadowJar` produces `build/libs/ProtocolLib.jar` with the required Byte Buddy classes included.
+`shadowJar` builds both plugin distributions with the required Byte Buddy classes included. Neither platform provider
+nor plugin descriptor is included in the Maven core artifact.
 
 ProtocolLib uses the Java 25 toolchain to compile against the current server, but production classes target Java 17 for
 compatibility with older supported servers.
@@ -26,7 +28,7 @@ server classes. The server packet classes and codecs are authoritative when docu
 
 ### 1. Update version metadata
 
-- Update `mcVersion` in `build.gradle.kts`.
+- Update `mcVersion` in `gradle.properties`.
 - Add the release to `MinecraftVersion` and update `MinecraftVersion.LATEST`.
 - Update `ProtocolLibrary.MAXIMUM_MINECRAFT_VERSION` and `ProtocolLibrary.MINECRAFT_LAST_RELEASE_DATE`.
 - Update `MinecraftProtocolVersion` if the release changed the protocol number.
@@ -57,7 +59,7 @@ serverbound and clientbound packet classes and codecs against every protocol pha
 ### 4. Add regression coverage
 
 - Initialize the test environment with `BukkitInitialization` when tests access CraftBukkit or NMS classes.
-- Exercise the actual packet structure supplied by the current Spigot dependency.
+- Exercise the actual packet structure supplied by the current Paper dependency.
 - Cover both sides of a version guard when feasible.
 - Re-enable previously disabled tests when the underlying incompatibility is fixed.
 - Run targeted tests while developing, followed by `./gradlew test`.
