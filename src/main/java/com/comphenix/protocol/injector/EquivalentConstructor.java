@@ -49,11 +49,14 @@ public class EquivalentConstructor {
         int i = 0;
         for (Tuple<Class<?>, Object> entry : converters) {
             Object rawConverter = entry.second();
-            switch (rawConverter) {
-                case EquivalentConverter converter -> convertedArgs[i] = converter.getGeneric(args[i]);
-                case PacketConstructor.Unwrapper unwrapper -> convertedArgs[i] = unwrapper.unwrapItem(args[i]);
-                case null -> convertedArgs[i] = args[i];
-                default -> throw new IllegalStateException("Invalid converter type: " + rawConverter.getClass());
+            if (rawConverter == null) {
+                convertedArgs[i] = args[i];
+            } else if (rawConverter instanceof EquivalentConverter converter) {
+                convertedArgs[i] = converter.getGeneric(args[i]);
+            } else if (rawConverter instanceof PacketConstructor.Unwrapper unwrapper) {
+                convertedArgs[i] = unwrapper.unwrapItem(args[i]);
+            } else {
+                throw new IllegalStateException("Invalid converter type: " + rawConverter.getClass());
             }
 
             i++;
