@@ -323,12 +323,12 @@ public class AsyncFilterManager implements AsynchronousManager {
 
     @Override
     public Set<PacketType> getReceivingTypes() {
-        return serverProcessingQueue.keySet();
+        return clientProcessingQueue.keySet();
     }
 
     @Override
     public Set<PacketType> getSendingTypes() {
-        return clientProcessingQueue.keySet();
+        return serverProcessingQueue.keySet();
     }
     
     /**
