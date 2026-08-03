@@ -7,6 +7,7 @@ definitions, reflection, or public wrappers.
 
 - The main project uses the Gradle wrapper. Do not use `TinyProtocol/pom.xml` to build ProtocolLib.
 - The Java toolchain and current Spigot dependency are defined in `build.gradle.kts`.
+- Keep the Java 25 build toolchain separate from the Java 17 production bytecode target.
 - Production code is under `src/main/java`; JUnit tests and NMS test initialization are under `src/test/java`.
 - Keep changes focused. Do not combine protocol fixes with unrelated cleanup or formatting.
 - Preserve public API and binary compatibility unless the task explicitly requires a breaking change.

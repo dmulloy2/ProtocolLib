@@ -63,9 +63,6 @@ dependencies {
 }
 
 java {
-    // sourceCompatibility = JavaVersion.VERSION_25
-    // targetCompatibility = JavaVersion.VERSION_25
-
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(25))
     }
@@ -120,6 +117,7 @@ tasks {
 
     compileJava {
         options.encoding = "UTF-8"
+        options.release.set(17)
     }
 }
 

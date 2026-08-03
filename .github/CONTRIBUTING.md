@@ -16,6 +16,9 @@ server dependency from the CodeMC repository.
 
 `shadowJar` produces `build/libs/ProtocolLib.jar` with the required Byte Buddy classes included.
 
+ProtocolLib uses the Java 25 toolchain to compile against the current server, but production classes target Java 17 for
+compatibility with older supported servers.
+
 ## Updating ProtocolLib for a Minecraft Release
 
 Start by reviewing the [Java Edition protocol](https://minecraft.wiki/w/Java_Edition_protocol) and the corresponding
