@@ -41,6 +41,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
@@ -101,6 +103,10 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.common.custom.BrandPayload;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket.AttributeSnapshot;
@@ -421,6 +427,64 @@ public class PacketContainerTest {
 
         PacketContainer cloned = SerializableCloner.clone(payload);
         Assertions.assertNotSame(payload, cloned);
+    }
+
+    @Test
+    public void testCustomPayloadConcreteSerialization() {
+        BrandPayload payload = new BrandPayload("Hello World!");
+
+        CustomPacketPayloadWrapper wrapper = CustomPacketPayloadWrapper.fromUnknownPayload(payload);
+
+        assertEquals(BrandPayload.TYPE.id().toString(), wrapper.getId().getFullKey());
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(wrapper.getPayload()));
+        try {
+            assertEquals("Hello World!", buffer.readUtf());
+            assertEquals(0, buffer.readableBytes());
+        } finally {
+            buffer.release();
+        }
+    }
+
+    @Test
+    public void testCustomPayloadSerializationFailureReleasesBuffer() {
+        FailingPayload payload = new FailingPayload();
+
+        assertThrows(RuntimeException.class, () -> CustomPacketPayloadWrapper.fromUnknownPayload(payload));
+
+        assertEquals(0, payload.buffer.refCnt());
+    }
+
+    @Test
+    public void testCustomPayloadCreatesDiscardedPayload() {
+        byte[] data = {0x00, 0x01, 0x05, 0x07};
+        com.comphenix.protocol.wrappers.MinecraftKey id =
+                new com.comphenix.protocol.wrappers.MinecraftKey("protocollib", "test");
+        CustomPacketPayloadWrapper wrapper = new CustomPacketPayloadWrapper(data, id);
+
+        Object handle = wrapper.newHandle();
+
+        assertInstanceOf(DiscardedPayload.class, handle);
+        CustomPacketPayloadWrapper converted = CustomPacketPayloadWrapper.fromUnknownPayload(handle);
+        assertEquals(id, converted.getId());
+        assertArrayEquals(data, converted.getPayload());
+    }
+
+    private static final class FailingPayload implements CustomPacketPayload {
+        private static final Type<FailingPayload> TYPE =
+                new Type<>(Identifier.fromNamespaceAndPath("protocollib", "failing"));
+
+        private ByteBuf buffer;
+
+        @SuppressWarnings("unused")
+        private void write(FriendlyByteBuf buffer) {
+            this.buffer = buffer;
+            throw new IllegalStateException("expected failure");
+        }
+
+        @Override
+        public Type<FailingPayload> type() {
+            return TYPE;
+        }
     }
 
 	/*
