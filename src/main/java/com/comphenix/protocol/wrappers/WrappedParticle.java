@@ -27,6 +27,15 @@ public class WrappedParticle<T> {
     private static MethodAccessor toNMS;
     private static MethodAccessor toCraftData;
 
+    private static final class ItemStackTemplateAccessor {
+        private static final Class<?> TYPE = MinecraftReflection.getMinecraftClass("world.item.ItemStackTemplate");
+        private static final MethodAccessor CREATE_ITEM_STACK = Accessors.getMethodAccessor(
+                FuzzyReflection.fromClass(TYPE).getMethod(FuzzyMethodContract.newBuilder()
+                        .returnTypeExact(MinecraftReflection.getItemStackClass())
+                        .parameterCount(0)
+                        .build()));
+    }
+
     private static void ensureMethods() {
         if (toBukkit != null && toNMS != null) {
             return;
@@ -176,6 +185,15 @@ public class WrappedParticle<T> {
     }
 
     private static Object getItem(Object handle) {
+        if (MinecraftVersion.v26_1.atOrAbove()) {
+            Object template = new StructureModifier<>(handle.getClass())
+                    .withTarget(handle)
+                    .withType(ItemStackTemplateAccessor.TYPE)
+                    .read(0);
+            Object itemStack = ItemStackTemplateAccessor.CREATE_ITEM_STACK.invoke(template);
+            return BukkitConverters.getItemStackConverter().getSpecific(itemStack);
+        }
+
         return new StructureModifier<>(handle.getClass())
                 .withTarget(handle)
                 .withType(MinecraftReflection.getItemStackClass(), BukkitConverters.getItemStackConverter())
