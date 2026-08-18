@@ -5,6 +5,7 @@ import com.comphenix.protocol.utility.IntegerMath;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class IntegerMapTest {
     @Test
@@ -20,5 +21,16 @@ class IntegerMapTest {
             map.put(i, false);
         }
         assertEquals(map.size(), 512);
+    }
+
+    @Test
+    public void testRemoveOutsideBounds() {
+        IntegerMap<Boolean> map = new IntegerMap<>();
+        map.put(0, true);
+
+        assertNull(map.remove(-1));
+        assertEquals(1, map.size());
+        assertNull(map.remove(8));
+        assertEquals(1, map.size());
     }
 }

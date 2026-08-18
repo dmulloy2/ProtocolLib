@@ -10,6 +10,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StreamSerializerTest {
@@ -85,5 +88,24 @@ public class StreamSerializerTest {
         ItemStack deserialized = serializer.deserializeItemStack(serialized);
 
         assertItemsEqual(initial, deserialized);
+    }
+
+    @Test
+    public void testGetBytesAndReleasePreservesReaderIndex() {
+        StreamSerializer serializer = new StreamSerializer();
+        ByteBuf[] buffers = {Unpooled.buffer(16), Unpooled.directBuffer(16)};
+
+        for (ByteBuf buffer : buffers) {
+            buffer.writeBytes(new byte[] {0, 1, 2, 3, 4});
+            buffer.readerIndex(2);
+            buffer.retain();
+
+            try {
+                assertArrayEquals(new byte[] {2, 3, 4}, serializer.getBytesAndRelease(buffer));
+                assertEquals(2, buffer.readerIndex());
+            } finally {
+                buffer.release();
+            }
+        }
     }
 }

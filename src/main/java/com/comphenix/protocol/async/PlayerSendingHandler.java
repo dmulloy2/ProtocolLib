@@ -134,14 +134,18 @@ class PlayerSendingHandler {
      * @return The server or client sending queue the packet belongs to.
      */
     public PacketSendingQueue getSendingQueue(PacketEvent packet, boolean createNew) {
-        QueueContainer queues = playerSendingQueues.get(packet.getPlayer());
+        Player player = packet.getPlayer();
+        if (player == null)
+            return null;
+
+        QueueContainer queues = playerSendingQueues.get(player);
         
         // Safe concurrent initialization
         if (queues == null && createNew) {
             final QueueContainer newContainer = new QueueContainer();
 
             // Attempt to map the queue
-            queues = playerSendingQueues.putIfAbsent(packet.getPlayer(), newContainer);
+            queues = playerSendingQueues.putIfAbsent(player, newContainer);
             
             if (queues == null) {
                 queues = newContainer;

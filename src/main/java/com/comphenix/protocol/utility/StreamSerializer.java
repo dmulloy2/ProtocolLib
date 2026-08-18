@@ -326,15 +326,9 @@ public class StreamSerializer {
 
     public byte[] getBytesAndRelease(ByteBuf buf) {
         try {
-            if (buf.hasArray()) {
-                // heap buffer, we can access the array directly
-                return buf.array();
-            } else {
-                // direct buffer, we need to copy the bytes into an array
-                byte[] bytes = new byte[buf.readableBytes()];
-                buf.readBytes(bytes);
-                return bytes;
-            }
+            byte[] bytes = new byte[buf.readableBytes()];
+            buf.getBytes(buf.readerIndex(), bytes);
+            return bytes;
         } finally {
             ReferenceCountUtil.safeRelease(buf);
         }

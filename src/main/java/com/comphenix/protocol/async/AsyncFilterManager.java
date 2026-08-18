@@ -309,12 +309,10 @@ public class AsyncFilterManager implements AsynchronousManager {
 
         asyncMarker.setQueuedSendingIndex(asyncMarker.getNewSendingIndex());
 
-        // The player is only be null when they're logged out,
-        // so this should be a pretty safe check
-        Player player = syncPacket.getPlayer();
-        if (player != null) {
+        PacketSendingQueue sendingQueue = getSendingQueue(syncPacket);
+        if (sendingQueue != null) {
             // Start the process
-            getSendingQueue(syncPacket).enqueue(newEvent);
+            sendingQueue.enqueue(newEvent);
 
             // We know this is occurring on the main thread, so pass TRUE
             getProcessingQueue(syncPacket).enqueue(newEvent, true);
@@ -323,12 +321,12 @@ public class AsyncFilterManager implements AsynchronousManager {
 
     @Override
     public Set<PacketType> getReceivingTypes() {
-        return serverProcessingQueue.keySet();
+        return clientProcessingQueue.keySet();
     }
 
     @Override
     public Set<PacketType> getSendingTypes() {
-        return clientProcessingQueue.keySet();
+        return serverProcessingQueue.keySet();
     }
     
     /**

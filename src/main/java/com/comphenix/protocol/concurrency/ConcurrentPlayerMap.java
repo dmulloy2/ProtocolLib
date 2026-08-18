@@ -190,7 +190,8 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
         Preconditions.checkNotNull(player, "player cannot be null");
 
         Object key = keyMethod.apply(player);
-        
+        Preconditions.checkState(key != null, "Unable to derive a key for the player.");
+
         keyLookup.put(key, player);
         return key;
     }
