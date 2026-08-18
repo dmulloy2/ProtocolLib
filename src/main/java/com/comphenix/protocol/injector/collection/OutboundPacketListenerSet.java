@@ -34,24 +34,23 @@ public class OutboundPacketListenerSet extends PacketListenerSet {
             Iterable<PacketContainer> packets = event.getPacket().getPacketBundles().read(0);
             List<PacketContainer> outPackets = new ArrayList<>();
             for (PacketContainer subPacket : packets) {
-                // ignore null packets as the will throw an error in the packet encoder
+                // ignore null packets as they will throw an error in the packet encoder
                 if (subPacket == null) {
                     continue;
                 }
 
                 PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(),
-                        event.getPlayer());
+                        event.getPlayer(), event.isFiltered(), event);
                 super.invoke(subPacketEvent, priorityFilter);
 
-                
-                // if the packet has been cancelled, the packet will not be add to the bundle
+                // if the packet has been cancelled, the packet will not be added to the bundle
                 if (subPacketEvent.isCancelled()) {
                     continue;
                 }
 
                 PacketContainer packet = subPacketEvent.getPacket();
                 if (packet == null || packet.getHandle() == null) {
-                    // super.invoke() should prevent us from getting new null packet so we just ignore it here
+                    // super.invoke() should prevent us from getting a new null packet so we just ignore it here
                     continue;
                 } else {
                     outPackets.add(packet);
@@ -59,7 +58,7 @@ public class OutboundPacketListenerSet extends PacketListenerSet {
             }
 
             if (!event.isReadOnly()) {
-                if (packets.iterator().hasNext()) {
+                if (!outPackets.isEmpty()) {
                     event.getPacket().getPacketBundles().write(0, outPackets);
                 } else {
                     // cancel entire packet if each individual packet has been cancelled
