@@ -13,6 +13,7 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.wrappers.Converters;
 
 public class OutboundPacketListenerSet extends PacketListenerSet {
 
@@ -31,35 +32,42 @@ public class OutboundPacketListenerSet extends PacketListenerSet {
 
         if (event.getPacketType() == PacketType.Play.Server.BUNDLE && !event.isCancelled()) {
             // unpack the bundle and invoke for each packet in the bundle
-            Iterable<PacketContainer> packets = event.getPacket().getPacketBundles().read(0);
-            List<PacketContainer> outPackets = new ArrayList<>();
-            for (PacketContainer subPacket : packets) {
-                // ignore null packets as they will throw an error in the packet encoder
-                if (subPacket == null) {
-                    continue;
+            List<PacketContainer> packets = Converters.toList(event.getPacket().getPacketBundles().read(0));
+            // lazily allocated when the first packet is removed or replaced
+            List<PacketContainer> outPackets = null;
+            for (int index = 0; index < packets.size(); index++) {
+                PacketContainer subPacket = packets.get(index);
+                PacketContainer packet = null;
+
+                if (subPacket != null) {
+                    PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(),
+                            event.getPlayer(), event.isFiltered(), event);
+                    super.invoke(subPacketEvent, priorityFilter);
+
+                    if (!subPacketEvent.isCancelled()) {
+                        PacketContainer result = subPacketEvent.getPacket();
+                        if (result != null && result.getHandle() != null) {
+                            packet = result;
+                        }
+                    }
                 }
 
-                PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(),
-                        event.getPlayer(), event.isFiltered(), event);
-                super.invoke(subPacketEvent, priorityFilter);
-
-                // if the packet has been cancelled, the packet will not be added to the bundle
-                if (subPacketEvent.isCancelled()) {
-                    continue;
+                boolean changed = packet == null || packet.getHandle() != subPacket.getHandle();
+                if (outPackets == null && changed) {
+                    outPackets = new ArrayList<>(packets.size());
+                    outPackets.addAll(packets.subList(0, index));
                 }
-
-                PacketContainer packet = subPacketEvent.getPacket();
-                if (packet == null || packet.getHandle() == null) {
-                    // super.invoke() should prevent us from getting a new null packet so we just ignore it here
-                    continue;
-                } else {
+                if (outPackets != null && packet != null) {
                     outPackets.add(packet);
                 }
             }
 
-            if (!event.isReadOnly()) {
+            if (!event.isReadOnly() && outPackets != null) {
                 if (!outPackets.isEmpty()) {
-                    event.getPacket().getPacketBundles().write(0, outPackets);
+                    // the original bundle may be shared between multiple recipients
+                    PacketContainer bundle = event.getPacket().shallowClone();
+                    bundle.getPacketBundles().write(0, outPackets);
+                    event.setPacket(bundle);
                 } else {
                     // cancel entire packet if each individual packet has been cancelled
                     event.setCancelled(true);
