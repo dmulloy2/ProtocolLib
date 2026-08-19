@@ -1,3 +1,4 @@
+import org.gradle.api.attributes.java.TargetJvmVersion
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
@@ -51,6 +52,12 @@ dependencies {
 paperweight.reobfArtifactConfiguration =
     io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
 
+configurations.matching { it.name == "compileClasspath" || it.name == "runtimeClasspath" || it.name == "testCompileClasspath" || it.name == "testRuntimeClasspath" }.configureEach {
+    attributes {
+        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
+    }
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(25))
@@ -78,6 +85,10 @@ tasks {
         testLogging {
             exceptionFormat = TestExceptionFormat.FULL
         }
+    }
+
+    compileJava {
+        options.release.set(17)
     }
 
     shadowJar {
