@@ -63,6 +63,7 @@ public class ImmutableDetector implements Cloner {
         add(MinecraftReflection::getBlockClass);
         add(MinecraftReflection::getItemClass);
         add(MinecraftReflection::getSoundEffectClass);
+        add(MinecraftReflection::getWorldTypeClass);
 
         if (MinecraftVersion.AQUATIC_UPDATE.atOrAbove()) {
             add(MinecraftReflection::getFluidTypeClass);

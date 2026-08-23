@@ -35,6 +35,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
@@ -98,20 +99,43 @@ public class StructureCache {
     }
 
     static Supplier<Object> determineBestCreator(Class<?> clazz) {
-        // certain packets are singletons which can't really be created
-        if (MinecraftReflection.isPacketClass(clazz)) {
+        boolean packetClass = MinecraftReflection.isPacketClass(clazz);
+        boolean immutableClass = ImmutableDetector.isImmutable(clazz);
+
+        // Certain packets are singletons which can't really be created. Immutable classes may also expose multiple
+        // constant instances as an enum replacement, which should be reused instead of invoking their constructors.
+        if (packetClass || immutableClass) {
             FuzzyReflection fuzzy = FuzzyReflection.fromClass(clazz, false);
             List<Field> singletons = fuzzy.getFieldList(FuzzyFieldContract.newBuilder()
                 .typeExact(clazz)
                 .requireModifier(Modifier.STATIC)
                 .requireModifier(Modifier.PUBLIC)
                 .build());
-            if (singletons.size() == 1) {
+
+            // Preserve the existing packet singleton behavior.
+            if (packetClass && singletons.size() == 1) {
                 FieldAccessor accessor = Accessors.getFieldAccessor(singletons.get(0));
                 try {
                     accessor.get(null);
                     return () -> accessor.get(null);
                 } catch (Exception ignored) {
+                }
+            }
+
+            if (immutableClass) {
+                for (Field singleton : singletons) {
+                    if (!Modifier.isFinal(singleton.getModifiers())) {
+                        continue;
+                    }
+
+                    FieldAccessor accessor = Accessors.getFieldAccessor(singleton);
+                    try {
+                        Object instance = accessor.get(null);
+                        if (instance != null) {
+                            return () -> instance;
+                        }
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         }
