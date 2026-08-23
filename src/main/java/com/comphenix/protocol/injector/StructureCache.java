@@ -98,21 +98,20 @@ public class StructureCache {
     }
 
     static Supplier<Object> determineBestCreator(Class<?> clazz) {
-        // certain packets are singletons which can't really be created
-        if (MinecraftReflection.isPacketClass(clazz)) {
-            FuzzyReflection fuzzy = FuzzyReflection.fromClass(clazz, false);
-            List<Field> singletons = fuzzy.getFieldList(FuzzyFieldContract.newBuilder()
-                .typeExact(clazz)
-                .requireModifier(Modifier.STATIC)
-                .requireModifier(Modifier.PUBLIC)
-                .build());
-            if (singletons.size() == 1) {
-                FieldAccessor accessor = Accessors.getFieldAccessor(singletons.get(0));
-                try {
-                    accessor.get(null);
+        // prioritize searching for singletons on all class types
+        FuzzyReflection fuzzy = FuzzyReflection.fromClass(clazz, false);
+        List<Field> singletons = fuzzy.getFieldList(FuzzyFieldContract.newBuilder()
+            .typeExact(clazz)
+            .requireModifier(Modifier.STATIC)
+            .requireModifier(Modifier.PUBLIC)
+            .build());
+        for (Field singleton : singletons) {
+            FieldAccessor accessor = Accessors.getFieldAccessor(singleton);
+            try {
+                if (accessor.get(null) != null) {
                     return () -> accessor.get(null);
-                } catch (Exception ignored) {
                 }
+            } catch (Exception ignored) {
             }
         }
 
