@@ -1,3 +1,5 @@
+import org.gradle.api.attributes.java.TargetJvmVersion
+
 plugins {
     `java-library`
     id("com.gradleup.shadow") version "9.4.0"
@@ -37,6 +39,12 @@ dependencies {
     testImplementation("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")
 }
 
+configurations.matching { it.name == "compileClasspath" || it.name == "runtimeClasspath" || it.name == "testCompileClasspath" || it.name == "testRuntimeClasspath" }.configureEach {
+    attributes {
+        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
+    }
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(25))
@@ -52,6 +60,10 @@ tasks {
 
     test {
         useJUnitPlatform()
+    }
+
+    compileJava {
+        options.release.set(17)
     }
 
     shadowJar {
