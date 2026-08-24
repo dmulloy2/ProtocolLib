@@ -105,17 +105,22 @@ public class LegacyDataWatcher extends AbstractWrapper implements IDataWatcher {
      */
     @Deprecated
     public LegacyDataWatcher(List<WrappedWatchableObject> objects) {
-        this(newHandle(fakeEntity(), objects));
+        this(newHandle(fakeEntity()));
+
+        for (WrappedWatchableObject object : objects) {
+            WrappedDataWatcherObject watcherObject = MinecraftReflection.watcherObjectExists()
+                    ? object.getWatcherObject()
+                    : WrappedDataWatcherObject.fromIndex(object.getIndex());
+            setObject(watcherObject, object, false);
+        }
     }
 
-    private static Object newHandle(Object entity, List<WrappedWatchableObject> objects) {
+    private static Object newHandle(Object entity) {
         if (constructor == null) {
-            constructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass(),
-                MinecraftReflection.getArrayClass(MinecraftReflection.getDataWatcherItemClass()));
+            constructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass());
         }
 
-        Object[] genericItems = new Object[0];// (Object[]) ITEMS_CONVERTER.getGeneric(objects);
-        return constructor.invoke(entity, genericItems);
+        return constructor.invoke(entity);
     }
 
     private static Object fakeEntity() {
