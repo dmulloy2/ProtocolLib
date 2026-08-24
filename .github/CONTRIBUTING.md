@@ -49,6 +49,7 @@ serverbound and clientbound packet classes and codecs against every protocol pha
 
 - Inspect changed fields, constructors, records, nested classes, and stream codecs instead of relying only on class names.
 - Prefer structural or type-based reflection where names are unstable.
+- Treat the current server API shape as primary and use older supported shapes only as narrow compatibility fallbacks.
 - Put version checks at the narrowest compatibility boundary and leave the older path unchanged.
 - If an NMS concept was removed, report it as unsupported or absent rather than treating a different class as equivalent.
 - Preserve packet fields that are unrelated to the value being changed.

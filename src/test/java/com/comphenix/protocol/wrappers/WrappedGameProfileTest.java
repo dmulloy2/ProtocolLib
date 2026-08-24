@@ -68,6 +68,20 @@ public class WrappedGameProfileTest {
     }
 
     @Test
+    void testMixedAccessorNames() {
+        MixedGameProfile profile = new MixedGameProfile();
+
+        assertEquals(profile.getId(), WrappedGameProfile.findMethodAccessor(
+                MixedGameProfile.class, "id", "getId").invoke(profile));
+        assertEquals(profile.name(), WrappedGameProfile.findMethodAccessor(
+                MixedGameProfile.class, "name", "getName").invoke(profile));
+        assertSame(profile.properties(), WrappedGameProfile.findMethodAccessor(
+                MixedGameProfile.class, "properties", "getProperties").invoke(profile));
+        assertEquals(profile.isComplete(), WrappedGameProfile.findMethodAccessor(
+                MixedGameProfile.class, "complete", "isComplete").invoke(profile));
+    }
+
+    @Test
     void testAddProperties() {
         String name = "test";
         String value = "test";
@@ -84,5 +98,29 @@ public class WrappedGameProfileTest {
         assertEquals(property.name(), name);
         assertEquals(property.value(), value);
         assertEquals(property.signature(), signature);
+    }
+
+    private static final class MixedGameProfile {
+        private final UUID id = UUID.randomUUID();
+
+        public UUID getId() {
+            return this.id;
+        }
+
+        public String name() {
+            return "ProtocolLib";
+        }
+
+        public String getName() {
+            return "Legacy";
+        }
+
+        public PropertyMap properties() {
+            return PropertyMap.EMPTY;
+        }
+
+        public boolean isComplete() {
+            return true;
+        }
     }
 }

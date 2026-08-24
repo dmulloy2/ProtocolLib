@@ -60,6 +60,7 @@ renamed packet can abort registration of later packets in the same registry.
 ## Version Compatibility
 
 - Put version checks at the narrowest affected boundary.
+- Treat the current supported server API shape as the primary path. Use older supported shapes only as narrow fallbacks.
 - Keep the pre-change code path intact whenever possible.
 - Use named `MinecraftVersion` constants with `atOrAbove()` instead of scattered version strings.
 - A public method should keep the same signature and broad contract across versions.

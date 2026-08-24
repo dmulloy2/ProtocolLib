@@ -41,23 +41,16 @@ public class WrappedGameProfile extends AbstractWrapper {
     private static final FieldAccessor GET_UUID_STRING = Accessors.getFieldAccessorOrNull(
             GAME_PROFILE, "id", String.class);
 
-    private static MethodAccessor GET_ID;
-    private static MethodAccessor GET_NAME;
-    private static MethodAccessor GET_PROPERTIES;
-    private static MethodAccessor IS_COMPLETE;
+    private static final MethodAccessor GET_ID = findMethodAccessor(GAME_PROFILE, "id", "getId");
+    private static final MethodAccessor GET_NAME = findMethodAccessor(GAME_PROFILE, "name", "getName");
+    private static final MethodAccessor GET_PROPERTIES = findMethodAccessor(
+            GAME_PROFILE, "properties", "getProperties");
+    private static final MethodAccessor IS_COMPLETE = findMethodAccessor(
+            GAME_PROFILE, "complete", "isComplete");
 
-    static {
-        GET_ID = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "getId");
-        if (GET_ID == null) {
-            GET_ID = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "id");
-            GET_NAME = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "name");
-            GET_PROPERTIES = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "properties");
-            IS_COMPLETE = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "complete");
-        } else {
-            GET_NAME = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "getName");
-            GET_PROPERTIES = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "getProperties");
-            IS_COMPLETE = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "isComplete");
-        }
+    static MethodAccessor findMethodAccessor(Class<?> type, String methodName, String fallbackName) {
+        MethodAccessor accessor = Accessors.getMethodAccessorOrNull(type, methodName);
+        return accessor != null ? accessor : Accessors.getMethodAccessorOrNull(type, fallbackName);
     }
 
     // Fetching game profile
