@@ -16,15 +16,26 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 public class WrappedStatistic extends AbstractWrapper {
     private static final Class<?> STATISTIC = MinecraftReflection.getStatisticClass();
     private static final Class<?> STATISTIC_LIST = MinecraftReflection.getStatisticListClass();
-
+    private static final FieldAccessor GET_NAME_FIELD;
+    private static final MethodAccessor GET_NAME_METHOD;
 
     static {
+        FieldAccessor[] nameFields = Accessors.getFieldAccessorArray(STATISTIC, String.class, true);
+        if (nameFields.length > 0) {
+            GET_NAME_FIELD = nameFields[0];
+            GET_NAME_METHOD = null;
+        } else {
+            GET_NAME_FIELD = null;
+            GET_NAME_METHOD = Accessors.getMethodAccessor(
+                    FuzzyReflection.fromClass(STATISTIC.getSuperclass(), true)
+                            .getMethodByReturnTypeAndParameters("getName", String.class));
+        }
+
         try {
             FIND_STATISTICS = Accessors.getMethodAccessor(
                     FuzzyReflection.fromClass(STATISTIC_LIST).getMethodByReturnTypeAndParameters(
                             "findStatistic", STATISTIC, new Class<?>[]{String.class}));
             MAP_ACCESSOR = Accessors.getFieldAccessor(STATISTIC_LIST, Map.class, true);
-            GET_NAME = Accessors.getFieldAccessor(STATISTIC, String.class, true);
         } catch (Exception ex) {
             // TODO - find an alternative
         }
@@ -32,7 +43,6 @@ public class WrappedStatistic extends AbstractWrapper {
 
     private static MethodAccessor FIND_STATISTICS;
     private static FieldAccessor MAP_ACCESSOR;
-    private static FieldAccessor GET_NAME;
     
     private final String name;
     
@@ -40,7 +50,9 @@ public class WrappedStatistic extends AbstractWrapper {
         super(STATISTIC);
         setHandle(handle);
         
-        this.name = (String) GET_NAME.get(handle);
+        this.name = GET_NAME_FIELD != null
+                ? (String) GET_NAME_FIELD.get(handle)
+                : (String) GET_NAME_METHOD.invoke(handle);
     }
     
     /**
