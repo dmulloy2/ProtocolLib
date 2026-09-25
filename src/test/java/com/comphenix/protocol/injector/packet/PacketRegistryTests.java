@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,8 @@ public class PacketRegistryTests {
 	public void testAllPacketsRegistered() {
 		List<PacketType> missing = new ArrayList<>();
 		for (PacketType type : PacketType.values()) {
-			if (type.isDeprecated()) {
+			if (type.isDeprecated()
+					|| type.getCurrentVersion().compareTo(MinecraftVersion.getCurrentVersion()) > 0) {
 				continue;
 			}
 			if (!PacketRegistry.tryGetPacketClass(type).isPresent()) {

@@ -37,6 +37,11 @@ import org.bukkit.Server;
  */
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
     /**
+     * Version 26.3 - wilderness bound
+     */
+    public static final MinecraftVersion v26_3 = new MinecraftVersion("26.3");
+
+    /**
      * Version 26.2 - chaos cubed
      */
     public static final MinecraftVersion v26_2 = new MinecraftVersion("26.2");

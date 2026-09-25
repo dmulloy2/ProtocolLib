@@ -16,6 +16,7 @@ package com.comphenix.protocol;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -253,6 +254,18 @@ public class PacketTypeTest {
             PacketType roundTrip = PacketType.findCurrent(type.getProtocol(), type.getSender(), type.names[0]);
             assertEquals(type, roundTrip);
         }
+    }
+
+    @Test
+    public void testMinecraft263PacketMappings() {
+        assertEquals(0x25, PacketType.Play.Server.ADD_TRANSIENT_BLOCK.getCurrentId());
+        assertEquals(0x26, PacketType.Play.Server.UNLOAD_CHUNK.getCurrentId());
+        assertNotEquals(PacketType.Play.Server.ADD_TRANSIENT_BLOCK, PacketType.Play.Server.UNLOAD_CHUNK);
+
+        assertEquals(0x53, PacketType.Play.Server.POST_EFFECTS.getCurrentId());
+        assertEquals(0x7B, PacketType.Play.Server.SWING_ANIMATION.getCurrentId());
+        assertEquals(0x2E, PacketType.Play.Client.PUNCH.getCurrentId());
+        assertNotEquals(PacketType.Play.Client.PUNCH, PacketType.Play.Client.RECIPE_SETTINGS);
     }
     
     @Test
