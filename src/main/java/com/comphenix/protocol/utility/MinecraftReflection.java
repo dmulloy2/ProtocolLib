@@ -1430,8 +1430,13 @@ public final class MinecraftReflection {
             try {
                 Method asMirrorMethod = getCraftItemStackClass().getMethod("asCraftMirror", getItemStackClass());
                 asCraftMirror = Accessors.getMethodAccessor(asMirrorMethod);
-            } catch (ReflectiveOperationException ex) {
-                throw new RuntimeException("Failed to obtain CraftItemStack.asCraftMirror", ex);
+            } catch (ReflectiveOperationException ex1) {
+                try {
+                    Method asMirrorMethod = getCraftItemStackClass().getMethod("asBukkitMirror", getItemStackClass());
+                    asCraftMirror = Accessors.getMethodAccessor(asMirrorMethod);
+                } catch (ReflectiveOperationException ex2) {
+                    throw new RuntimeException("Failed to obtain CraftItemStack.asCraftMirror", ex2);
+                }
             }
         }
 
