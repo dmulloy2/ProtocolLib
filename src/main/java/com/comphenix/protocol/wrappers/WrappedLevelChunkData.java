@@ -3,8 +3,11 @@ package com.comphenix.protocol.wrappers;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import org.jetbrains.annotations.Nullable;
@@ -49,11 +52,19 @@ public final class WrappedLevelChunkData {
         static {
             FuzzyReflection reflection = FuzzyReflection.fromClass(HANDLE_TYPE, true);
 
-            LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(reflection.getConstructor(FuzzyMethodContract.newBuilder()
-            		.parameterDerivedOf(MinecraftReflection.getPacketDataSerializerClass())
-            		.parameterExactType(int.class)
-            		.parameterExactType(int.class)
-            		.build()));
+            if (MinecraftVersion.v26_3.atOrAbove()) {
+                LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(reflection.getConstructor(FuzzyMethodContract.newBuilder()
+                        .parameterExactType(Map.class)
+                        .parameterExactType(byte[].class)
+                        .parameterExactType(List.class)
+                        .build()));
+            } else {
+                LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(reflection.getConstructor(FuzzyMethodContract.newBuilder()
+                        .parameterDerivedOf(MinecraftReflection.getPacketDataSerializerClass())
+                        .parameterExactType(int.class)
+                        .parameterExactType(int.class)
+                        .build()));
+            }
             BLOCK_ENTITIES_DATA_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
                     .typeExact(List.class)
                     .build()));
@@ -180,7 +191,12 @@ public final class WrappedLevelChunkData {
          */
         @Deprecated
         public static ChunkData fromValues(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
-            ChunkData data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
+            ChunkData data;
+            if (MinecraftVersion.v26_3.atOrAbove()) {
+                data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(Collections.emptyMap(), new byte[0], Collections.emptyList()));
+            } else {
+                data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
+            }
 
             data.setHeightmapsTag(heightmapsTag);
             data.setBuffer(buffer);
@@ -198,7 +214,12 @@ public final class WrappedLevelChunkData {
          * @return a newly created wrapper
          */
         public static ChunkData fromValues(Map<EnumWrappers.HeightmapType, long[]> heightmaps, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
-            ChunkData data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
+            ChunkData data;
+            if (MinecraftVersion.v26_3.atOrAbove()) {
+                data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(Collections.emptyMap(), new byte[0], Collections.emptyList()));
+            } else {
+                data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
+            }
 
             data.setHeightmaps(heightmaps);
             data.setBuffer(buffer);
@@ -433,17 +454,28 @@ public final class WrappedLevelChunkData {
 
         static {
             FuzzyReflection reflection = FuzzyReflection.fromClass(HANDLE_TYPE, true);
-            List<Field> posFields = reflection.getFieldList(FuzzyFieldContract.newBuilder().typeExact(int.class).build());
 
-            BLOCK_ENTITY_INFO_CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE, int.class, int.class,
-                    MinecraftReflection.getBlockEntityTypeClass(), MinecraftReflection.getNBTCompoundClass());
-            PACKED_XZ_ACCESSOR = Accessors.getFieldAccessor(posFields.get(0));
-            Y_ACCESSOR = Accessors.getFieldAccessor(posFields.get(1));
+            if (MinecraftVersion.v26_3.atOrAbove()) {
+                BLOCK_ENTITY_INFO_CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE, byte.class, short.class,
+                        MinecraftReflection.getBlockEntityTypeClass(), Optional.class);
+                PACKED_XZ_ACCESSOR = new IntegerFieldAccessor(Accessors.getFieldAccessor(HANDLE_TYPE, byte.class, true), Number::byteValue);
+                Y_ACCESSOR = new IntegerFieldAccessor(Accessors.getFieldAccessor(HANDLE_TYPE, short.class, true), Number::shortValue);
+                TAG_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
+                    .typeExact(Optional.class)
+                    .build()));
+            } else {
+                List<Field> posFields = reflection.getFieldList(FuzzyFieldContract.newBuilder().typeExact(int.class).build());
+
+                BLOCK_ENTITY_INFO_CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE, int.class, int.class,
+                        MinecraftReflection.getBlockEntityTypeClass(), MinecraftReflection.getNBTCompoundClass());
+                PACKED_XZ_ACCESSOR = Accessors.getFieldAccessor(posFields.get(0));
+                Y_ACCESSOR = Accessors.getFieldAccessor(posFields.get(1));
+                TAG_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
+                    .typeExact(MinecraftReflection.getNBTCompoundClass())
+                    .build()));
+            }
             TYPE_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
                     .typeExact(MinecraftReflection.getBlockEntityTypeClass())
-                    .build()));
-            TAG_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
-                    .typeExact(MinecraftReflection.getNBTCompoundClass())
                     .build()));
         }
 
@@ -533,6 +565,9 @@ public final class WrappedLevelChunkData {
         @Nullable
         public NbtCompound getAdditionalData() {
             Object tagHandle = TAG_ACCESSOR.get(handle);
+            if (MinecraftVersion.v26_3.atOrAbove()) {
+                tagHandle = ((Optional<Object>) tagHandle).orElse(null);
+            }
 
             return tagHandle == null ? null : NbtFactory.fromNMSCompound(tagHandle);
         }
@@ -543,7 +578,11 @@ public final class WrappedLevelChunkData {
          * @param additionalData the additional data for this block entity, can be {@code null}
          */
         public void setAdditionalData(@Nullable NbtCompound additionalData) {
-            TAG_ACCESSOR.set(handle, additionalData == null ? null : NbtFactory.fromBase(additionalData).getHandle());
+            if (MinecraftVersion.v26_3.atOrAbove()) {
+                TAG_ACCESSOR.set(handle, Optional.ofNullable(additionalData).map(data -> NbtFactory.fromBase(data).getHandle()));
+            } else {
+                TAG_ACCESSOR.set(handle, additionalData == null ? null : NbtFactory.fromBase(additionalData).getHandle());
+            }
         }
 
         /**
@@ -568,12 +607,46 @@ public final class WrappedLevelChunkData {
          * @param additionalData An NBT-Tag containing additional information. Can be {@code null}.
          */
         public static BlockEntityInfo fromValues(int sectionX, int sectionZ, int y, MinecraftKey typeKey, @Nullable NbtCompound additionalData) {
-            return new BlockEntityInfo(BLOCK_ENTITY_INFO_CONSTRUCTOR.invoke(
+            if (MinecraftVersion.v26_3.atOrAbove()) {
+                return new BlockEntityInfo(BLOCK_ENTITY_INFO_CONSTRUCTOR.invoke(
+                    (byte) (sectionX << 4 | sectionZ),
+                    (short) y,
+                    REGISTRY.get(typeKey),
+                    Optional.ofNullable(additionalData).map(data -> NbtFactory.fromBase(data).getHandle())
+                ));
+            } else {
+                return new BlockEntityInfo(BLOCK_ENTITY_INFO_CONSTRUCTOR.invoke(
                     sectionX << 4 | sectionZ,
                     y,
                     REGISTRY.get(typeKey),
                     additionalData == null ? null : NbtFactory.fromBase(additionalData).getHandle()
-            ));
+                ));
+            }
+        }
+    }
+
+    private final static class IntegerFieldAccessor implements FieldAccessor {
+        private final FieldAccessor inner;
+        private final Function<Number, Object> toType;
+
+        public IntegerFieldAccessor(FieldAccessor inner, Function<Number, Object> toType) {
+            this.inner = inner;
+            this.toType = toType;
+        }
+
+        @Override
+        public Object get(Object instance) {
+            return ((Number) this.inner.get(instance)).intValue();
+        }
+
+        @Override
+        public void set(Object instance, Object value) {
+            this.inner.set(instance, this.toType.apply((Integer) value));
+        }
+
+        @Override
+        public Field getField() {
+            return this.inner.getField();
         }
     }
 }
