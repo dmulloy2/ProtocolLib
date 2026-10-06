@@ -120,25 +120,9 @@ class CommandProtocol extends CommandBase {
             return;
         }
 
-        // Perform on an async thread
-        Runnable notify = new Runnable() {
-            @Override
-            public void run() {
-                if (command) {
-                    sender.sendMessage(ChatColor.YELLOW + "[ProtocolLib] " + updater.getResult());
-                    String remoteVersion = updater.getRemoteVersion();
-                    if (remoteVersion != null) {
-                        sender.sendMessage(ChatColor.YELLOW + "Remote version: " + remoteVersion);
-                        sender.sendMessage(ChatColor.YELLOW + "Current version: " + plugin.getDescription().getVersion());
-                    }
-                } else if (updater.shouldNotify() || config.isDebug()) {
-                    sender.sendMessage(ChatColor.YELLOW + "[ProtocolLib] " + updater.getResult());
-                }
-
-                updater.removeListener(this);
-                updateFinished();
-            }
-        };
+        // Top-level class instead of anonymous inner class so that PaperPluginClassLoader
+        // can resolve the .class entry when BukkitScheduler dispatches it on the main thread.
+        Runnable notify = new UpdateNotifyRunnable(sender, command, updater, config, plugin, this);
         updater.start(type);
         updater.addListener(notify);
     }
