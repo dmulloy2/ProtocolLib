@@ -26,6 +26,7 @@ import com.comphenix.protocol.wrappers.Pair;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 
 public class NetworkManagerInjector {
 
@@ -143,7 +144,20 @@ public class NetworkManagerInjector {
     }
 
     private void injectChannel(Channel channel) {
-        channel.pipeline().addLast(INBOUND_INJECT_HANDLER_NAME, this.injectionHandler);
+        addInjectionHandler(channel, MinecraftReflection.getNetworkManagerClass(), this.injectionHandler);
+    }
+
+    static void addInjectionHandler(Channel channel, Class<?> networkManagerClass, ChannelHandler injectionHandler) {
+        for (String handlerName : channel.pipeline().names()) {
+            ChannelHandler handler = channel.pipeline().get(handlerName);
+            if (networkManagerClass.isInstance(handler)) {
+                channel.pipeline().addBefore(handlerName, INBOUND_INJECT_HANDLER_NAME, injectionHandler);
+                return;
+            }
+        }
+
+        // Preserve the existing behavior for forks with an unexpected pipeline layout.
+        channel.pipeline().addLast(INBOUND_INJECT_HANDLER_NAME, injectionHandler);
     }
 
     public void close() {
