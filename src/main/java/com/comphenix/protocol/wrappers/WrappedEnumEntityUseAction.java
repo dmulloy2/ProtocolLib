@@ -11,6 +11,7 @@ import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
@@ -30,19 +31,21 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
     private static final Class<?>[] DECLARED_CLASSES = PACKET_CLASS.getDeclaredClasses();
 
     private static final Class<?> HANDLE_TYPE = MinecraftReflection.getEnumEntityUseActionClass();
-    private static final MethodAccessor ACTION_USE = MinecraftReflection.getEntityUseActionEnumMethodAccessor();
+    private static final MethodAccessor ACTION_USE = getActionUseAccessor();
 
-    private static final ConstructorAccessor INTERACT = useAction(EnumWrappers.getHandClass());
-    private static final ConstructorAccessor INTERACT_AT = useAction(EnumWrappers.getHandClass(),
-            MinecraftReflection.getVec3DClass());
+    private static final ConstructorAccessor PACKET_CONSTRUCTOR = MinecraftVersion.v26_1.atOrAbove()
+            ? Accessors.getConstructorAccessor(PACKET_CLASS, int.class, EnumWrappers.getHandClass(),
+                    MinecraftReflection.getVec3DClass(), boolean.class)
+            : null;
+    private static final ConstructorAccessor INTERACT = MinecraftVersion.v26_1.atOrAbove()
+            ? null
+            : useAction(EnumWrappers.getHandClass());
+    private static final ConstructorAccessor INTERACT_AT = MinecraftVersion.v26_1.atOrAbove()
+            ? null
+            : useAction(EnumWrappers.getHandClass(), MinecraftReflection.getVec3DClass());
 
-    private static final Object ATTACK = Accessors.getFieldAccessor(FuzzyReflection.fromClass(PACKET_CLASS, true)
-            .getField(FuzzyFieldContract.newBuilder()
-                    .requireModifier(Modifier.STATIC)
-                    .typeExact(MinecraftReflection.getEnumEntityUseActionClass())
-                    .build())
-    ).get(null);
-    private static final WrappedEnumEntityUseAction ATTACK_WRAPPER = new WrappedEnumEntityUseAction(ATTACK);
+    private static final Object ATTACK = initializeAttack();
+    private static final WrappedEnumEntityUseAction ATTACK_WRAPPER = ATTACK != null ? new WrappedEnumEntityUseAction(ATTACK) : null;
 
     private final EntityUseAction action;
     // these fields are only available for interact & interact_at
@@ -57,7 +60,32 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
         super(HANDLE_TYPE);
         setHandle(handle);
 
-        action = EnumWrappers.getEntityUseActionConverter().getSpecific(ACTION_USE.invoke(handle));
+        action = resolveAction();
+    }
+
+    private static MethodAccessor getActionUseAccessor() {
+        return MinecraftReflection.getEntityUseActionEnumMethodAccessor();
+    }
+
+    private static Object initializeAttack() {
+        if (MinecraftVersion.v26_1.atOrAbove()) {
+            return null;
+        }
+
+        return Accessors.getFieldAccessor(FuzzyReflection.fromClass(PACKET_CLASS, true)
+                .getField(FuzzyFieldContract.newBuilder()
+                        .requireModifier(Modifier.STATIC)
+                        .typeExact(MinecraftReflection.getEnumEntityUseActionClass())
+                        .build())
+        ).get(null);
+    }
+
+    private EntityUseAction resolveAction() {
+        if (ACTION_USE != null) {
+            return EnumWrappers.getEntityUseActionConverter().getSpecific(ACTION_USE.invoke(handle));
+        }
+
+        return EntityUseAction.INTERACT_AT;
     }
 
     /**
@@ -91,6 +119,10 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
      * @return the action for an entity attack.
      */
     public static WrappedEnumEntityUseAction attack() {
+        if (ATTACK_WRAPPER == null) {
+            throw new UnsupportedOperationException("Attack is no longer part of the USE_ENTITY packet on 26.1+");
+        }
+
         return ATTACK_WRAPPER;
     }
 
@@ -100,7 +132,10 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
      * @return the action for an interact.
      */
     public static WrappedEnumEntityUseAction interact(Hand hand) {
-        Object handle = INTERACT.invoke(EnumWrappers.getHandConverter().getGeneric(hand));
+        Object handle = MinecraftVersion.v26_1.atOrAbove()
+                ? PACKET_CONSTRUCTOR.invoke(0, EnumWrappers.getHandConverter().getGeneric(hand),
+                        BukkitConverters.getVectorConverter().getGeneric(new Vector()), false)
+                : INTERACT.invoke(EnumWrappers.getHandConverter().getGeneric(hand));
         return new WrappedEnumEntityUseAction(handle);
     }
 
@@ -111,8 +146,11 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
      * @return the action for an interact_at.
      */
     public static WrappedEnumEntityUseAction interactAt(Hand hand, Vector vector) {
-        Object handle = INTERACT_AT.invoke(EnumWrappers.getHandConverter().getGeneric(hand),
-                BukkitConverters.getVectorConverter().getGeneric(vector));
+        Object handle = MinecraftVersion.v26_1.atOrAbove()
+                ? PACKET_CONSTRUCTOR.invoke(0, EnumWrappers.getHandConverter().getGeneric(hand),
+                        BukkitConverters.getVectorConverter().getGeneric(vector), false)
+                : INTERACT_AT.invoke(EnumWrappers.getHandConverter().getGeneric(hand),
+                        BukkitConverters.getVectorConverter().getGeneric(vector));
         return new WrappedEnumEntityUseAction(handle);
     }
 
@@ -148,7 +186,7 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
      * @throws IllegalArgumentException if called for attack or interact.
      */
     public Vector getPosition() {
-        return BukkitConverters.getVectorConverter().getSpecific(getPositionAccessor().get(handle));
+        return getRawPosition(handle);
     }
 
     /**
@@ -162,7 +200,7 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
 
     @Override
     public WrappedEnumEntityUseAction deepClone() {
-        switch (action) {
+        switch (getAction()) {
             case ATTACK:
                 return WrappedEnumEntityUseAction.attack();
             case INTERACT:
@@ -170,7 +208,7 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
             case INTERACT_AT:
                 return WrappedEnumEntityUseAction.interactAt(getHand(), getPosition());
             default:
-                throw new IllegalArgumentException("Invalid EntityUseAction: " + action);
+                throw new IllegalArgumentException("Invalid EntityUseAction: " + getAction());
         }
     }
 
@@ -196,5 +234,9 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
             positionAccessor = MinecraftReflection.getVec3EntityUseActionEnumFieldAccessor(handle);
         }
         return positionAccessor;
+    }
+
+    private Vector getRawPosition(Object target) {
+        return BukkitConverters.getVectorConverter().getSpecific(getPositionAccessor().get(target));
     }
 }
