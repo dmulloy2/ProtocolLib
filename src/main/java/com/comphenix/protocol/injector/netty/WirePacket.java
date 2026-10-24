@@ -19,10 +19,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.StreamSerializer;
+import com.comphenix.protocol.wrappers.CustomPacketPayloadWrapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
@@ -81,6 +84,11 @@ public class WirePacket {
     public static byte[] bytesFromPacket(PacketContainer packet) {
         checkNotNull(packet, "packet cannot be null!");
 
+        // packets are written by their stream codec since 1.20.5
+        if (MinecraftVersion.v1_20_5.atOrAbove()) {
+            return bytesFromStreamCodec(packet);
+        }
+
         ByteBuf buffer = PacketContainer.createPacketBuffer();
         ByteBuf store = PacketContainer.createPacketBuffer();
 
@@ -107,6 +115,44 @@ public class WirePacket {
         return bytes;
     }
 
+    private static byte[] bytesFromStreamCodec(PacketContainer packet) {
+        // Spigot keeps the data of unknown custom payloads in a buffer and the codec reads from it,
+        // so the reader index is restored to keep the packet writable after this call
+        ByteBuf payloadData = getCustomPayloadData(packet);
+        int readerIndex = payloadData != null ? payloadData.readerIndex() : 0;
+
+        try {
+            ByteBuf buffer = (ByteBuf) packet.serializeToBuffer();
+            return StreamSerializer.getDefault().getBytesAndRelease(buffer);
+        } finally {
+            if (payloadData != null) {
+                payloadData.readerIndex(readerIndex);
+            }
+        }
+    }
+
+    private static ByteBuf getCustomPayloadData(PacketContainer packet) {
+        PacketType type = packet.getType();
+        if (type != PacketType.Play.Server.CUSTOM_PAYLOAD
+                && type != PacketType.Play.Client.CUSTOM_PAYLOAD
+                && type != PacketType.Configuration.Server.CUSTOM_PAYLOAD
+                && type != PacketType.Configuration.Client.CUSTOM_PAYLOAD) {
+            return null;
+        }
+
+        Object payload = packet.getModifier()
+                .withType(CustomPacketPayloadWrapper.getCustomPacketPayloadClass())
+                .readSafely(0);
+        if (payload == null) {
+            return null;
+        }
+
+        StructureModifier<ByteBuf> buffers = new StructureModifier<>(payload.getClass())
+                .withTarget(payload)
+                .withType(ByteBuf.class);
+        return buffers.readSafely(0);
+    }
+
     /**
      * Creates a WirePacket from an existing Minecraft packet
      *
@@ -117,6 +163,10 @@ public class WirePacket {
     public static WirePacket fromPacket(Object packet) {
         checkNotNull(packet, "packet cannot be null!");
         checkArgument(MinecraftReflection.isPacketClass(packet), "packet must be a Minecraft packet");
+
+        if (MinecraftVersion.v1_20_5.atOrAbove()) {
+            return fromPacket(PacketContainer.fromPacket(packet));
+        }
 
         ByteBuf buffer = PacketContainer.createPacketBuffer();
 
