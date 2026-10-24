@@ -556,15 +556,16 @@ public class NettyChannelInjector implements Injector {
             return action;
         }
 
+        PacketContainer packetContainer = new PacketContainer(packetType, packet);
+
         // ensure that we are on the main thread if we need to
-        if (this.listenerManager.hasMainThreadListener(packetType) && !Bukkit.isPrimaryThread()) {
+        if (!Bukkit.isPrimaryThread() && hasMainThreadListener(this.listenerManager, protocol, packetContainer)) {
             // not on the main thread but we are required to be - re-schedule the packet on the main thread
             ProtocolLibrary.getScheduler().runTask(() -> this.sendClientboundPacket(packet, null, true));
             return null;
         }
 
         // create event and invoke listeners
-        PacketContainer packetContainer = new PacketContainer(packetType, packet);
         PacketEvent event = PacketEvent.fromServer(this, packetContainer, marker, this.player);
         this.listenerManager.invokeOutboundPacketListeners(event);
 
@@ -592,6 +593,44 @@ public class NettyChannelInjector implements Injector {
 
         // return null if the event was cancelled to schedule a no-op event
         return null;
+    }
+
+    /**
+     * Checks if a listener that must be called on the main thread is going to be invoked for the given outbound packet.
+     * The packets inside a bundle are posted to their listeners together with the bundle, so their listeners count for
+     * the bundle as well.
+     *
+     * @param listenerManager the listener manager holding the registered listeners.
+     * @param protocol        the current outbound protocol of the connection.
+     * @param packet          the outbound packet.
+     * @return true if the packet must be processed on the main thread, false otherwise.
+     */
+    static boolean hasMainThreadListener(ListenerManager listenerManager, Protocol protocol, PacketContainer packet) {
+        if (listenerManager.hasMainThreadListener(packet.getType())) {
+            return true;
+        }
+
+        if (packet.getType() != PacketType.Play.Server.BUNDLE) {
+            return false;
+        }
+
+        Iterable<?> subPackets = packet.getModifier().<Iterable<?>>withType(Iterable.class).readSafely(0);
+        if (subPackets == null) {
+            return false;
+        }
+
+        for (Object subPacket : subPackets) {
+            if (subPacket == null) {
+                continue;
+            }
+
+            PacketType subPacketType = PacketRegistry.getPacketType(protocol, subPacket.getClass());
+            if (subPacketType != null && listenerManager.hasMainThreadListener(subPacketType)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @SuppressWarnings("unchecked")
