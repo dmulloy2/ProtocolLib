@@ -14,8 +14,8 @@ lead to more subtle bugs.
 
 * [Spigot Page](https://spigotmc.org/resources/protocollib.1997/)
 * [Releases](https://github.com/dmulloy2/ProtocolLib/releases)
-* [Dev Build](https://github.com/dmulloy2/ProtocolLib/releases/tag/dev-build)
-* [JavaDoc](https://dmulloy2.net/ProtocolLib/javadoc/)
+* [Dev Builds](https://ci.dmulloy2.net/job/ProtocolLib/)
+* [JavaDoc](https://ci.dmulloy2.net/job/ProtocolLib/javadoc/index.html)
 * [Protocol Wiki](https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg_merge/Protocol)
 
 `ProtocolLib.jar` is the primary Paper plugin. Spigot servers must use the compatibility artifact,
@@ -69,6 +69,48 @@ dependencies {
 }
 ```
 
+#### Snapshot builds
+
+Snapshot builds are available for testing changes before the next release. To use `5.5.0-SNAPSHOT`,
+add the [public repository](https://repo.dmulloy2.net/repository/public/) and update your dependency version.
+
+For Maven:
+
+```xml
+<repositories>
+  <repository>
+    <id>dmulloy2-public</id>
+    <url>https://repo.dmulloy2.net/repository/public/</url>
+  </repository>
+</repositories>
+
+<dependencies>
+  <dependency>
+    <groupId>net.dmulloy2</groupId>
+    <artifactId>ProtocolLib</artifactId>
+    <version>5.5.0-SNAPSHOT</version>
+    <scope>provided</scope>
+  </dependency>
+</dependencies>
+```
+
+For Gradle:
+
+```gradle
+repositories {
+    mavenCentral()
+    maven {
+        url = uri('https://repo.dmulloy2.net/repository/public/')
+    }
+}
+
+dependencies {
+    compileOnly 'net.dmulloy2:ProtocolLib:5.5.0-SNAPSHOT'
+}
+```
+
+#### Accessing the API
+
 Then get a reference to ProtocolManager in onLoad() or onEnable() and you're good to go.
 
 ````java
@@ -118,11 +160,6 @@ protocolManager.addPacketListener(new PacketAdapter(
     }
 });
 ````
-
-Do not moderate chat this way on Minecraft 1.19 and newer. Chat messages are signed there, and cancelling
-or modifying an inbound `PacketType.Play.Client.CHAT` packet before the server has validated it can leave
-the signed-message chain out of sync, so that later messages from the same player are rejected. Use the
-Bukkit or Paper chat event API instead, where the server has already processed the signed packet.
 
 ### Sending packets
 
