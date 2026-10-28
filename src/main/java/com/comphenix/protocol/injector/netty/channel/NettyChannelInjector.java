@@ -561,7 +561,7 @@ public class NettyChannelInjector implements Injector {
         // ensure that we are on the main thread if we need to
         if (!Bukkit.isPrimaryThread() && hasMainThreadListener(this.listenerManager, protocol, packetContainer)) {
             // not on the main thread but we are required to be - re-schedule the packet on the main thread
-            ProtocolLibrary.getScheduler().runTask(() -> this.sendClientboundPacket(packet, null, true));
+            ProtocolLibrary.getScheduler().runTask(() -> this.sendClientboundPacket(packet, marker, true));
             return null;
         }
 
