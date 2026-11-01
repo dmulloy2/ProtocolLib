@@ -36,6 +36,8 @@ import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
+import net.minecraft.network.protocol.common.ClientboundPostEffectsPacket;
+import net.minecraft.network.protocol.common.ClientboundStoreCookiePacket;
 import net.minecraft.network.protocol.login.ServerboundHelloPacket;
 
 /**
@@ -266,6 +268,15 @@ public class PacketTypeTest {
         assertEquals(0x7B, PacketType.Play.Server.SWING_ANIMATION.getCurrentId());
         assertEquals(0x2E, PacketType.Play.Client.PUNCH.getCurrentId());
         assertNotEquals(PacketType.Play.Client.PUNCH, PacketType.Play.Client.RECIPE_SETTINGS);
+    }
+
+    @Test
+    public void testMinecraft263ConfigurationPacketMappings() {
+        assertEquals(0x0A, PacketType.Configuration.Server.POST_EFFECTS.getCurrentId());
+        assertEquals(ClientboundPostEffectsPacket.class, PacketType.Configuration.Server.POST_EFFECTS.getPacketClass());
+        assertEquals(0x0B, PacketType.Configuration.Server.STORE_COOKIE.getCurrentId());
+        assertEquals(ClientboundStoreCookiePacket.class, PacketType.Configuration.Server.STORE_COOKIE.getPacketClass());
+        assertEquals(0x14, PacketType.Configuration.Server.CODE_OF_CONDUCT.getCurrentId());
     }
     
     @Test

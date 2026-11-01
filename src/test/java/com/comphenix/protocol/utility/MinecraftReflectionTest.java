@@ -131,7 +131,7 @@ public class MinecraftReflectionTest {
 
         // The NMS handle for CraftItemStack is null with Material.AIR, make sure it is handled correctly
         assertNotNull(
-                MinecraftReflection.getMinecraftItemStack(CraftItemStack.asCraftCopy(new ItemStack(Material.AIR))));
+                MinecraftReflection.getMinecraftItemStack(CraftItemStack.getCraftStack(new ItemStack(Material.AIR))));
     }
 
     @Test

@@ -50,6 +50,6 @@ public class WrappedStreamCodecTests {
         codec.encode(buf, packet);
         ClientboundOpenBookPacket roundTrip = (ClientboundOpenBookPacket) codec.decode(buf);
 
-        assertEquals(InteractionHand.OFF_HAND, roundTrip.getHand());
+        assertEquals(InteractionHand.OFF_HAND, roundTrip.hand());
     }
 }

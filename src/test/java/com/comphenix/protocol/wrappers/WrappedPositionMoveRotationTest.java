@@ -41,31 +41,11 @@ public class WrappedPositionMoveRotationTest {
     }
 
     @Test
-    public void testEntityPositionSyncPacket() {
+    public void testEntityPositionSyncPacketHasNoPositionMoveRotation() {
         PacketContainer packet = new PacketContainer(PacketType.Play.Server.ENTITY_POSITION_SYNC);
 
-        Vector position = new Vector(10.0, 70.0, -5.0);
-        Vector delta = new Vector(0.0, 0.0, 0.0);
-        float yRot = 90.0f;
-        float xRot = 0.0f;
-
-        packet.getPositionMoveRotation().write(0,
-                WrappedPositionMoveRotation.create(position, delta, yRot, xRot));
-
-        WrappedPositionMoveRotation result = packet.getPositionMoveRotation().read(0);
-
-        assertNotNull(result);
-
-        assertEquals(position.getX(), result.getPosition().getX(), 1e-6);
-        assertEquals(position.getY(), result.getPosition().getY(), 1e-6);
-        assertEquals(position.getZ(), result.getPosition().getZ(), 1e-6);
-
-        assertEquals(delta.getX(), result.getDeltaMovement().getX(), 1e-6);
-        assertEquals(delta.getY(), result.getDeltaMovement().getY(), 1e-6);
-        assertEquals(delta.getZ(), result.getDeltaMovement().getZ(), 1e-6);
-
-        assertEquals(yRot, result.getYRot(), 1e-6f);
-        assertEquals(xRot, result.getXRot(), 1e-6f);
+        assertEquals(0, packet.getPositionMoveRotation().size());
+        assertNull(packet.getPositionMoveRotation().readSafely(0));
     }
 
     @Test
