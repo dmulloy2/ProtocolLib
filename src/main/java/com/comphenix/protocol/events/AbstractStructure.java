@@ -1347,7 +1347,7 @@ public abstract class AbstractStructure {
      */
     public StructureModifier<WrappedVecDelta> getVecDeltas() {
         return structureModifier.withType(
-                MinecraftReflection.getVecDeltaClass().orElse(null),
+                MinecraftReflection.getVecDeltaClass().orElse(void.class),
                 WrappedVecDelta.getConverter()
         );
     }
@@ -1361,7 +1361,7 @@ public abstract class AbstractStructure {
      */
     public StructureModifier<WrappedPositionPath> getPositionPaths() {
         return structureModifier.withType(
-                MinecraftReflection.getPositionPathClass().orElse(null),
+                MinecraftReflection.getPositionPathClass().orElse(void.class),
                 WrappedPositionPath.getConverter()
         );
     }
