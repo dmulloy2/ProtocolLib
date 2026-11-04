@@ -83,15 +83,26 @@ public class StructureCache {
         return newInstance(packetClass);
     }
 
+    // determineBestCreator can re-enter this cache (legacy 1.8 packet registry), which
+    // ConcurrentHashMap.computeIfAbsent rejects on Java 9+, so use get/put instead.
+    private static Optional<Supplier<Object>> creatorFor(Class<?> clazz) {
+        Optional<Supplier<Object>> creator = CACHED_INSTANCE_CREATORS.get(clazz);
+        if (creator == null) {
+            creator = Optional.ofNullable(determineBestCreator(clazz));
+            Optional<Supplier<Object>> existing = CACHED_INSTANCE_CREATORS.putIfAbsent(clazz, creator);
+            if (existing != null) {
+                creator = existing;
+            }
+        }
+        return creator;
+    }
+
     public static boolean canCreateInstance(Class<?> clazz) {
-        Optional<Supplier<Object>> creator = CACHED_INSTANCE_CREATORS.computeIfAbsent(clazz, x ->
-            Optional.ofNullable(determineBestCreator(clazz)));
-        return creator.isPresent();
+        return creatorFor(clazz).isPresent();
     }
 
     public static Object newInstance(Class<?> clazz) {
-        Optional<Supplier<Object>> creator = CACHED_INSTANCE_CREATORS.computeIfAbsent(clazz, x ->
-            Optional.ofNullable(determineBestCreator(clazz)));
+        Optional<Supplier<Object>> creator = creatorFor(clazz);
         if (!creator.isPresent()) {
             throw new IllegalArgumentException("Cannot create instance of " + clazz);
         }
@@ -148,7 +159,10 @@ public class StructureCache {
         } catch (Exception ignored) {
         }
 
-        WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(clazz);
+        // stream codecs only exist on 1.20.5+; on legacy versions asking the registry re-enters its own
+        // initialization (createOldRegister builds StructureModifiers, which land back here)
+        WrappedStreamCodec streamCodec = MinecraftVersion.v1_20_5.atOrAbove()
+            ? PacketRegistry.getStreamCodec(clazz) : null;
 
         // use the new stream codec for versions above 1.20.5 if possible
         if (streamCodec != null && tryInitTrickDataSerializer()) {
