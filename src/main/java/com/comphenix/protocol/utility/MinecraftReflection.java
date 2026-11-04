@@ -1942,4 +1942,22 @@ public final class MinecraftReflection {
     public static Class<?> getPositionMoveRotationClass() {
         return getMinecraftClass("world.entity.PositionMoveRotation");
     }
+
+    /**
+     * Retrieves the VecDelta class (since 26.3).
+     *
+     * @return The VecDelta class.
+     */
+    public static Optional<Class<?>> getVecDeltaClass() {
+        return getOptionalNMS("network.protocol.game.VecDelta");
+    }
+
+    /**
+     * Retrieves the PositionPath class (since 26.3).
+     *
+     * @return The PositionPath class.
+     */
+    public static Optional<Class<?>> getPositionPathClass() {
+        return getOptionalNMS("world.entity.PositionPath");
+    }
 }

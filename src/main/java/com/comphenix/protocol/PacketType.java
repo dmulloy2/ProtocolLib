@@ -728,16 +728,17 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             public static final PacketType REGISTRY_DATA =                new PacketType(PROTOCOL, SENDER, 0x07, "RegistryData");
             public static final PacketType REMOVE_RESOURCE_PACK =         new PacketType(PROTOCOL, SENDER, 0x08, "ResourcePackPop");
             public static final PacketType ADD_RESOURCE_PACK =            new PacketType(PROTOCOL, SENDER, 0x09, "ResourcePackPush");
-            public static final PacketType STORE_COOKIE =                 new PacketType(PROTOCOL, SENDER, 0x0A, "StoreCookie");
-            public static final PacketType TRANSFER =                     new PacketType(PROTOCOL, SENDER, 0x0B, "Transfer");
-            public static final PacketType UPDATE_ENABLED_FEATURES =      new PacketType(PROTOCOL, SENDER, 0x0C, "UpdateEnabledFeatures");
-            public static final PacketType UPDATE_TAGS =                  new PacketType(PROTOCOL, SENDER, 0x0D, "UpdateTags");
-            public static final PacketType SELECT_KNOWN_PACKS =           new PacketType(PROTOCOL, SENDER, 0x0E, "ClientboundSelectKnownPacks");
-            public static final PacketType REPORT_DETAILS =               new PacketType(PROTOCOL, SENDER, 0x0F, "CustomReportDetails");
-            public static final PacketType SERVER_LINKS =                 new PacketType(PROTOCOL, SENDER, 0x10, "ServerLinks");
-            public static final PacketType CLEAR_DIALOG =                 new PacketType(PROTOCOL, SENDER, 0x11, "ClearDialog");
-            public static final PacketType SHOW_DIALOG =                  new PacketType(PROTOCOL, SENDER, 0x12, "ShowDialog");
-            public static final PacketType CODE_OF_CONDUCT =              new PacketType(PROTOCOL, SENDER, 0x13, "CodeOfConduct");
+            public static final PacketType POST_EFFECTS =                 new PacketType(PROTOCOL, SENDER, 0x0A, "PostEffects");
+            public static final PacketType STORE_COOKIE =                 new PacketType(PROTOCOL, SENDER, 0x0B, "StoreCookie");
+            public static final PacketType TRANSFER =                     new PacketType(PROTOCOL, SENDER, 0x0C, "Transfer");
+            public static final PacketType UPDATE_ENABLED_FEATURES =      new PacketType(PROTOCOL, SENDER, 0x0D, "UpdateEnabledFeatures");
+            public static final PacketType UPDATE_TAGS =                  new PacketType(PROTOCOL, SENDER, 0x0E, "UpdateTags");
+            public static final PacketType SELECT_KNOWN_PACKS =           new PacketType(PROTOCOL, SENDER, 0x0F, "ClientboundSelectKnownPacks");
+            public static final PacketType REPORT_DETAILS =               new PacketType(PROTOCOL, SENDER, 0x10, "CustomReportDetails");
+            public static final PacketType SERVER_LINKS =                 new PacketType(PROTOCOL, SENDER, 0x11, "ServerLinks");
+            public static final PacketType CLEAR_DIALOG =                 new PacketType(PROTOCOL, SENDER, 0x12, "ClearDialog");
+            public static final PacketType SHOW_DIALOG =                  new PacketType(PROTOCOL, SENDER, 0x13, "ShowDialog");
+            public static final PacketType CODE_OF_CONDUCT =              new PacketType(PROTOCOL, SENDER, 0x14, "CodeOfConduct");
 
             /**
              * @deprecated Removed in 1.20.4: replaced with new packets for removing and sending resource packs

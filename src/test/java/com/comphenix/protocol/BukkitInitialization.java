@@ -155,7 +155,7 @@ public class BukkitInitialization {
 
             LayeredRegistryAccess<RegistryLayer> layeredAccess1 = RegistryLayer.createRegistryAccess();
             List<net.minecraft.core.Registry.PendingTags<?>> tags = TagLoader.loadTagsForExistingRegistries(resourceManager, layeredAccess1.getLayer(RegistryLayer.STATIC));
-            RegistryAccess.Frozen access1 = layeredAccess1.getAccessForLoading(RegistryLayer.WORLDGEN);
+            RegistryAccess.Frozen access1 = layeredAccess1.getAccessForLoading(RegistryLayer.WORLD);
             List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(access1, tags);
 
             RegistryAccess.Frozen access2;
@@ -164,14 +164,14 @@ public class BukkitInitialization {
                 access2 = RegistryDataLoader.load(
                         resourceManager,
                         list1,
-                        RegistryDataLoader.WORLDGEN_REGISTRIES,
+                        RegistryDataLoader.WORLD_REGISTRIES,
                         Util.backgroundExecutor()).get();
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
 
             LayeredRegistryAccess<RegistryLayer> layeredAccess2 =
-                    layeredAccess1.replaceFrom(RegistryLayer.WORLDGEN, access2);
+                    layeredAccess1.replaceFrom(RegistryLayer.WORLD, access2);
             List<HolderLookup.RegistryLookup<?>> dimensionLookups =
                     Stream.concat(list1.stream(), access2.listRegistries()).toList();
             RegistryAccess.Frozen dimensions = RegistryDataLoader.load(

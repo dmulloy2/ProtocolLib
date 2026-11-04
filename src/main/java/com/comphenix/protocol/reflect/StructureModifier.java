@@ -90,6 +90,8 @@ public class StructureModifier<T> {
     protected Map<FieldAccessor, Integer> defaultFields;
     // Cache of previous types
     protected Map<Class<?>, StructureModifier<?>> subtypeCache;
+    // Cache of previous parameterized types
+    private Map<List<Type>, StructureModifier<?>> paramTypeCache = new HashMap<>();
 
     // Whether or subclasses should handle conversion
     protected boolean customConvertHandling;
@@ -201,6 +203,7 @@ public class StructureModifier<T> {
                 other.defaultFields,
                 other.converter,
                 other.subtypeCache);
+        this.paramTypeCache = other.paramTypeCache;
     }
 
     /**
@@ -531,8 +534,18 @@ public class StructureModifier<T> {
             return (StructureModifier<R>) NO_OP_MODIFIER;
         }
 
+        // parameterized lookups must not share a cache entry with the raw field type
+        List<Type> paramTypeKey = null;
+        if (paramTypes.length > 0) {
+            paramTypeKey = new ArrayList<>(paramTypes.length + 1);
+            paramTypeKey.add(fieldType);
+            paramTypeKey.addAll(Arrays.asList(paramTypes));
+        }
+
         // Do we need to update the cache?
-        StructureModifier<R> result = (StructureModifier<R>) this.subtypeCache.get(fieldType);
+        StructureModifier<R> result = (StructureModifier<R>) (paramTypeKey == null
+                ? this.subtypeCache.get(fieldType)
+                : this.paramTypeCache.get(paramTypeKey));
         if (result == null) {
             List<FieldAccessor> fields = new ArrayList<>();
             Map<FieldAccessor, Integer> defaults = new HashMap<>();
@@ -571,7 +584,11 @@ public class StructureModifier<T> {
 
             // Cache structure modifiers
             result = this.withFieldType(fieldType, fields, defaults);
-            this.subtypeCache.put(fieldType, result);
+            if (paramTypeKey == null) {
+                this.subtypeCache.put(fieldType, result);
+            } else {
+                this.paramTypeCache.put(paramTypeKey, result);
+            }
         }
 
         // Add the target too

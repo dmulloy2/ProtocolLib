@@ -45,22 +45,18 @@ public class AutoWrapperTest {
         display.announceChat = false;
         display.showToast = true;
         display.hidden = true;
-        display.x = 5f;
-        display.y = 67f;
 
         DisplayInfo nms = (DisplayInfo) displayWrapper().unwrap(display);
 
-        assertTrue(nms.shouldShowToast());
-        assertTrue(nms.isHidden());
-        assertFalse(nms.shouldAnnounceChat());
-        assertTrue(nms.getBackground().isPresent());
-        assertEquals("test", nms.getBackground().get().id().getPath());
-        validateRawText(nms.getTitle(), "Test123");
-        validateRawText(nms.getDescription(), "Test567");
-        assertSame(AdvancementType.CHALLENGE, nms.getType());
-        assertSame(getItemStackTemplateConverter().getSpecific(nms.getIcon()).getType(), Material.GOLD_INGOT);
-        assertEquals(5f, nms.getX(), 0f);
-        assertEquals(67f, nms.getY(), 0f);
+        assertTrue(nms.showToast());
+        assertTrue(nms.hidden());
+        assertFalse(nms.announceToChat());
+        assertTrue(nms.background().isPresent());
+        assertEquals("test", nms.background().get().id().getPath());
+        validateRawText(nms.title(), "Test123");
+        validateRawText(nms.description(), "Test567");
+        assertSame(AdvancementType.CHALLENGE, nms.type());
+        assertSame(getItemStackTemplateConverter().getSpecific(nms.icon()).getType(), Material.GOLD_INGOT);
     }
 
     @Test
@@ -75,7 +71,6 @@ public class AutoWrapperTest {
               false,
               true
         );
-        display.setLocation(5f, 67f);
 
         WrappedAdvancementDisplay wrapped = displayWrapper().wrap(display);
 
@@ -88,16 +83,14 @@ public class AutoWrapperTest {
         assertEquals("\"Test567\"", wrapped.description.getJson());
         assertSame(WrappedFrameType.CHALLENGE, wrapped.frameType);
         assertSame(Material.ENDER_EYE, wrapped.item.getType());
-        assertEquals(5f, wrapped.x, 0f);
-        assertEquals(67f, wrapped.y, 0f);
     }
 
     private AutoWrapper<WrappedAdvancementDisplay> displayWrapper() {
         return AutoWrapper
                 .wrap(WrappedAdvancementDisplay.class, "advancements.AdvancementDisplay", "advancements.DisplayInfo")
-                .field(0, BukkitConverters.getWrappedChatComponentConverter())
+                .field(0, getItemStackTemplateConverter())
                 .field(1, BukkitConverters.getWrappedChatComponentConverter())
-                .field(2, getItemStackTemplateConverter())
+                .field(2, BukkitConverters.getWrappedChatComponentConverter())
                 .field(3, Converters.optional(Converters.passthrough(ClientAsset.class)))
                 .field(4, EnumWrappers.getGenericConverter(
                     getMinecraftClass("advancements.AdvancementType", "advancements.AdvancementFrameType", "advancements.FrameType"),
@@ -140,15 +133,13 @@ public class AutoWrapperTest {
 
     public static final class WrappedAdvancementDisplay {
 
+        public ItemStack item;
         public WrappedChatComponent title;
         public WrappedChatComponent description;
-        public ItemStack item;
         public Optional<ClientAsset> background;
         public WrappedFrameType frameType;
         public boolean showToast;
         public boolean announceChat;
         public boolean hidden;
-        public float x;
-        public float y;
     }
 }

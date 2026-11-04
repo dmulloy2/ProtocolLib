@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.comphenix.protocol.paper.PaperPlatformProvider;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -22,7 +23,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 class PlatformCommandRegistrarTest {
 
     @Test
-    void registersLegacyExecutorAsPaperCommand() {
+    void registersLegacyExecutorAsPaperCommand() throws CommandSyntaxException {
         ProtocolLib plugin = mock(ProtocolLib.class);
         CommandExecutor executor = mock(CommandExecutor.class);
         ArgumentCaptor<BasicCommand> commandCaptor = ArgumentCaptor.forClass(BasicCommand.class);

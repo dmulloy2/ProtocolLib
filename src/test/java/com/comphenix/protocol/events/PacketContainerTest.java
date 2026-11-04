@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,6 +73,7 @@ import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.Converters;
 import com.comphenix.protocol.wrappers.ComponentConverter;
 import com.comphenix.protocol.wrappers.CustomPacketPayloadWrapper;
 import com.comphenix.protocol.wrappers.EnumWrappers;
@@ -183,8 +185,8 @@ public class PacketContainerTest {
 
     @Test
     public void testGetShorts() {
-        PacketContainer itemData = new PacketContainer(PacketType.Play.Server.REL_ENTITY_MOVE);
-        this.testPrimitive(itemData.getShorts(), 0, (short) 0, (short) 1);
+        PacketContainer creativeSlot = new PacketContainer(PacketType.Play.Client.SET_CREATIVE_SLOT);
+        this.testPrimitive(creativeSlot.getShorts(), 0, (short) 0, (short) 1);
     }
 
     @Test
@@ -940,6 +942,32 @@ public class PacketContainerTest {
 
         WrappedMessageSignature read = chatPacket.getMessageSignatures().read(0);
         assertArrayEquals(signature, read.getBytes());
+    }
+
+    @Test
+    public void testAbsentChatMessageSignature() {
+        PacketContainer chatPacket = new PacketContainer(PacketType.Play.Client.CHAT);
+        StructureModifier<WrappedMessageSignature> signatures = chatPacket.getMessageSignatures();
+
+        signatures.write(0, new WrappedMessageSignature(new byte[256]));
+        signatures.write(0, null);
+
+        assertNull(signatures.read(0));
+        assertEquals(Optional.empty(), chatPacket.getModifier().withType(Optional.class).read(0));
+    }
+
+    @Test
+    public void testMessageSignaturesDoNotShadowOptionals() {
+        PacketContainer chatPacket = new PacketContainer(PacketType.Play.Server.CHAT);
+        byte[] signature = new byte[256];
+        signature[0] = 42;
+
+        assertEquals(1, chatPacket.getMessageSignatures().size());
+        assertEquals(2, chatPacket.getOptionals(Converters.passthrough(Object.class)).size());
+        assertEquals(1, chatPacket.getMessageSignatures().size());
+
+        chatPacket.getMessageSignatures().write(0, new WrappedMessageSignature(signature));
+        assertArrayEquals(signature, chatPacket.getMessageSignatures().read(0).getBytes());
     }
 
     private void assertPacketsEqualAndSerializable(PacketContainer constructed, PacketContainer cloned) {

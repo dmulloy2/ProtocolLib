@@ -56,6 +56,7 @@ import com.comphenix.protocol.wrappers.WrappedMessageSignature;
 import com.comphenix.protocol.wrappers.WrappedNumberFormat;
 import com.comphenix.protocol.wrappers.WrappedParticle;
 import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
+import com.comphenix.protocol.wrappers.WrappedPositionPath;
 import com.comphenix.protocol.wrappers.WrappedProfilePublicKey;
 import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import com.comphenix.protocol.wrappers.WrappedRegistrable;
@@ -65,6 +66,7 @@ import com.comphenix.protocol.wrappers.WrappedSaltedSignature;
 import com.comphenix.protocol.wrappers.WrappedServerPing;
 import com.comphenix.protocol.wrappers.WrappedStatistic;
 import com.comphenix.protocol.wrappers.WrappedTeamParameters;
+import com.comphenix.protocol.wrappers.WrappedVecDelta;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
@@ -1164,9 +1166,35 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Since 26.3 the signature fields are optional, an absent signature is read and written as {@code null}.
+     *
      * @return read/writer structure direct access to unsalted signature data for example in chat message (since 1.19.3)
      */
     public StructureModifier<WrappedMessageSignature> getMessageSignatures() {
+        if (MinecraftVersion.v26_3.atOrAbove()) {
+            EquivalentConverter<WrappedMessageSignature> converter = BukkitConverters.getWrappedMessageSignatureConverter();
+            return structureModifier.withParamType(
+                    Optional.class,
+                    new EquivalentConverter<WrappedMessageSignature>() {
+                        @Override
+                        public Object getGeneric(WrappedMessageSignature specific) {
+                            return Optional.ofNullable(converter.getGeneric(specific));
+                        }
+
+                        @Override
+                        public WrappedMessageSignature getSpecific(Object generic) {
+                            return generic == null ? null : ((Optional<?>) generic).map(converter::getSpecific).orElse(null);
+                        }
+
+                        @Override
+                        public Class<WrappedMessageSignature> getSpecificType() {
+                            return WrappedMessageSignature.class;
+                        }
+                    },
+                    MinecraftReflection.getMessageSignatureClass()
+            );
+        }
+
         return structureModifier.withType(
                 MinecraftReflection.getMessageSignatureClass(),
                 BukkitConverters.getWrappedMessageSignatureConverter()
@@ -1299,7 +1327,7 @@ public abstract class AbstractStructure {
     /**
      * Retrieve a read/write structure for {@link WrappedPositionMoveRotation} (available since Minecraft 1.21.2).
      * <p>
-     * This is used in packets such as {@code ENTITY_TELEPORT} and {@code ENTITY_POSITION_SYNC}.
+     * This is used in packets such as {@code ENTITY_TELEPORT} and {@code ENTITY_POSITION_SYNC} (before 26.3).
      *
      * @return A modifier for PositionMoveRotation fields.
      */
@@ -1307,6 +1335,34 @@ public abstract class AbstractStructure {
         return structureModifier.withType(
                 MinecraftReflection.getPositionMoveRotationClass(),
                 WrappedPositionMoveRotation.getConverter()
+        );
+    }
+
+    /**
+     * Retrieve a read/write structure for {@link WrappedVecDelta} (available since Minecraft 26.3).
+     * <p>
+     * This is used in {@code REL_ENTITY_MOVE} and {@code REL_ENTITY_MOVE_LOOK}.
+     *
+     * @return A modifier for VecDelta fields.
+     */
+    public StructureModifier<WrappedVecDelta> getVecDeltas() {
+        return structureModifier.withType(
+                MinecraftReflection.getVecDeltaClass().orElse(void.class),
+                WrappedVecDelta.getConverter()
+        );
+    }
+
+    /**
+     * Retrieve a read/write structure for {@link WrappedPositionPath} (available since Minecraft 26.3).
+     * <p>
+     * This is used in {@code ENTITY_POSITION_SYNC}.
+     *
+     * @return A modifier for PositionPath fields.
+     */
+    public StructureModifier<WrappedPositionPath> getPositionPaths() {
+        return structureModifier.withType(
+                MinecraftReflection.getPositionPathClass().orElse(void.class),
+                WrappedPositionPath.getConverter()
         );
     }
 
