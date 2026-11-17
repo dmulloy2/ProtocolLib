@@ -58,7 +58,7 @@ class CommandProtocol extends CommandBase {
     private ProtocolConfig config;
 
     public CommandProtocol(ErrorReporter reporter, Plugin plugin, Updater updater, ProtocolConfig config) {
-        super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
+        super(reporter, "protocol.command.protocol", NAME, 1);
         this.plugin = plugin;
         this.updater = updater;
         this.config = config;
