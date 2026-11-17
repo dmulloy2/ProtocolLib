@@ -61,7 +61,7 @@ public class DetailedErrorReporter implements ErrorReporter {
     public static final String DEFAULT_SUPPORT_URL = "https://github.com/dmulloy2/ProtocolLib/issues";
 
     // Users that are informed about errors in the chat
-    public static final String ERROR_PERMISSION = "protocol.info";
+    public static final String ERROR_PERMISSION = "protocol.info.error";
     
     // We don't want to spam the server
     public static final int DEFAULT_MAX_ERROR_COUNT = 20;
