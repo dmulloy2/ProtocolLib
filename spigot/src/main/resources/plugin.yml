@@ -50,3 +50,6 @@ permissions:
   protocol.info:
     description: Can read update notifications and error reports.
     default: op
+    children:
+      protocol.info.error: true
+      protocol.info.notifications: true
