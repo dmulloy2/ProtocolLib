@@ -185,7 +185,7 @@ public class ProtocolLib extends JavaPlugin {
 
             // Send logging information to player listeners too
             this.initializeCommands();
-            this.setupBroadcastUsers(PERMISSION_INFO);
+            this.setupBroadcastUsers("protocol.info.notifications");
 
         } catch (Exception e) {
             reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
