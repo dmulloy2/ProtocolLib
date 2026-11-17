@@ -17,6 +17,11 @@ permissions:
   protocol.admin:
     description: Able to initiate the update process and configure debug mode.
     default: op
+    children:
+      protocol.command.filter: true
+      protocol.command.packet: true
+      protocol.command.packetlog: true
+      protocol.command.protocol: true
   protocol.info:
     description: Can read update notifications and error reports.
     default: op
