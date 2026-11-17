@@ -48,22 +48,22 @@ public final class PaperPlatformProvider implements PlatformProvider {
             case "protocol" -> new CommandMetadata(
                     "Performs administrative tasks regarding ProtocolLib.",
                     "/<command> config|check|update|timings|listeners|version|dump",
-                    "protocol.admin",
+                    "protocol.command.protocol",
                     List.of());
             case "packet" -> new CommandMetadata(
                     "Add or remove a simple packet listener.",
                     "/<command> add|remove|names client|server [ID start]-[ID stop] [detailed]",
-                    "protocol.admin",
+                    "protocol.command.packet",
                     List.of());
             case "filter" -> new CommandMetadata(
                     "Add or remove programmable filters to the packet listeners.",
                     "/<command> add|remove name [ID start]-[ID stop]",
-                    "protocol.admin",
+                    "protocol.command.filter",
                     List.of("packet_filter"));
             case "packetlog" -> new CommandMetadata(
                     "Logs hex representations of packets to a file or console",
                     "/<command> <protocol> <sender> <packet> [location]",
-                    "protocol.admin",
+                    "protocol.command.packetlog",
                     List.of());
             default -> throw new IllegalArgumentException("Unknown ProtocolLib command " + name);
         };
