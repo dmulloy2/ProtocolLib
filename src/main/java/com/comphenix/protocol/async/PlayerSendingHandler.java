@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
@@ -249,6 +250,11 @@ class PlayerSendingHandler {
             
             sendAllPackets();
             playerSendingQueues.clear();
+
+            // let already submitted sends finish, but don't keep the thread around after shutdown
+            if (asynchronousSender instanceof ExecutorService) {
+                ((ExecutorService) asynchronousSender).shutdown();
+            }
         }
     }
 

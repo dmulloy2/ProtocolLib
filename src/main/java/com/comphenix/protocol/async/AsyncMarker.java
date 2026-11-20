@@ -107,7 +107,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 
     // Determine if Minecraft processes this packet asynchronously
     private volatile static Method isMinecraftAsync;
-    private volatile static boolean alwaysSync;
+    private volatile static AsyncMode asyncMode;
 
     /**
      * Create a container for asyncronous packets.
@@ -407,59 +407,90 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
      * @throws FieldAccessException If determining fails for some reasaon
      */
     public boolean isMinecraftAsync(PacketEvent event) throws FieldAccessException {
-        if (isMinecraftAsync == null && !alwaysSync) {
-            try {
-                isMinecraftAsync = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethodByName("a_.*");
-            } catch (RuntimeException e) {
-                // This will occur in 1.2.5 (or possibly in later versions)
-                List<Method> methods = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).
-                                        getMethodListByParameters(boolean.class, new Class[] {});
+        AsyncMode mode = asyncMode;
+        if (mode == null) {
+            mode = determineAsyncMode();
+            asyncMode = mode;
+        }
 
-                // Try to look for boolean methods
-                if (methods.size() == 2) {
-                    isMinecraftAsync = methods.get(1);
-                } else if (methods.size() == 1) {
-                    // We're in 1.2.5
-                    alwaysSync = true;
-                } else if (MinecraftVersion.BOUNTIFUL_UPDATE.atOrAbove()) {
-                    // The centralized async marker was removed in 1.8
-                    // Incoming chat packets can be async
-                    if (event.getPacketType() == PacketType.Play.Client.CHAT) {
-                        String content = event.getPacket().getStrings().readSafely(0);
-                        if (content != null) {
-                            // Incoming chat packets are async only if they aren't commands
-                            return ! content.startsWith("/");
-                        } else {
-                            ProtocolLogger.log(Level.WARNING, "Failed to determine contents of incoming chat packet!");
-                            alwaysSync = true;
-                        }
-                    } else if (event.getPacketType() == PacketType.Status.Server.SERVER_INFO) {
-                        return true;
-                    } else {
-                        // TODO: Find more cases of async packets
-                        return false;
+        switch (mode) {
+            case HEURISTIC:
+                // The centralized async marker was removed in 1.8
+                // Incoming chat packets can be async
+                if (event.getPacketType() == PacketType.Play.Client.CHAT) {
+                    String content = event.getPacket().getStrings().readSafely(0);
+                    if (content != null) {
+                        // Incoming chat packets are async only if they aren't commands
+                        return !content.startsWith("/");
                     }
-                } else {
-                    ProtocolLogger.log(Level.INFO, "Could not determine asynchronous state of packets (this can probably be ignored)");
-                    alwaysSync = true;
-                }
-            }
-        }
 
-        if (alwaysSync) {
-            return false;
-        } else {
-            try {
-                // Wrap exceptions
-                return (Boolean) isMinecraftAsync.invoke(event.getPacket().getHandle());
-            } catch (IllegalArgumentException e) {
-                throw new FieldAccessException("Illegal argument", e);
-            } catch (IllegalAccessException e) {
-                throw new FieldAccessException("Unable to reflect method call 'a_', or: isAsyncPacket.", e);
-            } catch (InvocationTargetException e) {
-                throw new FieldAccessException("Minecraft error", e);
-            }
+                    ProtocolLogger.log(Level.WARNING, "Failed to determine contents of incoming chat packet!");
+                    asyncMode = AsyncMode.ALWAYS_SYNC;
+                    return false;
+                }
+
+                // TODO: Find more cases of async packets
+                return event.getPacketType() == PacketType.Status.Server.SERVER_INFO;
+            case METHOD:
+                try {
+                    // Wrap exceptions
+                    return (Boolean) isMinecraftAsync.invoke(event.getPacket().getHandle());
+                } catch (IllegalArgumentException e) {
+                    throw new FieldAccessException("Illegal argument", e);
+                } catch (IllegalAccessException e) {
+                    throw new FieldAccessException("Unable to reflect method call 'a_', or: isAsyncPacket.", e);
+                } catch (InvocationTargetException e) {
+                    throw new FieldAccessException("Minecraft error", e);
+                }
+            case ALWAYS_SYNC:
+            default:
+                return false;
         }
+    }
+
+    /**
+     * Determines once how the asynchronous state of packets is resolved. This used to be re-evaluated for every
+     * packet when no marker method exists (1.8 - 1.12), including two reflective scans and an exception each time.
+     *
+     * @return the mode to use from now on.
+     */
+    private static AsyncMode determineAsyncMode() {
+        Class<?> packetClass = MinecraftReflection.getPacketClass();
+        try {
+            isMinecraftAsync = FuzzyReflection.fromClass(packetClass).getMethodByName("a_.*");
+            return AsyncMode.METHOD;
+        } catch (RuntimeException e) {
+            List<Method> methods = FuzzyReflection.fromClass(packetClass)
+                    .getMethodListByParameters(boolean.class, new Class[] {});
+
+            if (MinecraftVersion.BOUNTIFUL_UPDATE.atOrAbove()) {
+                // 1.8 - 1.12 have no boolean method on packets, the async state is guessed per packet type. Newer
+                // versions only have unrelated boolean methods (isSkippable / isTerminal), they always used the
+                // synchronous path before as well (1.21+ picked one of the two methods by reflection order).
+                return methods.isEmpty() ? AsyncMode.HEURISTIC : AsyncMode.ALWAYS_SYNC;
+            }
+
+            // Try to look for boolean methods
+            if (methods.size() == 2) {
+                isMinecraftAsync = methods.get(1);
+                return AsyncMode.METHOD;
+            } else if (methods.size() == 1) {
+                // We're in 1.2.5
+                return AsyncMode.ALWAYS_SYNC;
+            }
+
+            ProtocolLogger.log(Level.INFO, "Could not determine asynchronous state of packets (this can probably be ignored)");
+            return AsyncMode.ALWAYS_SYNC;
+        }
+    }
+
+    private enum AsyncMode {
+        // invoke the marker method of the packet (pre 1.8)
+        METHOD,
+        // decide based on the packet type (1.8 - 1.12)
+        HEURISTIC,
+        // packets are never processed asynchronously by Minecraft
+        ALWAYS_SYNC
     }
 
     @Override
