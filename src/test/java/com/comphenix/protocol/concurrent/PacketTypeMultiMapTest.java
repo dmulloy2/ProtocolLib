@@ -83,4 +83,12 @@ public class PacketTypeMultiMapTest {
 		assertFalse(iteratorC.hasNext());
 		assertThrows(NoSuchElementException.class, () -> iteratorC.next());
 	}
+
+	@Test
+	public void testUnknownPacketTypeHasNoValues() {
+		// unknown packets have no type; the map must answer instead of throwing
+		PacketTypeMultiMap<Integer> map = new PacketTypeMultiMap<>();
+		assertFalse(map.contains(null));
+		assertFalse(map.get(null).iterator().hasNext());
+	}
 }

@@ -2,10 +2,10 @@ package com.comphenix.protocol.concurrent;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
@@ -29,7 +29,8 @@ import com.google.common.collect.Iterables;
  */
 public class PacketTypeMultiMap<T> {
 
-    private final Map<PacketType, SortedCopyOnWriteSet<T, PriorityHolder>> typeMap = new HashMap<>();
+    // concurrent map: writes are synchronized, but reads happen lock-free from netty threads
+    private final Map<PacketType, SortedCopyOnWriteSet<T, PriorityHolder>> typeMap = new ConcurrentHashMap<>();
 
     /**
      * Adds a value to the map, associating it with the {@link PacketType}s
@@ -111,7 +112,8 @@ public class PacketTypeMultiMap<T> {
      *         {@code false} otherwise
      */
     public boolean contains(PacketType packetType) {
-        return this.typeMap.containsKey(packetType);
+        // the concurrent map rejects null keys, unknown packets have no type
+        return packetType != null && this.typeMap.containsKey(packetType);
     }
 
     /**
@@ -124,7 +126,7 @@ public class PacketTypeMultiMap<T> {
      */
     public Iterable<T> get(PacketType packetType) {
         return () -> {
-            SortedCopyOnWriteSet<T, PriorityHolder> entrySet = this.typeMap.get(packetType);
+            SortedCopyOnWriteSet<T, PriorityHolder> entrySet = packetType == null ? null : this.typeMap.get(packetType);
 
             if (entrySet != null) {
                 return entrySet.iterator();
