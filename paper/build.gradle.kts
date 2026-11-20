@@ -34,7 +34,7 @@ dependencies {
     implementation(project(":"))
     paperweight.paperDevBundle("$mcVersion.build.+")
 
-    compileOnly("io.netty:netty-all:4.2.8.Final")
+    compileOnly("io.netty:netty-all:4.2.16.Final")
     compileOnly("net.kyori:adventure-text-serializer-gson:4.25.0")
     compileOnly("commons-lang:commons-lang:2.6")
 
@@ -42,8 +42,8 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
     testImplementation("org.mockito:mockito-core:5.21.0")
-    testImplementation("io.netty:netty-common:4.2.8.Final")
-    testImplementation("io.netty:netty-transport:4.2.8.Final")
+    testImplementation("io.netty:netty-common:4.2.16.Final")
+    testImplementation("io.netty:netty-transport:4.2.16.Final")
     testImplementation("net.kyori:adventure-text-serializer-gson:4.25.0")
     testImplementation("net.kyori:adventure-text-serializer-plain:4.25.0")
     testImplementation("commons-lang:commons-lang:2.6")
