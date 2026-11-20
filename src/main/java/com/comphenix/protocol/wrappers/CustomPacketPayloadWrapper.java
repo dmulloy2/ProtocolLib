@@ -330,7 +330,7 @@ public final class CustomPacketPayloadWrapper {
 
         // we read and retain the underlying buffer in case the class uses a buffer to store the data
         // this way, when passing the packet to further handling, the buffer is not released and can be re-used
-        StructureModifier<Object> modifier = new StructureModifier<>(payload.getClass()).withTarget(payload);
+        StructureModifier<Object> modifier = StructureModifier.forClass(payload.getClass()).withTarget(payload);
         byte[] messagePayload = (byte[]) modifier.withType(byte[].class).readSafely(0);
         if (messagePayload != null) {
             messagePayload = messagePayload.clone();

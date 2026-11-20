@@ -32,7 +32,7 @@ public class WrappedDataValue extends AbstractWrapper {
     public WrappedDataValue(Object handle) {
         super(HANDLE_TYPE);
         this.setHandle(handle);
-        this.modifier = new StructureModifier<>(this.handleType).withTarget(handle);
+        this.modifier = StructureModifier.forClass(this.handleType).withTarget(handle);
     }
 
     /**

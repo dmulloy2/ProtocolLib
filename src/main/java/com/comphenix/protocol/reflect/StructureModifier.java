@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.reflect;
 
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -31,15 +29,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
 
 /**
  * Provides list-oriented access to the fields of a Minecraft packet.
@@ -50,6 +46,14 @@ import com.google.common.collect.Table;
  * @author Kristian
  */
 public class StructureModifier<T> {
+
+    // Field accessors per class and excluded superclass. Accessors are immutable and thread-safe, so a single cache is
+    // shared by every thread. A plain map (instead of a ClassValue) is used on purpose: values stored in a ClassValue
+    // of a server class would keep this plugin's class loader alive after a reload.
+    private static final Map<Class<?>, Map<Class<?>, List<FieldAccessor>>> FIELD_CACHE = new ConcurrentHashMap<>();
+
+    // Shared modifiers created by forClass
+    private static final Map<Class<?>, StructureModifier<Object>> SHARED_MODIFIERS = new ConcurrentHashMap<>();
 
     // a structure modifier which does nothing
     private static final StructureModifier<Object> NO_OP_MODIFIER = new StructureModifier<Object>() {
@@ -84,8 +88,10 @@ public class StructureModifier<T> {
     protected Map<FieldAccessor, Integer> defaultFields;
     // Cache of previous types
     protected Map<Class<?>, StructureModifier<?>> subtypeCache;
-    // Cache of previous parameterized types
-    private Map<List<Type>, StructureModifier<?>> paramTypeCache = new HashMap<>();
+    // Cache of previous parameterized types, shared with all copies created by withTarget
+    private Map<List<Type>, StructureModifier<?>> paramTypeCache;
+
+    private static final Class<?>[] NO_PARAM_TYPES = new Class<?>[0];
 
     // Whether or subclasses should handle conversion
     protected boolean customConvertHandling;
@@ -114,7 +120,7 @@ public class StructureModifier<T> {
         List<FieldAccessor> fields = getFields(targetType, superclassExclude);
         Map<FieldAccessor, Integer> defaults = requireDefault ? generateDefaultFields(fields) : new HashMap<>();
 
-        this.initialize(targetType, Object.class, fields, defaults, null, new HashMap<>());
+        this.initialize(targetType, Object.class, fields, defaults, null, new ConcurrentHashMap<>());
     }
 
     /**
@@ -144,9 +150,30 @@ public class StructureModifier<T> {
         return requireDefaults;
     }
 
-    // Used to filter out irrelevant fields
-    private static final ThreadLocal<Table<Class<?>, Class<?>, Reference<List<FieldAccessor>>>>
-        fieldCacheLocal = ThreadLocal.withInitial(HashBasedTable::create);
+    /**
+     * Retrieves a shared modifier for every non-static field of the given class, which is created only once per class.
+     * This is the cheap alternative to {@code new StructureModifier<>(type, null, false)} for code that needs to access
+     * the fields of many instances of the same class.
+     * <p>
+     * The returned modifier has no target; bind it to an instance with {@link #withTarget(Object)} before reading or
+     * writing. Default values are not discovered, so {@link #writeDefaults()} does nothing.
+     *
+     * @param type the class to access the fields of.
+     * @return the shared modifier for the class.
+     */
+    public static StructureModifier<Object> forClass(Class<?> type) {
+        StructureModifier<Object> modifier = SHARED_MODIFIERS.get(type);
+        if (modifier == null) {
+            // not computeIfAbsent: building a modifier may recursively access this map
+            modifier = new StructureModifier<>(type, null, false);
+            StructureModifier<Object> existing = SHARED_MODIFIERS.putIfAbsent(type, modifier);
+            if (existing != null) {
+                modifier = existing;
+            }
+        }
+        return modifier;
+    }
+
     private static final Class<?> NULL_CACHE_CLASS_REPLACEMENT = Void.class;
 
     // Used to filter out irrelevant fields
@@ -154,23 +181,21 @@ public class StructureModifier<T> {
         if (type == null) {
             throw new IllegalArgumentException("Type cannot be NULL.");
         }
-        Table<Class<?>, Class<?>, Reference<List<FieldAccessor>>> fieldCache = fieldCacheLocal.get();
         Class<?> superclassKey = superclassExclude == null ? NULL_CACHE_CLASS_REPLACEMENT : superclassExclude;
-        Reference<List<FieldAccessor>> cacheEntryReference = fieldCache.get(type, superclassKey);
-        if (cacheEntryReference != null) {
-            List<FieldAccessor> cacheEntry = cacheEntryReference.get();
-            if (cacheEntry != null) {
-                return cacheEntry;
+        Map<Class<?>, List<FieldAccessor>> cache = FIELD_CACHE.computeIfAbsent(type, key -> new ConcurrentHashMap<>());
+        List<FieldAccessor> accessors = cache.get(superclassKey);
+        if (accessors == null) {
+            accessors = FuzzyReflection.fromClass(type, true)
+                .getDeclaredFields(superclassExclude)
+                .stream()
+                .filter(field -> !Modifier.isStatic(field.getModifiers()))
+                .map(Accessors::getFieldAccessor)
+                .collect(Collectors.toList());
+            List<FieldAccessor> existing = cache.putIfAbsent(superclassKey, accessors);
+            if (existing != null) {
+                accessors = existing;
             }
         }
-        List<FieldAccessor> accessors = FuzzyReflection.fromClass(type, true)
-            .getDeclaredFields(superclassExclude)
-            .stream()
-            .filter(field -> !Modifier.isStatic(field.getModifiers()))
-            .map(Accessors::getFieldAccessor)
-            .collect(Collectors.toList());
-        fieldCache.put(type, superclassKey, new SoftReference<>(accessors));
-        fieldCache.cellSet().removeIf(entry -> entry.getValue().get() == null);
         return accessors;
     }
 
@@ -180,6 +205,8 @@ public class StructureModifier<T> {
      * @param other - information to set.
      */
     protected void initialize(StructureModifier<T> other) {
+        // share the cache before initializing, so that initialize does not allocate a new one
+        this.paramTypeCache = other.paramTypeCache;
         this.initialize(
                 other.targetType,
                 other.fieldType,
@@ -187,7 +214,6 @@ public class StructureModifier<T> {
                 other.defaultFields,
                 other.converter,
                 other.subtypeCache);
-        this.paramTypeCache = other.paramTypeCache;
     }
 
     /**
@@ -214,6 +240,9 @@ public class StructureModifier<T> {
         this.defaultFields = defaultFields;
         this.converter = converter;
         this.subtypeCache = subTypeCache;
+        if (this.paramTypeCache == null) {
+            this.paramTypeCache = new ConcurrentHashMap<>();
+        }
     }
 
     /**
@@ -495,7 +524,7 @@ public class StructureModifier<T> {
      * @return A structure modifier for fields of this type.
      */
     public <R> StructureModifier<R> withType(Class<?> fieldType, EquivalentConverter<R> converter) {
-        return this.withParamType(fieldType, converter);
+        return this.withParamType(fieldType, converter, NO_PARAM_TYPES);
     }
 
     /**
@@ -526,10 +555,17 @@ public class StructureModifier<T> {
             paramTypeKey.addAll(Arrays.asList(paramTypes));
         }
 
+        Map<List<Type>, StructureModifier<?>> paramCache = this.paramTypeCache;
+        if (paramTypeKey != null && paramCache == null) {
+            // only possible for modifiers that were never initialized
+            paramCache = new ConcurrentHashMap<>();
+            this.paramTypeCache = paramCache;
+        }
+
         // Do we need to update the cache?
         StructureModifier<R> result = (StructureModifier<R>) (paramTypeKey == null
                 ? this.subtypeCache.get(fieldType)
-                : this.paramTypeCache.get(paramTypeKey));
+                : paramCache.get(paramTypeKey));
         if (result == null) {
             List<FieldAccessor> fields = new ArrayList<>();
             Map<FieldAccessor, Integer> defaults = new HashMap<>();
@@ -571,7 +607,7 @@ public class StructureModifier<T> {
             if (paramTypeKey == null) {
                 this.subtypeCache.put(fieldType, result);
             } else {
-                this.paramTypeCache.put(paramTypeKey, result);
+                paramCache.put(paramTypeKey, result);
             }
         }
 
@@ -623,7 +659,7 @@ public class StructureModifier<T> {
                 filtered,
                 defaults,
                 converter,
-                new HashMap<>());
+                new ConcurrentHashMap<>());
         return result;
     }
 
