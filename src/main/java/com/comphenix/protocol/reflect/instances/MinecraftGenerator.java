@@ -1,6 +1,6 @@
 package com.comphenix.protocol.reflect.instances;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,7 +30,7 @@ public class MinecraftGenerator {
         try {
             SYS_UUID = new UUID(0L, 0L);
             AIR_ITEM_STACK = BukkitConverters.getItemStackConverter().getGeneric(new ItemStack(Material.AIR));
-            FAST_MAP_CONSTRUCTORS = new HashMap<>();
+            FAST_MAP_CONSTRUCTORS = new ConcurrentHashMap<>();
             NON_NULL_LIST_CREATE = MinecraftReflection.getNonNullListCreateAccessor();
         } catch (Throwable ex) {
             throw new RuntimeException("Failed to create static fields in MinecraftGenerator", ex);

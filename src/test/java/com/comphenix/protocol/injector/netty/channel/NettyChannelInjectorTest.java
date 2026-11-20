@@ -26,7 +26,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,6 +40,7 @@ import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -134,6 +137,42 @@ public class NettyChannelInjectorTest {
 
         assertTrue(action.ran);
         verify(postListener).onPostEvent(any(PacketEvent.class));
+    }
+
+    @Test
+    public void testSkippedPacketsAreComparedByIdentity() throws Exception {
+        ListenerManager listenerManager = mock(ListenerManager.class);
+        when(listenerManager.hasOutboundListener(PacketType.Play.Server.SYSTEM_CHAT)).thenReturn(true);
+
+        // two different packets with the same content: record packets compare equal
+        Object first = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT).getHandle();
+        Object second = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT).getHandle();
+        assertEquals(first, second);
+        assertNotSame(first, second);
+
+        NettyChannelInjector injector = createInjector(listenerManager);
+
+        // the first packet is sent without filters, which must not affect the equal second packet
+        injector.sendClientboundPacket(first, null, false);
+        injector.processOutbound(new SendAction((Packet<?>) second));
+        verify(listenerManager, times(1)).invokeOutboundPacketListeners(any());
+
+        injector.processOutbound(new SendAction((Packet<?>) first));
+        verify(listenerManager, times(1)).invokeOutboundPacketListeners(any());
+    }
+
+    private static NettyChannelInjector createInjector(ListenerManager listenerManager) throws Exception {
+        // the real Connection can't be loaded in tests, so the injector gets a stand-in and a mocked invoker
+        NettyChannelInjector injector;
+        try (MockedConstruction<PacketListenerInvoker> ignored = mockConstruction(PacketListenerInvoker.class)) {
+            injector = spy(new NettyChannelInjector(null, new FakeNetworkManager(), new EmbeddedChannel(),
+                    listenerManager, mock(InjectionFactory.class), mock(ErrorReporter.class)));
+        }
+        doReturn(Protocol.PLAY).when(injector).getCurrentProtocol(PacketType.Sender.SERVER);
+        Field injected = NettyChannelInjector.class.getDeclaredField("injected");
+        injected.setAccessible(true);
+        injected.setBoolean(injector, true);
+        return injector;
     }
 
     private static final class FakeNetworkManager {
