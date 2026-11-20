@@ -121,6 +121,49 @@ public class PacketRegistry {
     // Current register
     protected static volatile Register REGISTER;
 
+    // incremented whenever REGISTER is replaced, lets callers invalidate data derived from it
+    private static volatile int REGISTER_EPOCH = 0;
+
+    /**
+     * Returns a counter that changes every time the register is rebuilt. Data derived from the register (such as
+     * {@link #getPacketClasses(PacketType)}) is only valid as long as the epoch did not change.
+     *
+     * @return the current register epoch.
+     */
+    public static int getRegisterEpoch() {
+        return REGISTER_EPOCH;
+    }
+
+    /**
+     * Retrieves every packet class that the register resolves to the given packet type, in any protocol state. A
+     * packet whose class is not part of this set can never be resolved to the given type by
+     * {@link #getPacketType(PacketType.Protocol, Class)}.
+     *
+     * @param type the packet type.
+     * @return a new mutable set of packet classes, empty if the type is not registered.
+     */
+    public static Set<Class<?>> getPacketClasses(PacketType type) {
+        initialize();
+
+        Set<Class<?>> classes = new HashSet<>();
+        Register register = REGISTER;
+        register.classToType.forEach((packetClass, packetType) -> {
+            if (packetType.equals(type)) {
+                classes.add(packetClass);
+            }
+        });
+        register.protocolClassToType.values().forEach(classToType -> classToType.forEach((packetClass, packetType) -> {
+            if (packetType.equals(type)) {
+                classes.add(packetClass);
+            }
+        }));
+        tryGetPacketClass(type).ifPresent(classes::add);
+        if (type == PacketType.Play.Server.BUNDLE) {
+            MinecraftReflection.getPackedBundlePacketClass().ifPresent(classes::add);
+        }
+        return classes;
+    }
+
     /**
      * Ensure that our local register is up-to-date with Minecraft.
      * <p>
@@ -357,6 +400,8 @@ public class PacketRegistry {
             } else {
                 REGISTER = createOldRegister();
             }
+
+            REGISTER_EPOCH++;
 
             INITIALIZED = true;
         }

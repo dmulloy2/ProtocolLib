@@ -503,6 +503,11 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
     }
 
     @Override
+    public boolean mayHaveOutboundListener(Class<?> packetClass) {
+        return this.outboundListeners.mayContainPacketClass(packetClass);
+    }
+
+    @Override
     public boolean hasMainThreadListener(PacketType packetType) {
         return this.mainThreadPacketTypes.contains(packetType);
     }

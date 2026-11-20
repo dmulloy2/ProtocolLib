@@ -24,6 +24,53 @@ final class ChannelProtocolUtil {
 
     public static final BiFunction<Channel, PacketType.Sender, PacketType.Protocol> PROTOCOL_RESOLVER;
 
+    // non-null on 1.20.5+, where the resolved protocol can be cached per codec handler instance
+    private static final Post1_20_5WrappedResolver CACHEABLE_RESOLVER;
+
+    /**
+     * Resolves the current protocol of the given channel, reusing the result stored in the given cache when the codec
+     * handler holding the protocol was not replaced since the last call.
+     *
+     * @param channel the channel to resolve the protocol of.
+     * @param sender  the direction to resolve the protocol for.
+     * @param cache   the per-channel cache, must only be used with the given channel.
+     * @return the current protocol, {@link PacketType.Protocol#UNKNOWN} if it cannot be determined.
+     */
+    static PacketType.Protocol getProtocol(Channel channel, PacketType.Sender sender, ProtocolCache cache) {
+        if (CACHEABLE_RESOLVER != null) {
+            return CACHEABLE_RESOLVER.resolveCached(channel, sender, cache);
+        }
+        return PROTOCOL_RESOLVER.apply(channel, sender);
+    }
+
+    /**
+     * Holds the last resolved protocol of a channel per direction.
+     */
+    static final class ProtocolCache {
+
+        private volatile CachedProtocol serverBound;
+        private volatile CachedProtocol clientBound;
+    }
+
+    private static final class CachedProtocol {
+
+        private final ChannelHandlerContext context;
+        private final Object handler;
+        private final PacketType.Protocol protocol;
+
+        private CachedProtocol(ChannelHandlerContext context, Object handler, PacketType.Protocol protocol) {
+            this.context = context;
+            this.handler = handler;
+            this.protocol = protocol;
+        }
+
+        private boolean isValid() {
+            // the protocol is a final field of the codec handler, Minecraft replaces the handler (and thereby its
+            // context) whenever the protocol changes
+            return !this.context.isRemoved() && this.context.handler() == this.handler;
+        }
+    }
+
     static {
         Class<?> networkManagerClass = MinecraftReflection.getNetworkManagerClass();
         List<Field> attributeKeys = FuzzyReflection.fromClass(networkManagerClass, true).getFieldList(FuzzyFieldContract.newBuilder()
@@ -33,9 +80,11 @@ final class ChannelProtocolUtil {
                 .build());
 
         BiFunction<Channel, PacketType.Sender, Object> baseResolver = null;
+        Post1_20_5WrappedResolver cacheableResolver = null;
         if (attributeKeys.isEmpty()) {
             // since 1.20.5 the protocol is stored as final field in de-/encoder
-            baseResolver = new Post1_20_5WrappedResolver();
+            cacheableResolver = new Post1_20_5WrappedResolver();
+            baseResolver = cacheableResolver;
         } else if (attributeKeys.size() == 1) {
             // if there is only one attribute key we can assume it's the correct one (1.8 - 1.20.1)
             Object protocolKey = Accessors.getFieldAccessor(attributeKeys.get(0)).get(null);
@@ -77,6 +126,7 @@ final class ChannelProtocolUtil {
 
         // decorate the base resolver by wrapping its return value into our packet type value
         PROTOCOL_RESOLVER = baseResolver.andThen(protocol -> PacketType.Protocol.fromVanilla((Enum<?>) protocol));
+        CACHEABLE_RESOLVER = cacheableResolver;
     }
 
     private static final class Pre1_20_2DirectResolver implements BiFunction<Channel, PacketType.Sender, Object> {
@@ -147,11 +197,12 @@ final class ChannelProtocolUtil {
         // lazy initialized when needed
         private Function<Object, Object> serverProtocolAccessor;
         private Function<Object, Object> clientProtocolAccessor;
+        private Class<? extends ChannelHandler> encoderClass;
+        private Class<? extends ChannelHandler> decoderClass;
 
         @Override
         public Object apply(Channel channel, PacketType.Sender sender) {
-            Class<? extends ChannelHandler> handlerClass = this.getHandlerClass(sender)
-                    .asSubclass(ChannelHandler.class);
+            Class<? extends ChannelHandler> handlerClass = this.getHandlerClass(sender);
 
             ChannelHandlerContext handlerContext = channel.pipeline().context(handlerClass);
             if (handlerContext == null) {
@@ -160,6 +211,31 @@ final class ChannelProtocolUtil {
 
             Function<Object, Object> protocolAccessor = this.getProtocolAccessor(handlerClass, sender);
             return protocolAccessor.apply(handlerContext.handler());
+        }
+
+        PacketType.Protocol resolveCached(Channel channel, PacketType.Sender sender, ProtocolCache cache) {
+            CachedProtocol cached = sender == PacketType.Sender.SERVER ? cache.serverBound : cache.clientBound;
+            if (cached != null && cached.isValid()) {
+                return cached.protocol;
+            }
+
+            Class<? extends ChannelHandler> handlerClass = this.getHandlerClass(sender);
+            ChannelHandlerContext handlerContext = channel.pipeline().context(handlerClass);
+            if (handlerContext == null) {
+                return PacketType.Protocol.UNKNOWN;
+            }
+
+            Object handler = handlerContext.handler();
+            Object vanillaProtocol = this.getProtocolAccessor(handlerClass, sender).apply(handler);
+            PacketType.Protocol protocol = PacketType.Protocol.fromVanilla((Enum<?>) vanillaProtocol);
+
+            CachedProtocol entry = new CachedProtocol(handlerContext, handler, protocol);
+            if (sender == PacketType.Sender.SERVER) {
+                cache.serverBound = entry;
+            } else {
+                cache.clientBound = entry;
+            }
+            return protocol;
         }
 
         private Function<Object, Object> getProtocolAccessor(Class<?> codecHandler, PacketType.Sender sender) {
@@ -179,12 +255,20 @@ final class ChannelProtocolUtil {
             }
         }
 
-        private Class<?> getHandlerClass(PacketType.Sender sender) {
+        private Class<? extends ChannelHandler> getHandlerClass(PacketType.Sender sender) {
             switch (sender) {
                 case SERVER:
-                    return MinecraftReflection.getMinecraftClass("network.PacketEncoder");
+                    if (this.encoderClass == null) {
+                        this.encoderClass = MinecraftReflection.getMinecraftClass("network.PacketEncoder")
+                                .asSubclass(ChannelHandler.class);
+                    }
+                    return this.encoderClass;
                 case CLIENT:
-                    return MinecraftReflection.getMinecraftClass("network.PacketDecoder");
+                    if (this.decoderClass == null) {
+                        this.decoderClass = MinecraftReflection.getMinecraftClass("network.PacketDecoder")
+                                .asSubclass(ChannelHandler.class);
+                    }
+                    return this.decoderClass;
                 default:
                     throw new IllegalArgumentException("Illegal packet sender " + sender.name());
             }

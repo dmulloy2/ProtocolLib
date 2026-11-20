@@ -627,8 +627,17 @@ public final class MinecraftReflection {
      * @return The packet class.
      */
     public static Class<?> getPacketClass() {
-        return getMinecraftClass("network.protocol.Packet", "Packet");
+        // called multiple times for every packet, avoid the name based lookup after the first call
+        Class<?> packetClass = cachedPacketClass;
+        if (packetClass == null) {
+            packetClass = getMinecraftClass("network.protocol.Packet", "Packet");
+            cachedPacketClass = packetClass;
+        }
+        return packetClass;
     }
+
+    private static volatile Class<?> cachedPacketClass;
+    private static volatile Optional<Class<?>> cachedPackedBundlePacketClass;
 
     public static Class<?> getByteBufClass() {
         return getClass("io.netty.buffer.ByteBuf");
@@ -653,11 +662,17 @@ public final class MinecraftReflection {
     }
 
     public static Optional<Class<?>> getPackedBundlePacketClass() {
-        return getOptionalNMS("network.protocol.game.ClientboundBundlePacket", "ClientboundBundlePacket");
+        Optional<Class<?>> bundleClass = cachedPackedBundlePacketClass;
+        if (bundleClass == null) {
+            bundleClass = getOptionalNMS("network.protocol.game.ClientboundBundlePacket", "ClientboundBundlePacket");
+            cachedPackedBundlePacketClass = bundleClass;
+        }
+        return bundleClass;
     }
 
     public static boolean isBundlePacket(Class<?> packetClass) {
-        return Optionals.Equals(getPackedBundlePacketClass(), packetClass);
+        Class<?> bundleClass = getPackedBundlePacketClass().orElse(null);
+        return bundleClass != null && bundleClass.equals(packetClass);
     }
 
     public static boolean isBundleDelimiter(Class<?> packetClass) {

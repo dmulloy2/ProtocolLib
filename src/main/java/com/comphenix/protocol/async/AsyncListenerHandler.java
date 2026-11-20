@@ -596,13 +596,12 @@ public class AsyncListenerHandler {
                 marker.setListenerHandler(this);
                 marker.setWorkerID(workerID);
                 
-                TimingTrackerManager.get(listener, packet.isServerPacket() ? TimingListenerType.ASYNC_OUTBOUND : TimingListenerType.ASYNC_INBOUND)
-                        .track(packet.getPacketType(), () -> {
-                            if (packet.isServerPacket())
-                                listener.onPacketSending(packet);
-                            else
-                                listener.onPacketReceiving(packet);
-                        });
+                if (TimingTrackerManager.isTracking()) {
+                    TimingTrackerManager.get(listener, packet.isServerPacket() ? TimingListenerType.ASYNC_OUTBOUND : TimingListenerType.ASYNC_INBOUND)
+                            .track(packet.getPacketType(), () -> invokeListener(packet));
+                } else {
+                    invokeListener(packet);
+                }
             }
             
         } catch (OutOfMemoryError e) {
@@ -615,7 +614,15 @@ public class AsyncListenerHandler {
         // Note that listeners can opt to delay the packet transmission
         filterManager.signalPacketTransmission(packet);
     }
-    
+
+    private void invokeListener(PacketEvent packet) {
+        if (packet.isServerPacket()) {
+            listener.onPacketSending(packet);
+        } else {
+            listener.onPacketReceiving(packet);
+        }
+    }
+
     /**
      * Close all worker threads and the handler itself.
      */

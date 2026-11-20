@@ -31,6 +31,18 @@ public interface ListenerManager {
 
     boolean hasOutboundListener(PacketType packetType);
 
+    /**
+     * Checks whether an outbound packet of the given class could have listeners, without resolving its packet type.
+     * A {@code false} result guarantees that {@link #hasOutboundListener(PacketType)} is false for every packet type
+     * the class resolves to; a {@code true} result may be a false positive.
+     *
+     * @param packetClass the class of the outbound packet.
+     * @return false if the packet can be sent without invoking any listener.
+     */
+    default boolean mayHaveOutboundListener(Class<?> packetClass) {
+        return true;
+    }
+
     boolean hasMainThreadListener(PacketType packetType);
 
     /**

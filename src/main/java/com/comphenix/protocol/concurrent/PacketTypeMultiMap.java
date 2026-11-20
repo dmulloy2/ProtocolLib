@@ -99,7 +99,7 @@ public class PacketTypeMultiMap<T> {
      *
      * @return an immutable set of packet types
      */
-    public ImmutableSet<PacketType> getPacketTypes() {
+    public synchronized ImmutableSet<PacketType> getPacketTypes() {
         return ImmutableSet.copyOf(this.typeMap.keySet());
     }
 

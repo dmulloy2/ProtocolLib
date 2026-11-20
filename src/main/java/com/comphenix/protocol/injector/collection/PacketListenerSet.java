@@ -1,5 +1,7 @@
 package com.comphenix.protocol.injector.collection;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -36,6 +38,13 @@ public abstract class PacketListenerSet {
     protected final PacketTypeListenerSet mainThreadPacketTypes;
     protected final ErrorReporter errorReporter;
 
+    /**
+     * Immutable snapshot of every packet class that may resolve to a packet type with listeners, rebuilt whenever
+     * listeners change or the packet registry is rebuilt. Lets the injector skip packets by class without resolving
+     * the protocol state first.
+     */
+    private volatile PacketClassSnapshot packetClasses = PacketClassSnapshot.EMPTY;
+
     public PacketListenerSet(PacketTypeListenerSet mainThreadPacketTypes, ErrorReporter errorReporter) {
         this.mainThreadPacketTypes = mainThreadPacketTypes;
         this.errorReporter = errorReporter;
@@ -64,6 +73,7 @@ public abstract class PacketListenerSet {
         }
 
         this.map.put(listeningWhitelist, packetListener);
+        this.invalidatePacketClasses();
 
         Set<ListenerOptions> options = listeningWhitelist.getOptions();
         for (PacketType packetType : listeningWhitelist.getTypes()) {
@@ -82,6 +92,7 @@ public abstract class PacketListenerSet {
     public void removeListener(PacketListener packetListener) {
         ListeningWhitelist listeningWhitelist = getListeningWhitelist(packetListener);
         this.map.remove(listeningWhitelist, packetListener);
+        this.invalidatePacketClasses();
 
         if (this.mainThreadPacketTypes != null) {
             for (PacketType packetType : listeningWhitelist.getTypes()) {
@@ -92,6 +103,60 @@ public abstract class PacketListenerSet {
 
     public final boolean containsPacketType(PacketType packetType) {
         return this.map.contains(packetType);
+    }
+
+    /**
+     * Checks whether a packet of the given class could have listeners. This is a superset check: a {@code true}
+     * result still requires resolving the packet type, but a {@code false} result guarantees that no listener is
+     * registered for any packet type the class can resolve to.
+     *
+     * @param packetClass the class of the packet.
+     * @return false if no listener can be interested in the packet class, true otherwise.
+     */
+    public final boolean mayContainPacketClass(Class<?> packetClass) {
+        PacketClassSnapshot snapshot = this.packetClasses;
+        if (snapshot.epoch != PacketRegistry.getRegisterEpoch()) {
+            snapshot = this.rebuildPacketClasses();
+        }
+        return snapshot.classes.contains(packetClass);
+    }
+
+    // synchronized with rebuildPacketClasses so that a rebuild running concurrently with a listener change can never
+    // publish a snapshot that misses the change
+    private synchronized void invalidatePacketClasses() {
+        this.packetClasses = PacketClassSnapshot.EMPTY;
+    }
+
+    private synchronized PacketClassSnapshot rebuildPacketClasses() {
+        PacketClassSnapshot snapshot = this.packetClasses;
+        int epoch = PacketRegistry.getRegisterEpoch();
+        if (snapshot.epoch == epoch) {
+            return snapshot;
+        }
+
+        Set<Class<?>> classes = new HashSet<>();
+        for (PacketType packetType : this.map.getPacketTypes()) {
+            classes.addAll(PacketRegistry.getPacketClasses(packetType));
+        }
+
+        // re-read the epoch: the lookups above may have initialized the registry
+        snapshot = new PacketClassSnapshot(PacketRegistry.getRegisterEpoch(), Collections.unmodifiableSet(classes));
+        this.packetClasses = snapshot;
+        return snapshot;
+    }
+
+    private static final class PacketClassSnapshot {
+
+        // epoch -1 never matches the registry, so the empty snapshot always triggers a rebuild
+        static final PacketClassSnapshot EMPTY = new PacketClassSnapshot(-1, Collections.emptySet());
+
+        final int epoch;
+        final Set<Class<?>> classes;
+
+        PacketClassSnapshot(int epoch, Set<Class<?>> classes) {
+            this.epoch = epoch;
+            this.classes = classes;
+        }
     }
 
     public final ImmutableSet<PacketType> getPacketTypes() {
@@ -117,10 +182,14 @@ public abstract class PacketListenerSet {
                 break;
             }
 
-            // invoke packet listener
-            TimingTrackerManager
-                    .get(listener, event.isServerPacket() ? TimingListenerType.SYNC_OUTBOUND : TimingListenerType.SYNC_INBOUND)
-                    .track(event.getPacketType(), () -> invokeListener(event, listener));
+            // invoke packet listener, only pay for the timing wrapper while timings are recorded
+            if (TimingTrackerManager.isTracking()) {
+                TimingTrackerManager
+                        .get(listener, event.isServerPacket() ? TimingListenerType.SYNC_OUTBOUND : TimingListenerType.SYNC_INBOUND)
+                        .track(event.getPacketType(), () -> invokeListener(event, listener));
+            } else {
+                invokeListener(event, listener);
+            }
             
             // check for new null packets
             PacketContainer newPacket = event.getPacket();
@@ -138,5 +207,6 @@ public abstract class PacketListenerSet {
 
     public void clear() {
         this.map.clear();
+        this.invalidatePacketClasses();
     }
 }
