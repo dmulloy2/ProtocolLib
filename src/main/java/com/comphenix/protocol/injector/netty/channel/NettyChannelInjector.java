@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -188,9 +189,9 @@ public class NettyChannelInjector implements Injector {
         // jumps from event loop to minecraft main thread in order to process packets in
         // main thread
         Object networkManangerChannel = this.channelField.get(this.networkManager);
-        if (!(networkManangerChannel instanceof NettyChannelProxy)) {
+        if (!LegacyNettyChannelProxy.isChannelProxy(networkManangerChannel)) {
             EventLoop proxyEventLoop = new NettyEventLoopProxy(this.channel.eventLoop(), this);
-            Channel proxyChannel = new NettyChannelProxy(this.channel, proxyEventLoop, this);
+            Channel proxyChannel = LegacyNettyChannelProxy.createChannelProxy(this.channel, proxyEventLoop, this);
             this.channelField.set(this.networkManager, proxyChannel);
         }
 
@@ -657,6 +658,45 @@ public class NettyChannelInjector implements Injector {
             }
         }
         return false;
+    }
+
+    /**
+     * Checks if the given message written to the channel proxy must be passed to {@link #processOutbound(Object)}.
+     * Used by the channel proxies, kept here so that the netty 4.0 proxy does not need to load the regular one.
+     *
+     * @param msg the message that is written.
+     * @return true if the message is a packet that was not processed yet.
+     */
+    boolean isPacketEventCallNeeded(Object msg) {
+        if (MinecraftReflection.isPacketClass(msg)) {
+            // check if any packet was marked as processed before during the current execution
+            // then reset the thread local as there will always be only one packet per write op (if needed)
+            Boolean hasProcessedPacket = this.processedPackets.get();
+            if (hasProcessedPacket == Boolean.TRUE) {
+                // at least one packet was processed before, so no need for us to process as well
+                this.processedPackets.set(Boolean.FALSE);
+                return false;
+            } else {
+                // no packet was processed in the current context, we need to process
+                return true;
+            }
+        } else {
+            // not a packet, just ignore
+            return false;
+        }
+    }
+
+    /**
+     * Processes an outbound packet written directly to the channel proxy.
+     *
+     * @param packet                the packet.
+     * @param delegateActionHandler writes the (possibly replaced) packet to the real channel.
+     */
+    void processPacketOutbound(Object packet, Consumer<Object> delegateActionHandler) {
+        Runnable action = this.processOutbound(() -> delegateActionHandler.accept(packet));
+        if (action != null) {
+            action.run();
+        }
     }
 
     /**
