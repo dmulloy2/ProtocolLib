@@ -46,6 +46,8 @@ public final class MinecraftMethods {
     // For packet
     private volatile static MethodAccessor packetReadByteBuf;
     private volatile static MethodAccessor packetWriteByteBuf;
+    // the read method no longer exists since 1.18, so packetReadByteBuf alone can't tell if the lookup already ran
+    private volatile static boolean packetMethodsResolved;
 
     // Decorated PacketSerializer to identify methods
     private volatile static ConstructorAccessor decoratedDataSerializerAccessor;
@@ -259,7 +261,7 @@ public final class MinecraftMethods {
         }
 
         // Initialize the methods
-        if (packetReadByteBuf == null || packetWriteByteBuf == null) {
+        if (!packetMethodsResolved) {
             // setups a decorated PacketDataSerializer which we can use to identity read/write methods in the packet class
             if (decoratedDataSerializerAccessor == null) {
                 decoratedDataSerializerAccessor = Accessors.getConstructorAccessor(setupProxyConstructor());
@@ -298,6 +300,8 @@ public final class MinecraftMethods {
             if (packetWriteByteBuf == null) {
                 throw new IllegalStateException("Unable to find Packet.write(PacketDataSerializer)");
             }
+
+            packetMethodsResolved = true;
         }
     }
 

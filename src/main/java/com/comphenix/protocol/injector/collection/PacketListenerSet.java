@@ -171,7 +171,8 @@ public abstract class PacketListenerSet {
         Iterable<PacketListener> listeners = this.map.get(event.getPacketType());
 
         for (PacketListener listener : listeners) {
-            ListeningWhitelist listeningWhitelist = listener.getReceivingWhitelist();
+            // use the whitelist of this direction, outbound MONITOR listeners were filtered by their receiving whitelist
+            ListeningWhitelist listeningWhitelist = this.getListeningWhitelist(listener);
             if (priorityFilter != null && listeningWhitelist.getPriority() != priorityFilter) {
                 continue;
             }

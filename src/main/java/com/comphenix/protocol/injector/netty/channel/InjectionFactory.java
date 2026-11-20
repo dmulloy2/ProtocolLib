@@ -93,6 +93,7 @@ public class InjectionFactory {
         if (injector != null && !injector.isClosed()) {
             return injector;
         }
+        Injector closedInjector = injector;
 
         // check if a network manager is present, if not maybe we cached the player temporarily
         Object networkManager = MinecraftFields.getNetworkManager(player);
@@ -101,8 +102,13 @@ public class InjectionFactory {
         }
 
         // get the channel of the player and check if we already hooked into it
-        Channel channel = FuzzyReflection.getFieldValue(networkManager, Channel.class, true);
+        Channel channel = (Channel) NettyChannelInjector.getChannelAccessor(networkManager.getClass()).get(networkManager);
         injector = NettyChannelInjector.findInjector(channel);
+
+        // the player is gone: don't build (and cache) a new injector for every packet sent to the stale player object
+        if (injector == null && closedInjector != null && !channel.isActive()) {
+            return closedInjector;
+        }
 
         if (injector != null) {
             // check if the new player is not the old one, this saves us a bit when many calls to the method are made
