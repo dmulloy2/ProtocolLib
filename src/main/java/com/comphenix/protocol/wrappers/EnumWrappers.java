@@ -946,10 +946,13 @@ public abstract class EnumWrappers {
     }
 
     public static Map<Class<?>, EquivalentConverter<?>> getFromNativeMap() {
+        // the maps are only filled by initialize, callers may run before any other accessor did
+        initialize();
         return FROM_NATIVE;
     }
 
     public static Map<Class<?>, EquivalentConverter<?>> getFromWrapperMap() {
+        initialize();
         return FROM_WRAPPER;
     }
 

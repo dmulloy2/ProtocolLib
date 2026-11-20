@@ -70,7 +70,7 @@ public class StructureCache {
 
     // packet data serializer which always returns an empty nbt tag compound
     private static final Object TRICK_INIT_LOCK = new Object();
-    private static boolean TRICK_TRIED = false;
+    private static volatile boolean TRICK_TRIED = false;
 
     private static Function<ByteBuf, Object> TRICKED_DATA_SERIALIZER_BASE;
     private static Supplier<Object> TRICKED_DATA_SERIALIZER_JSON;
@@ -184,13 +184,11 @@ public class StructureCache {
                         throw ex;
                     }
 
-                    Object serializer = TRICKED_DATA_SERIALIZER_BASE.apply(Unpooled.copiedBuffer(data));
+                    Object serializer = TRICKED_DATA_SERIALIZER_BASE.apply(Unpooled.wrappedBuffer(data));
                     streamCodec.decode(serializer);
 
-                    return () -> {
-                        ((ByteBuf) serializer).readerIndex(0);
-                        return streamCodec.decode(serializer);
-                    };
+                    // a new (wrapping, not copying) buffer per packet: rewinding one shared buffer is not thread-safe
+                    return () -> streamCodec.decode(TRICKED_DATA_SERIALIZER_BASE.apply(Unpooled.wrappedBuffer(data)));
                 } catch (Exception ignored1) {
                     try {
                         // try with the json accessor
