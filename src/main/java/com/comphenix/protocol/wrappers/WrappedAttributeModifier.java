@@ -32,50 +32,11 @@ public class WrappedAttributeModifier extends AbstractWrapper {
     private static final Class<?> OPERATION_CLASS;
     private static final EquivalentConverter<Operation> OPERATION_CONVERTER;
 
-    private static class IndexedEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
-        private final Class<T> specificClass;
-        private final Class<?> genericClass;
-
-        private IndexedEnumConverter(Class<T> specificClass, Class<?> genericClass) {
-            this.specificClass = specificClass;
-            this.genericClass = genericClass;
-        }
-
-        @Override
-        public Object getGeneric(T specific) {
-            int ordinal = specific.ordinal();
-            for (Object elem : genericClass.getEnumConstants()) {
-                if (((Enum<?>) elem).ordinal() == ordinal) {
-                    return elem;
-                }
-            }
-
-            return null;
-        }
-
-        @Override
-        public T getSpecific(Object generic) {
-            int ordinal = ((Enum<?>) generic).ordinal();
-            for (T elem : specificClass.getEnumConstants()) {
-                if (elem.ordinal() == ordinal) {
-                    return elem;
-                }
-            }
-
-            return null;
-        }
-
-        @Override
-        public Class<T> getSpecificType() {
-            return specificClass;
-        }
-    }
-
     static {
         OPERATION_CLASS = OPERATION_ENUM ? MinecraftReflection.getMinecraftClass(
                 "world.entity.ai.attributes.AttributeModifier$Operation", "AttributeModifier$Operation"
         ) : null;
-        OPERATION_CONVERTER = OPERATION_ENUM ? new IndexedEnumConverter<>(Operation.class, OPERATION_CLASS) : null;
+        OPERATION_CONVERTER = OPERATION_ENUM ? new EnumWrappers.IndexedEnumConverter<>(Operation.class, OPERATION_CLASS) : null;
     }
 
      /**

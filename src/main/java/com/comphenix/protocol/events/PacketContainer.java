@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import javax.annotation.Nullable;
 
@@ -78,31 +77,35 @@ public class PacketContainer extends AbstractStructure implements Serializable {
     // Support for serialization
     private static final Map<PacketType, Function<Object, Object>> PACKET_DESERIALIZER_METHODS = new ConcurrentHashMap<>();
 
-    // Used to clone packets
-    private static final AggregateCloner DEEP_CLONER = AggregateCloner
-            .newBuilder()
-            .instanceProvider(StructureCache::newInstance)
-            .andThen(BukkitCloner.class)
-            .andThen(ImmutableDetector.class)
-            .andThen(JavaOptionalCloner.class)
-            .andThen(GuavaOptionalCloner.class)
-            .andThen(CollectionCloner.class)
-            .andThen(getSpecializedDeepClonerFactory())
-            .build();
+    // Used to clone packets. Built on first use: creating the cloners resolves many classes and converters, which
+    // used to happen while the first intercepted packet was processed even if nothing is ever cloned.
+    private static final class Cloners {
 
-    private static final AggregateCloner SHALLOW_CLONER = AggregateCloner
-            .newBuilder()
-            .instanceProvider(StructureCache::newInstance)
-            .andThen(param -> {
-                if (param == null)
-                    throw new IllegalArgumentException("Cannot be NULL.");
+        private static final AggregateCloner DEEP_CLONER = AggregateCloner
+                .newBuilder()
+                .instanceProvider(StructureCache::newInstance)
+                .andThen(BukkitCloner.class)
+                .andThen(ImmutableDetector.class)
+                .andThen(JavaOptionalCloner.class)
+                .andThen(GuavaOptionalCloner.class)
+                .andThen(CollectionCloner.class)
+                .andThen(getSpecializedDeepClonerFactory())
+                .build();
 
-                return new FieldCloner(param.getAggregateCloner(), param.getInstanceProvider()) {{
-                    // Use a default writer with no concept of cloning
-                    writer = new ObjectWriter();
-                }};
-            })
-            .build();
+        private static final AggregateCloner SHALLOW_CLONER = AggregateCloner
+                .newBuilder()
+                .instanceProvider(StructureCache::newInstance)
+                .andThen(param -> {
+                    if (param == null)
+                        throw new IllegalArgumentException("Cannot be NULL.");
+
+                    return new FieldCloner(param.getAggregateCloner(), param.getInstanceProvider()) {{
+                        // Use a default writer with no concept of cloning
+                        writer = new ObjectWriter();
+                    }};
+                })
+                .build();
+    }
 
     // Packets that cannot be cloned by our default deep cloner
     private static final Set<PacketType> FAST_CLONE_UNSUPPORTED = Sets.newHashSet(
@@ -216,7 +219,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
      * @return A shallow copy of the current packet.
      */
     public PacketContainer shallowClone() {
-        Object clonedPacket = SHALLOW_CLONER.clone(getHandle());
+        Object clonedPacket = Cloners.SHALLOW_CLONER.clone(getHandle());
         return new PacketContainer(getType(), clonedPacket);
     }
 
@@ -241,7 +244,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
         // try fast cloning first
         if (!FAST_CLONE_UNSUPPORTED.contains(packetType)) {
             try {
-                Object cloned = DEEP_CLONER.clone(handle);
+                Object cloned = Cloners.DEEP_CLONER.clone(handle);
                 return new PacketContainer(packetType, cloned);
             } catch (Exception ex) {
                 FAST_CLONE_UNSUPPORTED.add(packetType);
@@ -443,37 +446,6 @@ public class PacketContainer extends AbstractStructure implements Serializable {
      */
     public void removeMeta(String key) {
         PacketMetadata.remove(handle, key);
-    }
-
-    /**
-     * Retrieve the cached method concurrently.
-     * @param lookup - a lazy lookup cache.
-     * @param handleClass - class type of the current packet.
-     * @param methodName - name of method to retrieve.
-     * @param parameterClass - the one parameter type in the method.
-     * @return Reflected method.
-     */
-    private Method getMethodLazily(ConcurrentMap<Class<?>, Method> lookup,
-                                   Class<?> handleClass, String methodName, Class<?> parameterClass) {
-        Method method = lookup.get(handleClass);
-
-        // Atomic operation
-        if (method == null) {
-            Method initialized = FuzzyReflection.fromClass(handleClass).getMethod(
-                            FuzzyMethodContract.newBuilder().
-                            parameterCount(1).
-                            parameterDerivedOf(parameterClass).
-                            returnTypeVoid().
-                            build());
-            method = lookup.putIfAbsent(handleClass, initialized);
-
-            // Use our version if we succeeded
-            if (method == null) {
-                method = initialized;
-            }
-        }
-
-        return method;
     }
 
     @Override

@@ -1737,7 +1737,7 @@ public final class MinecraftReflection {
     }
 
     public static Class<?> getSectionPosition() {
-        return getMinecraftClass("core.SectionPosition", "core.SectionPos", "SectionPosition");
+        return getSectionPositionClass();
     }
 
     public static Class<?> getChunkProviderServer() {

@@ -23,9 +23,11 @@ import com.google.common.primitives.Ints;
 
 /**
  * Represents a listener with a priority.
- * 
+ *
  * @author Kristian
+ * @deprecated not used by ProtocolLib anymore, listeners are ordered by {@code PacketTypeMultiMap}.
  */
+@Deprecated
 public class PrioritizedListener<TListener> implements Comparable<PrioritizedListener<TListener>> {
 
     private final TListener listener;

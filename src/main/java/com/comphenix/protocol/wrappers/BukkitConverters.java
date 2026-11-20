@@ -98,7 +98,6 @@ import static com.comphenix.protocol.wrappers.Converters.ignoreNull;
 public class BukkitConverters {
     // Check whether or not certain classes exists
     private static boolean hasWorldType = false;
-    private static boolean hasAttributeSnapshot = false;
     
     // The static maps
     private static Map<Class<?>, EquivalentConverter<Object>> genericConverters;
@@ -119,12 +118,6 @@ public class BukkitConverters {
         try {
             MinecraftReflection.getWorldTypeClass();
             hasWorldType = true;
-        } catch (Exception e) {
-        }
-        
-        try {
-            MinecraftReflection.getAttributeSnapshotClass();
-            hasAttributeSnapshot = true;
         } catch (Exception e) {
         }
         

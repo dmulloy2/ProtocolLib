@@ -12,9 +12,6 @@ global:
   # Prints certain warnings to players with the protocol.info permission
   chat warnings: true
   
-  # Automatically compile structure modifiers 
-  background compiler: true
-  
   # Disable version checking for the given Minecraft version. Backup your world first!
   ignore version check: 
 

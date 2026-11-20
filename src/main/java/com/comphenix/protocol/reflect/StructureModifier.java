@@ -37,10 +37,6 @@ import java.util.stream.Collectors;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.instances.BannedGenerator;
-import com.comphenix.protocol.reflect.instances.DefaultInstances;
-import com.comphenix.protocol.reflect.instances.InstanceProvider;
-import com.comphenix.protocol.utility.MinecraftReflection;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
@@ -55,8 +51,6 @@ import com.google.common.collect.Table;
  */
 public class StructureModifier<T> {
 
-    // Instance generator we will use
-    private static final DefaultInstances DEFAULT_GENERATOR = getDefaultGenerator();
     // a structure modifier which does nothing
     private static final StructureModifier<Object> NO_OP_MODIFIER = new StructureModifier<Object>() {
         @Override
@@ -130,15 +124,6 @@ public class StructureModifier<T> {
 
     }
 
-    private static DefaultInstances getDefaultGenerator() {
-        List<InstanceProvider> providers = new ArrayList<>();
-
-        // Prevent certain classes from being generated
-        providers.add(new BannedGenerator(MinecraftReflection.getItemStackClass(), MinecraftReflection.getBlockClass()));
-        providers.addAll(DefaultInstances.DEFAULT.getRegistered());
-        return DefaultInstances.fromCollection(providers);
-    }
-
     // Used to generate plausible default values
     private static Map<FieldAccessor, Integer> generateDefaultFields(Collection<FieldAccessor> fields) {
         int currentFieldIndex = 0;
@@ -147,7 +132,6 @@ public class StructureModifier<T> {
         for (FieldAccessor accessor : fields) {
             Field field = accessor.getField();
             if (!field.getType().isPrimitive()) {// && !Modifier.isFinal(field.getModifiers())) {
-                // if (DEFAULT_GENERATOR.hasDefault(field.getType())) {
                 if (StructureCache.canCreateInstance(field.getType())) {
                     requireDefaults.put(accessor, currentFieldIndex);
                 }
@@ -655,19 +639,6 @@ public class StructureModifier<T> {
         // Create a new instance
         copy.initialize(this);
         copy.target = target;
-        return copy;
-    }
-
-    /**
-     * Retrieves a structure modifier with the same type and target, but using a new object converter.
-     *
-     * @param converter - the object converter to use.
-     * @return Structure modifier with the new converter.
-     */
-    @SuppressWarnings("unchecked")
-    private <V> StructureModifier<V> withConverter(EquivalentConverter<V> converter) {
-        StructureModifier<V> copy = (StructureModifier<V>) this.withTarget(this.target);
-        copy.setConverter(converter);
         return copy;
     }
 
