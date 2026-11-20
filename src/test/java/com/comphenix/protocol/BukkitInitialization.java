@@ -12,6 +12,7 @@ import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.MoreExecutors;
+import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.WorldConfiguration;
 import io.papermc.paper.registry.PaperRegistryAccess;
@@ -165,7 +166,8 @@ public class BukkitInitialization {
                         resourceManager,
                         list1,
                         RegistryDataLoader.WORLD_REGISTRIES,
-                        Util.backgroundExecutor()).get();
+                        Util.backgroundExecutor(),
+                        ReloadableRegistrarEvent.Cause.INITIAL).get();
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -178,7 +180,8 @@ public class BukkitInitialization {
                     resourceManager,
                     dimensionLookups,
                     RegistryDataLoader.DIMENSION_REGISTRIES,
-                    Util.backgroundExecutor()).join();
+                    Util.backgroundExecutor(),
+                    ReloadableRegistrarEvent.Cause.INITIAL).join();
             layeredAccess2 = layeredAccess2.replaceFrom(RegistryLayer.DIMENSIONS, dimensions);
 
             try {
@@ -204,7 +207,8 @@ public class BukkitInitialization {
                 Commands.CommandSelection.DEDICATED /* DEDICATED */,
                 LevelBasedPermissionSet.ALL,
                 MoreExecutors.directExecutor(),
-                MoreExecutors.directExecutor()
+                MoreExecutors.directExecutor(),
+                ReloadableRegistrarEvent.Cause.INITIAL
             ).join();
             dataPackResources.updateComponentsAndStaticRegistryTags();
 
