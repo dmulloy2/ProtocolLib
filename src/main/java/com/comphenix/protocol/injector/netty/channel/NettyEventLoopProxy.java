@@ -177,7 +177,7 @@ final class NettyEventLoopProxy extends AbstractEventLoop {
     @SuppressWarnings("unchecked")
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
         Callable<V> proxied = this.proxyCallable(callable);
-        return this.delegate.schedule(callable == null ? (Callable<V>) EMPTY_CALLABLE : proxied, delay, unit);
+        return this.delegate.schedule(proxied == null ? (Callable<V>) EMPTY_CALLABLE : proxied, delay, unit);
     }
 
     @Override

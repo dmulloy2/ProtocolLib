@@ -4,7 +4,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -140,7 +139,6 @@ public class PacketListenerInvoker {
     }
 
     private final Object networkManager;
-    private final AtomicReference<Object> packetListener = new AtomicReference<>(null);
 
     PacketListenerInvoker(Object networkManager) {
         if (!MinecraftReflection.is(MinecraftReflection.getNetworkManagerClass(), networkManager)) {
@@ -159,22 +157,10 @@ public class PacketListenerInvoker {
      * @return the current packet listener if it meets the required criteria, otherwise {@code null}.
      */
     private Object getPacketListener() {
-        // Retrieve the current packet listener from the network manager using reflection.
+        // Retrieve the current packet listener from the network manager using reflection. The result only depends on
+        // this value, so there is nothing to cache (the previous cache did a compare-and-set for every packet).
         Object packetListener = NETWORK_MANAGER_PACKET_LISTENER.invoke(this.networkManager);
-
-        // Perform a thread-safe check to see if the packet listener has changed since the last retrieval.
-        if (!this.packetListener.compareAndSet(packetListener, packetListener)) {
-            // If the packet listener has changed, attempt to update the cached listener to the new instance,
-            // or invalidate the cached object if it does not match the preferred type.
-            if (PREFERRED_PACKET_LISTENER_CLASS.isInstance(packetListener)) {
-                this.packetListener.set(packetListener);
-            } else {
-                this.packetListener.set(null);
-            }
-        }
-
-        // Return the currently cached packet listener, which may be null if it does not match the preferred type.
-        return this.packetListener.get();
+        return PREFERRED_PACKET_LISTENER_CLASS.isInstance(packetListener) ? packetListener : null;
     }
 
     /**
