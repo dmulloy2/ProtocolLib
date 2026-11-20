@@ -158,7 +158,7 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
         
         // A monitor listener should never modify a packet/event so we can simply invoke monitor listeners
         // independently of our injector pipeline 
-        if (!filters) {
+        if (!filters && this.outboundListeners.containsPacketType(packet.getType())) {
             this.runMonitorListeners(packet, () -> {
                 PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
                 this.outboundListeners.invoke(event, ListenerPriority.MONITOR);
@@ -215,7 +215,7 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
 
             // Prevent possible de-sync if the packet was replaced by a listener.
             nmsPacket = event.getPacket().getHandle();
-        } else {
+        } else if (this.inboundListeners.containsPacketType(packet.getType())) {
             // A monitor listener should never modify a packet/event so we can simply invoke monitor listeners
             // independently of our injector pipeline 
             this.runMonitorListeners(packet, () -> {
