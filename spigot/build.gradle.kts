@@ -28,14 +28,14 @@ dependencies {
     implementation(project(":"))
     compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
     compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")
-    compileOnly("io.netty:netty-all:4.2.8.Final")
+    compileOnly("io.netty:netty-all:4.2.16.Final")
     compileOnly("net.kyori:adventure-text-serializer-gson:4.25.0")
     compileOnly("com.googlecode.json-simple:json-simple:1.1.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:6.0.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
     testImplementation("org.mockito:mockito-core:5.21.0")
-    testImplementation("io.netty:netty-transport:4.2.8.Final")
+    testImplementation("io.netty:netty-transport:4.2.16.Final")
     testImplementation("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")
 }
 

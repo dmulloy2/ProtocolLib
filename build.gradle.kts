@@ -44,7 +44,7 @@ dependencies {
     implementation("net.bytebuddy:byte-buddy:1.18.2")
     compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
     compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")
-    compileOnly("io.netty:netty-all:4.2.8.Final")
+    compileOnly("io.netty:netty-all:4.2.16.Final")
     compileOnly("net.kyori:adventure-text-serializer-gson:4.25.0")
     compileOnly("com.googlecode.json-simple:json-simple:1.1.1")
     compileOnly("commons-lang:commons-lang:2.6")
