@@ -100,7 +100,7 @@ public class WrappedNumberFormat extends AbstractWrapper {
         private Fixed(Object handle) {
             super(MinecraftReflection.getFixedFormatClass().get());
             setHandle(handle);
-            this.modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+            this.modifier = StructureModifier.forClass(handle.getClass()).withTarget(handle);
         }
 
         public WrappedChatComponent getContent() {
@@ -115,7 +115,7 @@ public class WrappedNumberFormat extends AbstractWrapper {
         private Styled(Object handle) {
             super(MinecraftReflection.getStyledFormatClass().get());
             setHandle(handle);
-            this.modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+            this.modifier = StructureModifier.forClass(handle.getClass()).withTarget(handle);
         }
 
         public WrappedComponentStyle getStyle() {

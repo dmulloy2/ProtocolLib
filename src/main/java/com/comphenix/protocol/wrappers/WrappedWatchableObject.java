@@ -51,7 +51,7 @@ public final class WrappedWatchableObject extends AbstractWrapper {
     public WrappedWatchableObject(Object handle) {
         super(HANDLE_TYPE);
         this.setHandle(handle);
-        this.modifier = new StructureModifier<>(this.handleType).withTarget(handle);
+        this.modifier = StructureModifier.forClass(this.handleType).withTarget(handle);
     }
 
     /**

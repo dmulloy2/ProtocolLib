@@ -209,7 +209,7 @@ public final class ServerPingRecord implements ServerPingImpl {
             throw new IllegalArgumentException("Expected handle of type " + SERVER_PING.getName() + " but got " + handle.getClass().getName());
         }
 
-        StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+        StructureModifier<Object> modifier = StructureModifier.forClass(handle.getClass()).withTarget(handle);
         InternalStructure structure = new InternalStructure(handle, modifier);
 
         this.description = structure.getChatComponents().readSafely(0);

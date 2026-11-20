@@ -16,7 +16,6 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
 
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -25,6 +24,8 @@ import org.bukkit.util.Vector;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
 
@@ -40,15 +41,65 @@ public class BlockPosition {
      */
     public static BlockPosition ORIGIN = new BlockPosition(0, 0, 0);
     
-    private static Constructor<?> blockPositionConstructor;
+    private static volatile ConstructorAccessor blockPositionConstructor;
 
     // Use protected members, like Bukkit
     protected final int x;
     protected final int y;
     protected final int z;
     
-    // Used to access a BlockPosition, in case it's names are changed
-    private static StructureModifier<Integer> intModifier;
+    private static final EquivalentConverter<BlockPosition> CONVERTER = new EquivalentConverter<BlockPosition>() {
+        @Override
+        public Object getGeneric(BlockPosition specific) {
+            ConstructorAccessor constructor = blockPositionConstructor;
+            if (constructor == null) {
+                try {
+                    constructor = Accessors.getConstructorAccessor(MinecraftReflection.getBlockPositionClass(),
+                            int.class, int.class, int.class);
+                } catch (Exception e) {
+                    throw new RuntimeException("Cannot find block position constructor.", e);
+                }
+                blockPositionConstructor = constructor;
+            }
+
+            // Construct the underlying BlockPosition
+            try {
+                return constructor.invoke(specific.x, specific.y, specific.z);
+            } catch (Exception e) {
+                throw new RuntimeException("Cannot construct BlockPosition.", e);
+            }
+        }
+
+        @Override
+        public BlockPosition getSpecific(Object generic) {
+            if (MinecraftReflection.isBlockPosition(generic)) {
+                // Use a structure modifier, shared per class as subclasses such as the mutable position may be passed
+                StructureModifier<Integer> intModifier = StructureModifier.forClass(generic.getClass()).withType(int.class);
+
+                // Damn it all
+                if (intModifier.size() < 3) {
+                    throw new IllegalStateException("Cannot read class " + generic.getClass() + " for its integer fields.");
+                }
+
+                try {
+                    StructureModifier<Integer> instance = intModifier.withTarget(generic);
+                    return new BlockPosition(instance.read(0), instance.read(1), instance.read(2));
+                } catch (FieldAccessException e) {
+                    // This is an exeptional work-around, so we don't want to burden the caller with the messy details
+                    throw new RuntimeException("Field access error.", e);
+                }
+            }
+
+            // Otherwise, return NULL
+            return null;
+        }
+
+        // Thanks Java Generics!
+        @Override
+        public Class<BlockPosition> getSpecificType() {
+            return BlockPosition.class;
+        }
+    };
 
     /**
      * Construct an immutable 3D vector.
@@ -159,63 +210,10 @@ public class BlockPosition {
     
     /**
      * Used to convert between NMS ChunkPosition and the wrapper instance.
-     * @return A new converter.
+     * @return The shared converter.
      */
     public static EquivalentConverter<BlockPosition> getConverter() {
-        return new EquivalentConverter<BlockPosition>() {
-            @Override
-            public Object getGeneric(BlockPosition specific) {
-                if (blockPositionConstructor == null) {
-                    try {
-                        blockPositionConstructor = MinecraftReflection.getBlockPositionClass().
-                            getConstructor(int.class, int.class, int.class);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Cannot find block position constructor.", e);
-                    }
-                }
-                
-                // Construct the underlying BlockPosition
-                try {
-                    Object result = blockPositionConstructor.newInstance(specific.x, specific.y, specific.z);
-                    return result;
-                } catch (Exception e) {
-                    throw new RuntimeException("Cannot construct BlockPosition.", e);
-                }
-            }
-            
-            @Override
-            public BlockPosition getSpecific(Object generic) {
-                if (MinecraftReflection.isBlockPosition(generic)) {
-                    // Use a structure modifier
-                    intModifier = new StructureModifier<>(generic.getClass(), null, false).withType(int.class);
-                    
-                    // Damn it all
-                    if (intModifier.size() < 3) {
-                        throw new IllegalStateException("Cannot read class " + generic.getClass() + " for its integer fields.");
-                    }
-                    
-                    if (intModifier.size() >= 3) {
-                        try {
-                            StructureModifier<Integer> instance = intModifier.withTarget(generic);
-                            BlockPosition result = new BlockPosition(instance.read(0), instance.read(1), instance.read(2));
-                            return result;
-                        } catch (FieldAccessException e) {
-                            // This is an exeptional work-around, so we don't want to burden the caller with the messy details
-                            throw new RuntimeException("Field access error.", e);
-                        }
-                    }
-                }
-                
-                // Otherwise, return NULL
-                return null;
-            }
-
-            // Thanks Java Generics!
-            @Override
-            public Class<BlockPosition> getSpecificType() {
-                return BlockPosition.class;
-            }
-        };
+        return CONVERTER;
     }
         
     @Override

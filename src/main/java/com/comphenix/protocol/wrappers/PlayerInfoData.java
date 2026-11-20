@@ -393,7 +393,7 @@ public class PlayerInfoData {
             @Override
             public PlayerInfoData getSpecific(Object generic) {
                 if (MinecraftReflection.isPlayerInfoData(generic)) {
-                    StructureModifier<Object> modifier = new StructureModifier<>(generic.getClass(), null, false)
+                    StructureModifier<Object> modifier = StructureModifier.forClass(generic.getClass())
                         .withTarget(generic);
 
                     StructureModifier<WrappedGameProfile> gameProfiles = modifier.withType(

@@ -132,7 +132,7 @@ public class BukkitCloner implements Cloner {
 
             @Override
             public Object clone(Object source) {
-                StructureModifier<Object> modifier = new StructureModifier<>(source.getClass()).withTarget(source);
+                StructureModifier<Object> modifier = StructureModifier.forClass(source.getClass()).withTarget(source);
                 List<?> list = (List<?>) modifier.read(0);
                 Object empty = modifier.read(1);
 

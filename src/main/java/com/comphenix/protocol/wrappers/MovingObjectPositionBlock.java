@@ -86,7 +86,7 @@ public class MovingObjectPositionBlock implements Cloneable {
 
             @Override
             public MovingObjectPositionBlock getSpecific(Object generic) {
-                StructureModifier<Object> modifier = new StructureModifier<>(generic.getClass()).withTarget(generic);
+                StructureModifier<Object> modifier = StructureModifier.forClass(generic.getClass()).withTarget(generic);
                 Direction direction = modifier.withType(EnumWrappers.getDirectionClass(), EnumWrappers.getDirectionConverter()).read(0);
                 BlockPosition blockPos = modifier.withType(MinecraftReflection.getBlockPositionClass(), BlockPosition.getConverter()).read(0);
                 Vector posVector = modifier.withType(MinecraftReflection.getVec3DClass(), BukkitConverters.getVectorConverter()).read(0);

@@ -48,7 +48,7 @@ public class WrappedTeamParameters extends AbstractWrapper {
         super(getNmsClassOrThrow());
         setHandle(handle);
 
-        this.modifier = new StructureModifier<>(getNmsClassOrThrow()).withTarget(handle);
+        this.modifier = StructureModifier.forClass(getNmsClassOrThrow()).withTarget(handle);
         this.visiblityModifier = this.modifier.withType(EnumWrappers.getTeamVisibilityClass(), EnumWrappers.getTeamVisibilityConverter());
         this.collisionRuleModifier = this.modifier.withType(EnumWrappers.getTeamCollisionRuleClass(), EnumWrappers.getTeamCollisionRuleConverter());
     }
