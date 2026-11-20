@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-import io.netty.channel.AbstractEventLoop;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
@@ -27,7 +26,9 @@ import io.netty.util.concurrent.ScheduledFuture;
  * An abstract event loop implementation which delegates all calls to a given event loop, but proxies all calls which
  * schedule something on the event loop to methods which decide what should happen to the scheduled task.
  */
-final class NettyEventLoopProxy extends AbstractEventLoop {
+// AbstractEventLoop only exists since netty 4.1, extending it fails to load on 1.8 (netty 4.0). It only adds the
+// covariant parent() and next() overrides, which are implemented below.
+final class NettyEventLoopProxy extends AbstractEventExecutor implements EventLoop {
 
     private static final Callable<?> EMPTY_CALLABLE = () -> null;
     private static final Runnable EMPTY_RUNNABLE = () -> {
