@@ -42,7 +42,8 @@ public final class SpigotUpdater extends Updater {
         waitForThread();
 
         this.type = type;
-        this.thread = new Thread(new SpigotUpdateRunnable(this));
+        this.thread = new Thread(new SpigotUpdateRunnable(this), "ProtocolLib-Updater");
+        this.thread.setDaemon(true);
         this.thread.start();
     }
 
@@ -63,6 +64,8 @@ public final class SpigotUpdater extends Updater {
     public String getSpigotVersion() throws IOException {
         try (Closer closer = Closer.create()) {
             HttpURLConnection con = (HttpURLConnection) new URL(UPDATE_URL).openConnection();
+            con.setConnectTimeout(10_000);
+            con.setReadTimeout(10_000);
             con.setDoOutput(true);
             con.setRequestMethod(ACTION);
 

@@ -41,6 +41,15 @@ public class Statistics {
         addCustomGraphs(metrics);
     }
 
+    /**
+     * Stops submitting statistics.
+     */
+    public void shutdown() {
+        if (metrics != null) {
+            metrics.shutdown();
+        }
+    }
+
     private void addCustomGraphs(Metrics metrics) {
         metrics.addCustomChart(new Metrics.AdvancedPie("pluginUsers", this::getPluginUsers));
         metrics.addCustomChart(new Metrics.SimplePie("buildVersion", this::getBuildNumber));

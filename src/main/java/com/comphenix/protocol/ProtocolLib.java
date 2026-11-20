@@ -284,12 +284,38 @@ public class ProtocolLib extends JavaPlugin {
 
         // Broadcast information to every user too
         this.redirectHandler = new Handler() {
+            // a warning logged for every packet would otherwise turn into a chat message for every packet
+            private static final long WINDOW_MILLIS = 10_000;
+            private static final int MAX_MESSAGES_PER_WINDOW = 5;
+
+            private long windowStart;
+            private int messagesInWindow;
+
             @Override
             public void publish(LogRecord record) {
                 // Only display warnings and above
-                if (record.getLevel().intValue() >= Level.WARNING.intValue()) {
+                if (record.getLevel().intValue() < Level.WARNING.intValue()) {
+                    return;
+                }
+
+                // honour the "chat warnings" option
+                ProtocolConfig currentConfig = ProtocolLib.config;
+                if (currentConfig != null && !currentConfig.isChatWarnings()) {
+                    return;
+                }
+
+                if (this.tryAcquireMessage()) {
                     ProtocolLib.this.commandPacket.broadcastMessageSilently(record.getMessage(), permission);
                 }
+            }
+
+            private synchronized boolean tryAcquireMessage() {
+                long now = System.currentTimeMillis();
+                if (now - this.windowStart > WINDOW_MILLIS) {
+                    this.windowStart = now;
+                    this.messagesInWindow = 0;
+                }
+                return ++this.messagesInWindow <= MAX_MESSAGES_PER_WINDOW;
             }
 
             @Override
@@ -568,6 +594,9 @@ public class ProtocolLib extends JavaPlugin {
         }
 
         protocolManager = null;
+        if (this.statistics != null) {
+            this.statistics.shutdown();
+        }
         this.statistics = null;
 
         // To clean up global parameters
