@@ -1,6 +1,5 @@
 package com.comphenix.protocol.injector.netty.channel;
 
-import com.comphenix.protocol.utility.MinecraftReflection;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
@@ -14,7 +13,6 @@ import io.netty.channel.EventLoop;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import java.net.SocketAddress;
-import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -208,8 +206,8 @@ final class NettyChannelProxy implements Channel {
     @Override
     public ChannelFuture write(Object msg, ChannelPromise promise) {
         // only need to do our special handling if we are in the event loop
-        if (this.isPacketEventCallNeeded(msg)) {
-            this.processPacketOutbound(msg, packet -> this.delegate.write(packet, promise));
+        if (this.injector.isPacketEventCallNeeded(msg)) {
+            this.injector.processPacketOutbound(msg, packet -> this.delegate.write(packet, promise));
             return promise;
         } else {
             // no special handling needed, just write the packet
@@ -225,8 +223,8 @@ final class NettyChannelProxy implements Channel {
     @Override
     public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
         // only need to do our special handling if we are in the event loop
-        if (this.isPacketEventCallNeeded(msg)) {
-            this.processPacketOutbound(msg, packet -> this.delegate.writeAndFlush(packet, promise));
+        if (this.injector.isPacketEventCallNeeded(msg)) {
+            this.injector.processPacketOutbound(msg, packet -> this.delegate.writeAndFlush(packet, promise));
             return promise;
         } else {
             // no special handling needed, just write the packet
@@ -252,31 +250,5 @@ final class NettyChannelProxy implements Channel {
     @Override
     public int compareTo(@NotNull Channel o) {
         return this.delegate.compareTo(o);
-    }
-
-    private boolean isPacketEventCallNeeded(Object msg) {
-        if (MinecraftReflection.isPacketClass(msg)) {
-            // check if any packet was marked as processed before during the current execution
-            // then reset the thread local as there will always be only one packet per write op (if needed)
-            Boolean hasProcessedPacket = this.injector.processedPackets.get();
-            if (hasProcessedPacket == Boolean.TRUE) {
-                // at least one packet was processed before, so no need for us to process as well
-                this.injector.processedPackets.set(Boolean.FALSE);
-                return false;
-            } else {
-                // no packet was processed in the current context, we need to process
-                return true;
-            }
-        } else {
-            // not a packet, just ignore
-            return false;
-        }
-    }
-
-    private void processPacketOutbound(Object packet, Consumer<Object> delegateActionHandler) {
-        Runnable action = this.injector.processOutbound(() -> delegateActionHandler.accept(packet));
-        if (action != null) {
-            action.run();
-        }
     }
 }
