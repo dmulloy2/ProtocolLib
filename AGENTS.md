@@ -6,9 +6,11 @@ definitions, reflection, or public wrappers.
 ## Repository Basics
 
 - The main project uses the Gradle wrapper. Do not use `TinyProtocol/pom.xml` to build ProtocolLib.
-- The Java toolchain and current Spigot dependency are defined in `build.gradle.kts`.
+- `mcVersion` is defined in `gradle.properties`; the Java toolchain and dependencies are defined in `build.gradle.kts`,
+  `paper/build.gradle.kts`, `spigot/build.gradle.kts`, and `.github/workflows/`.
 - Keep the Java 25 build toolchain separate from the Java 17 production bytecode target.
-- Production code is under `src/main/java`; JUnit tests and NMS test initialization are under `src/test/java`.
+- Core library code is under `src/main/java`, platform providers are under `paper/` and `spigot/`, and JUnit tests and
+  NMS test initialization are under `src/test/java` (executed by `:paper:test`).
 - Keep changes focused. Do not combine protocol fixes with unrelated cleanup or formatting.
 - Preserve public API and binary compatibility unless the task explicitly requires a breaking change.
 
@@ -22,8 +24,8 @@ definitions, reflection, or public wrappers.
 Run the smallest relevant test while developing:
 
 ```shell
-./gradlew test --tests fully.qualified.TestClass
-./gradlew test --tests fully.qualified.TestClass.testMethod
+./gradlew :paper:test --tests fully.qualified.TestClass
+./gradlew :paper:test --tests fully.qualified.TestClass.testMethod
 ```
 
 After changing production Java code, run the targeted tests and then the complete test suite. Use `build shadowJar` when
@@ -68,6 +70,9 @@ renamed packet can abort registration of later packets in the same registry.
   unrelated packet or class is the removed type.
 - When Minecraft splits one packet into several packets, expose and use the new packet types explicitly.
 - Preserve unrelated packet fields when adapting or rewriting one logical value.
+- Classes loaded on every supported server must not reference library types or methods that older bundled versions
+  lack (for example Netty 4.1+ types on 1.8–1.11), including through superclasses or compiler-generated bridge
+  methods. Isolate newer-only code in classes that load only after a capability check.
 
 The current test dependency exercises the latest supported server. Review older guarded paths carefully because they may
 not execute in the local test run.
@@ -110,7 +115,7 @@ required for API compatibility, initialize all modifier metadata and test its in
 ## Tests
 
 - Call `BukkitInitialization.initializeAll()` before tests that resolve CraftBukkit or NMS classes.
-- Prefer regression tests using the actual Spigot packet classes supplied by the test dependency.
+- Prefer regression tests using the actual Paper/NMS packet classes supplied by the test dependency.
 - Test reads, writes, safe access, cloning, equality, and preservation of unrelated fields when changing wrappers.
 - Test modifier metadata and inherited methods when introducing a custom `StructureModifier`.
 - Re-enable disabled tests when fixing the incompatibility that caused them to be disabled.
