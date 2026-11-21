@@ -56,4 +56,24 @@ public class EnumWrappersTest {
     public void testValidity() {
         assertEquals(EnumWrappers.INVALID, KNOWN_INVALID);
     }
+
+    @Test
+    public void testConvertersAreShared() {
+        // a new converter per call discarded its lookup cache for every packet read
+        assertSame(EnumWrappers.getPlayerDiggingActionConverter(), EnumWrappers.getPlayerDiggingActionConverter());
+        assertSame(EnumWrappers.getEntityActionConverter(), EnumWrappers.getEntityActionConverter());
+        assertSame(EnumWrappers.getGameModeConverter(), EnumWrappers.getGameModeConverter());
+        assertSame(EnumWrappers.getDifficultyConverter(), EnumWrappers.getDifficultyConverter());
+    }
+
+    @Test
+    public void testSharedAliasedConverterRoundTrip() {
+        EquivalentConverter<EnumWrappers.PlayerDigType> converter = EnumWrappers.getPlayerDiggingActionConverter();
+        for (Object nativeConstant : EnumWrappers.getPlayerDigTypeClass().getEnumConstants()) {
+            EnumWrappers.PlayerDigType wrapped = converter.getSpecific(nativeConstant);
+            assertSame(nativeConstant, converter.getGeneric(wrapped));
+            // the second lookup is answered from the shared converter's cache
+            assertSame(wrapped, converter.getSpecific(nativeConstant));
+        }
+    }
 }

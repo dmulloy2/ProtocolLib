@@ -35,7 +35,7 @@ public class WrappedMessageSignature extends AbstractWrapper {
     @Override
     protected void setHandle(Object handle) {
         super.setHandle(handle);
-        this.modifier = new StructureModifier<>(HANDLE_TYPE).withTarget(handle);
+        this.modifier = StructureModifier.forClass(HANDLE_TYPE).withTarget(handle);
     }
 
     public byte[] getBytes() {

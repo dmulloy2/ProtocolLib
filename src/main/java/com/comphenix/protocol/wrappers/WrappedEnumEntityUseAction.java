@@ -2,6 +2,8 @@ package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -48,6 +50,10 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
     // these fields are only available for interact & interact_at
     private FieldAccessor handAccessor;
     private FieldAccessor positionAccessor;
+
+    // accessors per action implementation class, resolving them needs a field scan
+    private static final Map<Class<?>, FieldAccessor> HAND_ACCESSORS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, FieldAccessor> POSITION_ACCESSORS = new ConcurrentHashMap<>();
 
     /**
      * Construct a new wrapper for the entity use action class in the UseEntity packet.
@@ -181,7 +187,8 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
      */
     private FieldAccessor getHandAccessor() {
         if (handAccessor == null) {
-            handAccessor = MinecraftReflection.getHandEntityUseActionEnumFieldAccessor(handle);
+            handAccessor = HAND_ACCESSORS.computeIfAbsent(handle.getClass(),
+                    type -> MinecraftReflection.getHandEntityUseActionEnumFieldAccessor(handle));
         }
         return handAccessor;
     }
@@ -193,7 +200,8 @@ public class WrappedEnumEntityUseAction extends AbstractWrapper implements Clona
      */
     public FieldAccessor getPositionAccessor() {
         if (positionAccessor == null) {
-            positionAccessor = MinecraftReflection.getVec3EntityUseActionEnumFieldAccessor(handle);
+            positionAccessor = POSITION_ACCESSORS.computeIfAbsent(handle.getClass(),
+                    type -> MinecraftReflection.getVec3EntityUseActionEnumFieldAccessor(handle));
         }
         return positionAccessor;
     }

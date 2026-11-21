@@ -1914,7 +1914,7 @@ public class BukkitConverters {
 
             @Override
             public BlockPosition getSpecific(Object generic) {
-                StructureModifier<Integer> modifier = new StructureModifier<>(generic.getClass()).withTarget(generic).withType(int.class);
+                StructureModifier<Integer> modifier = StructureModifier.forClass(generic.getClass()).withTarget(generic).withType(int.class);
                 return new BlockPosition(modifier.readSafely(0), modifier.readSafely(1), modifier.readSafely(2));
             }
 

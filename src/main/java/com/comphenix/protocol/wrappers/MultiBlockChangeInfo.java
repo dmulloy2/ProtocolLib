@@ -189,7 +189,7 @@ public class MultiBlockChangeInfo {
 
             @Override
             public MultiBlockChangeInfo getSpecific(Object generic) {
-                StructureModifier<Object> modifier = new StructureModifier<>(generic.getClass(), null, false).withTarget(generic);
+                StructureModifier<Object> modifier = StructureModifier.forClass(generic.getClass()).withTarget(generic);
 
                 StructureModifier<Short> shorts = modifier.withType(short.class);
                 short location = shorts.read(0);

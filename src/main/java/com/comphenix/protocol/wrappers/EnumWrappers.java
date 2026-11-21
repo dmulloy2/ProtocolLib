@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.ChatColor;
@@ -1096,111 +1097,111 @@ public abstract class EnumWrappers {
 
     // Get the converters
     public static EquivalentConverter<Protocol> getProtocolConverter() {
-        return new EnumConverter<>(getProtocolClass(), Protocol.class);
+        return cachedConverter(getProtocolClass(), Protocol.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<ClientCommand> getClientCommandConverter() {
-        return new EnumConverter<>(getClientCommandClass(), ClientCommand.class);
+        return cachedConverter(getClientCommandClass(), ClientCommand.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<ChatVisibility> getChatVisibilityConverter() {
-        return new EnumConverter<>(getChatVisibilityClass(), ChatVisibility.class);
+        return cachedConverter(getChatVisibilityClass(), ChatVisibility.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<Difficulty> getDifficultyConverter() {
-        return new EnumConverter<>(getDifficultyClass(), Difficulty.class);
+        return cachedConverter(getDifficultyClass(), Difficulty.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<EntityUseAction> getEntityUseActionConverter() {
-        return new EnumConverter<>(getEntityUseActionClass(), EntityUseAction.class);
+        return cachedConverter(getEntityUseActionClass(), EntityUseAction.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<NativeGameMode> getGameModeConverter() {
-        return new EnumConverter<>(getGameModeClass(), NativeGameMode.class);
+        return cachedConverter(getGameModeClass(), NativeGameMode.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<ResourcePackStatus> getResourcePackStatusConverter() {
-        return new EnumConverter<>(getResourcePackStatusClass(), ResourcePackStatus.class);
+        return cachedConverter(getResourcePackStatusClass(), ResourcePackStatus.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<PlayerInfoAction> getPlayerInfoActionConverter() {
-        return new EnumConverter<>(getPlayerInfoActionClass(), PlayerInfoAction.class);
+        return cachedConverter(getPlayerInfoActionClass(), PlayerInfoAction.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<TitleAction> getTitleActionConverter() {
-        return new EnumConverter<>(getTitleActionClass(), TitleAction.class);
+        return cachedConverter(getTitleActionClass(), TitleAction.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<WorldBorderAction> getWorldBorderActionConverter() {
-        return new EnumConverter<>(getWorldBorderActionClass(), WorldBorderAction.class);
+        return cachedConverter(getWorldBorderActionClass(), WorldBorderAction.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<CombatEventType> getCombatEventTypeConverter() {
-        return new EnumConverter<>(getCombatEventTypeClass(), CombatEventType.class);
+        return cachedConverter(getCombatEventTypeClass(), CombatEventType.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<PlayerDigType> getPlayerDiggingActionConverter() {
-        return new AliasedEnumConverter<>(getPlayerDigTypeClass(), PlayerDigType.class);
+        return cachedConverter(getPlayerDigTypeClass(), PlayerDigType.class, AliasedEnumConverter::new);
     }
 
     public static EquivalentConverter<PlayerAction> getEntityActionConverter() {
-        return new AliasedEnumConverter<>(getPlayerActionClass(), PlayerAction.class);
+        return cachedConverter(getPlayerActionClass(), PlayerAction.class, AliasedEnumConverter::new);
     }
 
     public static EquivalentConverter<ScoreboardAction> getUpdateScoreActionConverter() {
-        return new EnumConverter<>(getScoreboardActionClass(), ScoreboardAction.class);
+        return cachedConverter(getScoreboardActionClass(), ScoreboardAction.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<Particle> getParticleConverter() {
-        return new EnumConverter<>(getParticleClass(), Particle.class);
+        return cachedConverter(getParticleClass(), Particle.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<SoundCategory> getSoundCategoryConverter() {
-        return new EnumConverter<>(getSoundCategoryClass(), SoundCategory.class);
+        return cachedConverter(getSoundCategoryClass(), SoundCategory.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<ItemSlot> getItemSlotConverter() {
-        return new EnumConverter<>(getItemSlotClass(), ItemSlot.class);
+        return cachedConverter(getItemSlotClass(), ItemSlot.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<Hand> getHandConverter() {
-        return new EnumConverter<>(getHandClass(), Hand.class);
+        return cachedConverter(getHandClass(), Hand.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<Direction> getDirectionConverter() {
-        return new EnumConverter<>(getDirectionClass(), Direction.class);
+        return cachedConverter(getDirectionClass(), Direction.class, EnumConverter::new);
     }
     
     public static EquivalentConverter<ChatType> getChatTypeConverter() {
-        return new EnumConverter<>(getChatTypeClass(), ChatType.class);
+        return cachedConverter(getChatTypeClass(), ChatType.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<DisplaySlot> getDisplaySlotConverter() {
-        return new EnumConverter<>(getDisplaySlotClass(), DisplaySlot.class);
+        return cachedConverter(getDisplaySlotClass(), DisplaySlot.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<RenderType> getRenderTypeConverter() {
-        return new EnumConverter<>(getRenderTypeClass(), RenderType.class);
+        return cachedConverter(getRenderTypeClass(), RenderType.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<ChatFormatting> getChatFormattingConverter() {
-        return new EnumConverter<>(getChatFormattingClass(), ChatFormatting.class);
+        return cachedConverter(getChatFormattingClass(), ChatFormatting.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<ClientIntent> getClientIntentConverter() {
-        return new EnumConverter<>(getClientIntentClass(), ClientIntent.class);
+        return cachedConverter(getClientIntentClass(), ClientIntent.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<TeamCollisionRule> getTeamCollisionRuleConverter() {
-        return new EnumConverter<>(getTeamCollisionRuleClass(), TeamCollisionRule.class);
+        return cachedConverter(getTeamCollisionRuleClass(), TeamCollisionRule.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<TeamVisibility> getTeamVisibilityConverter() {
-        return new EnumConverter<>(getTeamVisibilityClass(), TeamVisibility.class);
+        return cachedConverter(getTeamVisibilityClass(), TeamVisibility.class, EnumConverter::new);
     }
 
     public static EquivalentConverter<HeightmapType> getHeightmapTypeConverter() {
-        return new EnumConverter<>(getHeightmapTypeClass(), HeightmapType.class);
+        return cachedConverter(getHeightmapTypeClass(), HeightmapType.class, EnumConverter::new);
     }
 
     /**
@@ -1209,7 +1210,7 @@ public abstract class EnumWrappers {
      */
     public static EquivalentConverter<EntityPose> getEntityPoseConverter() {
         if (getEntityPoseClass() == null) return null;
-        return new EnumConverter<>(getEntityPoseClass(), EntityPose.class);
+        return cachedConverter(getEntityPoseClass(), EntityPose.class, EnumConverter::new);
     }
 
     /**
@@ -1219,7 +1220,25 @@ public abstract class EnumWrappers {
      * @return A generic enum converter
      */
     public static <T extends Enum<T>> EquivalentConverter<T> getGenericConverter(Class<?> genericClass, Class<T> specificType) {
-        return new EnumConverter<>(genericClass, specificType);
+        return cachedConverter(genericClass, specificType, EnumConverter::new);
+    }
+
+    // Converters are stateless apart from their lookup caches, so one instance per enum pair is shared. Creating a new
+    // converter for every packet access threw those caches away (and made aliased lookups throw on every read).
+    private static final Map<Class<?>, Map<Class<?>, EquivalentConverter<?>>> CONVERTER_CACHE = new ConcurrentHashMap<>();
+
+    @SuppressWarnings("unchecked")
+    private static <T> EquivalentConverter<T> cachedConverter(Class<?> genericClass, Class<T> specificType,
+            BiFunction<Class<?>, Class<T>, EquivalentConverter<T>> factory) {
+        if (genericClass == null) {
+            // unknown (or not yet resolved) class, don't keep a converter that cannot convert anything
+            return factory.apply(null, specificType);
+        }
+
+        Map<Class<?>, EquivalentConverter<?>> byGenericClass = CONVERTER_CACHE.computeIfAbsent(specificType,
+                key -> new ConcurrentHashMap<>());
+        return (EquivalentConverter<T>) byGenericClass.computeIfAbsent(genericClass,
+                key -> factory.apply(genericClass, specificType));
     }
 
     /**
@@ -1339,7 +1358,9 @@ public abstract class EnumWrappers {
     public static class FauxEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
         private final Class<T> specificClass;
         private final Class<?> genericClass;
+        // used from netty threads, so both lookups must be thread-safe
         private final Map<Object, T> lookup;
+        private final Map<T, Object> genericLookup;
 
         public FauxEnumConverter(Class<T> specific, Class<?> generic) {
             Validate.notNull(specific,"specific class cannot be null");
@@ -1347,15 +1368,19 @@ public abstract class EnumWrappers {
 
             this.specificClass = specific;
             this.genericClass = generic;
-            this.lookup = new HashMap<>();
+            this.lookup = new ConcurrentHashMap<>();
+            this.genericLookup = new ConcurrentHashMap<>();
         }
 
         @Override
         public Object getGeneric(T specific) {
             Validate.notNull(specific, "specific object cannot be null");
 
-            Field field = ExactReflection.fromClass(this.genericClass, false).findField(specific.name());
-            return Accessors.getFieldAccessor(field).get(null);
+            // the constants are static fields, resolve each of them only once
+            return genericLookup.computeIfAbsent(specific, key -> {
+                Field field = ExactReflection.fromClass(this.genericClass, false).findField(key.name());
+                return Accessors.getFieldAccessor(field).get(null);
+            });
         }
 
         @Override
@@ -1389,6 +1414,10 @@ public abstract class EnumWrappers {
         private final Class<T> specificClass;
         private final Class<?> genericClass;
 
+        // getEnumConstants() clones the array on every call, keep our own copy (index == ordinal)
+        private volatile Object[] genericConstants;
+        private volatile Object[] specificConstants;
+
         public IndexedEnumConverter(Class<T> specificClass, Class<?> genericClass) {
             this.specificClass = specificClass;
             this.genericClass = genericClass;
@@ -1396,26 +1425,27 @@ public abstract class EnumWrappers {
 
         @Override
         public Object getGeneric(T specific) {
-            int ordinal = specific.ordinal();
-            for (Object elem : genericClass.getEnumConstants()) {
-                if (((Enum<?>) elem).ordinal() == ordinal) {
-                    return elem;
-                }
+            Object[] constants = this.genericConstants;
+            if (constants == null) {
+                constants = genericClass.getEnumConstants();
+                this.genericConstants = constants;
             }
 
-            return null;
+            int ordinal = specific.ordinal();
+            return ordinal < constants.length ? constants[ordinal] : null;
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public T getSpecific(Object generic) {
-            int ordinal = ((Enum<?>) generic).ordinal();
-            for (T elem : specificClass.getEnumConstants()) {
-                if (elem.ordinal() == ordinal) {
-                    return elem;
-                }
+            Object[] constants = this.specificConstants;
+            if (constants == null) {
+                constants = specificClass.getEnumConstants();
+                this.specificConstants = constants;
             }
 
-            return null;
+            int ordinal = ((Enum<?>) generic).ordinal();
+            return ordinal < constants.length ? (T) constants[ordinal] : null;
         }
 
         @Override

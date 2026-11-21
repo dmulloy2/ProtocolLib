@@ -40,7 +40,7 @@ public class WrappedVillagerData extends AbstractWrapper implements ClonableWrap
         super(NMS_CLASS);
         setHandle(handle);
 
-        modifier = new StructureModifier<>(NMS_CLASS).withTarget(handle);
+        modifier = StructureModifier.forClass(NMS_CLASS).withTarget(handle);
     }
 
     public static WrappedVillagerData fromHandle(Object handle) {
