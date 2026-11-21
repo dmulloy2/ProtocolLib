@@ -226,9 +226,8 @@ public class PacketLogging implements CommandExecutor, PacketListener {
             String hexDump = hexDump(bytes);
 
             if (location == LogLocation.FILE) {
-                fileLogger.log(Level.INFO, event.getPacketType() + ":");
-                fileLogger.log(Level.INFO, hexDump);
-                fileLogger.log(Level.INFO, "");
+                // a single record: the file handler flushes after every record
+                fileLogger.log(Level.INFO, event.getPacketType() + ":" + System.lineSeparator() + hexDump);
             } else {
                 System.out.println(event.getPacketType() + ":");
                 System.out.println(hexDump);
