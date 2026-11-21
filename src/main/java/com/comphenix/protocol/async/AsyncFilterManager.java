@@ -377,6 +377,7 @@ public class AsyncFilterManager implements AsynchronousManager {
     @Override
     public void cleanupAll() {
         serverProcessingQueue.cleanupAll();
+        clientProcessingQueue.cleanupAll();
         playerSendingHandler.cleanupAll();
         timeoutListeners.clear();
         
@@ -413,8 +414,12 @@ public class AsyncFilterManager implements AsynchronousManager {
 
                     if (!handler.isCancelled()) {
                         marker.incrementProcessingDelay();
-                        handler.enqueuePacket(packet);
-                        return;
+                        if (handler.offerPacket(packet)) {
+                            return;
+                        }
+
+                        // the queue of the handler is full, skip it instead of losing the packet
+                        marker.decrementProcessingDelay();
                     }
                 }
             }
