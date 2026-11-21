@@ -60,7 +60,6 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.Converters;
 import com.comphenix.protocol.wrappers.WrappedStreamCodec;
 
-import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
 
@@ -104,13 +103,15 @@ public class PacketContainer extends AbstractStructure implements Serializable {
             })
             .build();
 
-    // Packets that cannot be cloned by our default deep cloner
-    private static final Set<PacketType> FAST_CLONE_UNSUPPORTED = Sets.newHashSet(
-        PacketType.Play.Server.BOSS,
-        PacketType.Play.Server.ADVANCEMENTS,
-        PacketType.Play.Client.USE_ENTITY,
-        PacketType.Status.Server.SERVER_INFO
-    );
+    // Packets that cannot be cloned by our default deep cloner, written from any thread that clones a packet
+    private static final Set<PacketType> FAST_CLONE_UNSUPPORTED = ConcurrentHashMap.newKeySet();
+
+    static {
+        FAST_CLONE_UNSUPPORTED.add(PacketType.Play.Server.BOSS);
+        FAST_CLONE_UNSUPPORTED.add(PacketType.Play.Server.ADVANCEMENTS);
+        FAST_CLONE_UNSUPPORTED.add(PacketType.Play.Client.USE_ENTITY);
+        FAST_CLONE_UNSUPPORTED.add(PacketType.Status.Server.SERVER_INFO);
+    }
 
     /**
      * Creates a packet container for a new packet.
@@ -239,12 +240,15 @@ public class PacketContainer extends AbstractStructure implements Serializable {
         }
 
         // try fast cloning first
-        if (!FAST_CLONE_UNSUPPORTED.contains(packetType)) {
+        // the concurrent set rejects null, a packet without a type is never marked as unsupported
+        if (packetType == null || !FAST_CLONE_UNSUPPORTED.contains(packetType)) {
             try {
                 Object cloned = DEEP_CLONER.clone(handle);
                 return new PacketContainer(packetType, cloned);
             } catch (Exception ex) {
-                FAST_CLONE_UNSUPPORTED.add(packetType);
+                if (packetType != null) {
+                    FAST_CLONE_UNSUPPORTED.add(packetType);
+                }
             }
         }
 

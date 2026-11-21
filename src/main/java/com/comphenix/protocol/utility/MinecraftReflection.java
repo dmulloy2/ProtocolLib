@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -76,7 +77,7 @@ public final class MinecraftReflection {
     private static final Pattern PACKAGE_VERSION_MATCHER = Pattern.compile(".*\\.(v\\d+_\\d+_\\w*\\d+)");
 
     // Cache of getBukkitEntity
-    private static final Map<Class<?>, MethodAccessor> BUKKIT_ENTITY_CACHE = new HashMap<>();
+    private static final Map<Class<?>, MethodAccessor> BUKKIT_ENTITY_CACHE = new ConcurrentHashMap<>();
 
     /**
      * The Entity package in Forge 1.5.2

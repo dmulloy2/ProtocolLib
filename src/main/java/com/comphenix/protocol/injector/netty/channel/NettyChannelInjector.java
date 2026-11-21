@@ -3,11 +3,11 @@ package com.comphenix.protocol.injector.netty.channel;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.SocketAddress;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -41,6 +41,7 @@ import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.google.common.collect.MapMaker;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -92,9 +93,11 @@ public class NettyChannelInjector implements Injector {
 
     private final FieldAccessor channelField;
 
-    // packet marking
-    private final Map<Object, NetworkMarker> savedMarkers = new WeakHashMap<>(16, 0.9f);
-    private final Set<Object> skippedPackets = ConcurrentHashMap.newKeySet();
+    // packet marking. Both are written from plugin threads and read from the event loop, so they must be thread-safe.
+    // They compare packets by identity: record packets implement equals/hashCode over their whole content, which is
+    // expensive and would match a different packet with the same content.
+    private final Map<Object, NetworkMarker> savedMarkers = new MapMaker().weakKeys().makeMap();
+    private final Set<Object> skippedPackets = Collections.newSetFromMap(new MapMaker().weakKeys().makeMap());
     protected final ThreadLocal<Boolean> processedPackets = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     // status of this injector
