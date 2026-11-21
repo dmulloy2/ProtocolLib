@@ -61,6 +61,20 @@ public class Metrics {
     // A list with all custom charts
     private final List<CustomChart> charts = new ArrayList<>();
 
+    // kept to cancel it on disable, otherwise every reload leaves a timer thread behind for up to 30 minutes
+    private volatile Timer timer;
+
+    /**
+     * Stops submitting data.
+     */
+    public void shutdown() {
+        Timer current = this.timer;
+        if (current != null) {
+            current.cancel();
+            this.timer = null;
+        }
+    }
+
     /**
      * Class constructor.
      *
@@ -141,7 +155,8 @@ public class Metrics {
      * Starts the Scheduler which submits our data every 30 minutes.
      */
     private void startSubmitting() {
-        final Timer timer = new Timer(true); // We use a timer cause the Bukkit scheduler is affected by server lags
+        final Timer timer = new Timer("ProtocolLib-Metrics-Timer", true); // We use a timer cause the Bukkit scheduler is affected by server lags
+        this.timer = timer;
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
@@ -256,7 +271,7 @@ public class Metrics {
         data.put("plugins", pluginData);
 
         // Create a new thread for the connection to the bStats server
-        new Thread(() -> {
+        Thread submitThread = new Thread(() -> {
             try {
                 // Send the data
                 sendData(data);
@@ -266,7 +281,10 @@ public class Metrics {
                     plugin.getLogger().log(Level.WARNING, "Could not submit plugin stats of " + plugin.getName(), e);
                 }
             }
-        }).start();
+        }, "ProtocolLib-Metrics-Submit");
+        // never keep the server process alive for a statistics request
+        submitThread.setDaemon(true);
+        submitThread.start();
     }
 
     /**
@@ -283,6 +301,8 @@ public class Metrics {
             throw new IllegalAccessException("This method must not be called from the main thread!");
         }
         HttpsURLConnection connection = (HttpsURLConnection) new URL(URL).openConnection();
+        connection.setConnectTimeout(10_000);
+        connection.setReadTimeout(10_000);
 
         // Compress the data to save bandwidth
         byte[] compressedData = compress(data.toString());
