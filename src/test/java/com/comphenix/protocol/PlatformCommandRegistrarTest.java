@@ -48,7 +48,7 @@ class PlatformCommandRegistrarTest {
         commandCaptor.getValue().execute(source, arguments);
 
         assertEquals("filter", legacyCommand.getValue().getName());
-        assertEquals("protocol.admin", commandCaptor.getValue().permission());
+        assertEquals("protocol.command.filter", commandCaptor.getValue().permission());
         verify(sender).sendMessage("/filter add|remove name [ID start]-[ID stop]");
     }
 }
