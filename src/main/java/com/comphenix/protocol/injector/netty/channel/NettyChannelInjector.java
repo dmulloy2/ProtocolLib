@@ -75,6 +75,19 @@ public class NettyChannelInjector implements Injector {
         return channel.attr(INJECTOR).get();
     }
 
+    // channel field accessor per network manager class, resolved once instead of for every connection
+    private static final Map<Class<?>, FieldAccessor> CHANNEL_ACCESSORS = new ConcurrentHashMap<>();
+
+    static FieldAccessor getChannelAccessor(Class<?> networkManagerClass) {
+        return CHANNEL_ACCESSORS.computeIfAbsent(networkManagerClass, type -> {
+            Field channelField = FuzzyReflection.fromClass(type, true).getField(FuzzyFieldContract.newBuilder()
+                    .typeExact(Channel.class)
+                    .banModifier(Modifier.STATIC)
+                    .build());
+            return Accessors.getFieldAccessor(channelField);
+        });
+    }
+
     private static String getRandomKey() {
         return "ProtocolLib-" + ThreadLocalRandom.current().nextLong();
     }
@@ -145,12 +158,8 @@ public class NettyChannelInjector implements Injector {
         this.channel.attr(INJECTOR).set(this);
 
         // read the channel field from the network manager given to this method
-        // we re-read this field every time as plugins/spigot forks might give us different network manager types
-        Field channelField = FuzzyReflection.fromObject(networkManager, true).getField(FuzzyFieldContract.newBuilder()
-                .typeExact(Channel.class)
-                .banModifier(Modifier.STATIC)
-                .build());
-        this.channelField = Accessors.getFieldAccessor(channelField);
+        // resolved per class as plugins/spigot forks might give us different network manager types
+        this.channelField = getChannelAccessor(networkManager.getClass());
 
         // hook here into the close future to be 100% sure that this injector gets closed when the channel we wrap gets closed
         // normally we listen to the disconnect event, but there is a very small period of time, between the login and actual
