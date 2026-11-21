@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -109,6 +110,39 @@ public class OutboundPacketListenerSetTest {
         assertSame(sharedPackets, getRawPackets(sharedEvent.getPacket()));
         assertPacketHandles(modifiedEvent.getPacket(), replacement, retained);
         assertPacketHandles(sharedEvent.getPacket(), replaced, retained);
+    }
+
+    @Test
+    public void testSubPacketsWithoutListenersKeepTheirContainer() {
+        PacketContainer listened = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT);
+        PacketContainer unlistened = new PacketContainer(PacketType.Play.Server.KEEP_ALIVE);
+        List<PacketType> seen = new java.util.ArrayList<>();
+        OutboundPacketListenerSet listenerSet = createListenerSet(event -> seen.add(event.getPacketType()));
+
+        PacketEvent bundleEvent = createBundleEvent(createBundle(listened, unlistened));
+        listenerSet.invoke(bundleEvent);
+
+        // only sub packets with listeners get an event, the bundle stays unchanged
+        assertEquals(List.of(PacketType.Play.Server.SYSTEM_CHAT), seen);
+        assertPacketHandles(bundleEvent.getPacket(), listened, unlistened);
+    }
+
+    @Test
+    public void testPacketClassSnapshotFollowsListeners() {
+        OutboundPacketListenerSet listenerSet = new OutboundPacketListenerSet(null, mock(ErrorReporter.class));
+        Class<?> chatClass = PacketType.Play.Server.SYSTEM_CHAT.getPacketClass();
+        Class<?> keepAliveClass = PacketType.Play.Server.KEEP_ALIVE.getPacketClass();
+        assertFalse(listenerSet.mayContainPacketClass(chatClass));
+
+        PacketAdapter listener = new PacketAdapter(mock(Plugin.class), PacketType.Play.Server.SYSTEM_CHAT,
+                PacketType.Play.Server.BUNDLE) { };
+        listenerSet.addListener(listener);
+        assertTrue(listenerSet.mayContainPacketClass(chatClass));
+        assertTrue(listenerSet.mayContainPacketClass(PacketType.Play.Server.BUNDLE.getPacketClass()));
+        assertFalse(listenerSet.mayContainPacketClass(keepAliveClass));
+
+        listenerSet.removeListener(listener);
+        assertFalse(listenerSet.mayContainPacketClass(chatClass));
     }
 
     private static OutboundPacketListenerSet createListenerSet(Consumer<PacketEvent> callback) {

@@ -39,7 +39,10 @@ public class OutboundPacketListenerSet extends PacketListenerSet {
                 PacketContainer subPacket = packets.get(index);
                 PacketContainer packet = null;
 
-                if (subPacket != null) {
+                if (subPacket != null && !this.containsPacketType(subPacket.getType())) {
+                    // no listener for this packet, keep it without creating an event for it
+                    packet = subPacket;
+                } else if (subPacket != null) {
                     PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(),
                             event.getPlayer(), event.isFiltered(), event);
                     super.invoke(subPacketEvent, priorityFilter);
