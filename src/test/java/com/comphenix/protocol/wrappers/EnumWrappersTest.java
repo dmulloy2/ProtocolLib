@@ -1,5 +1,8 @@
 package com.comphenix.protocol.wrappers;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -117,4 +120,58 @@ public class EnumWrappersTest {
         }
         return aliased;
     }
+
+    @Test
+    public void testGenericConverterDoesNotRetainForeignClassLoaders() throws Exception {
+        // the enum of another plugin: once that plugin is disabled, its class loader must be collectable
+        WeakReference<ClassLoader> loader = requestConverterForForeignEnum();
+        for (int i = 0; i < 50 && loader.get() != null; i++) {
+            System.gc();
+            Thread.sleep(20);
+        }
+        assertNull(loader.get(), "the class loader of a foreign enum is still reachable");
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static WeakReference<ClassLoader> requestConverterForForeignEnum() throws Exception {
+        ClassLoader foreignLoader = new ForeignEnumLoader(EnumWrappersTest.class.getClassLoader());
+        Class<? extends Enum> foreignEnum = (Class<? extends Enum>) foreignLoader.loadClass(ForeignEnum.class.getName());
+        assertNotSame(ForeignEnum.class, foreignEnum);
+
+        EquivalentConverter<?> converter = EnumWrappers.getGenericConverter(EnumWrappers.getPlayerDigTypeClass(), foreignEnum);
+        assertNotNull(converter);
+        return new WeakReference<>(foreignLoader);
+    }
+
+    // defines its own copy of ForeignEnum, like the class loader of another plugin
+    private static final class ForeignEnumLoader extends ClassLoader {
+
+        private ForeignEnumLoader(ClassLoader parent) {
+            super(parent);
+        }
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            if (!name.equals(ForeignEnum.class.getName())) {
+                return super.loadClass(name, resolve);
+            }
+
+            synchronized (getClassLoadingLock(name)) {
+                Class<?> loaded = findLoadedClass(name);
+                if (loaded == null) {
+                    try (InputStream input = getParent().getResourceAsStream(name.replace('.', '/') + ".class")) {
+                        byte[] bytes = input.readAllBytes();
+                        loaded = defineClass(name, bytes, 0, bytes.length);
+                    } catch (IOException exception) {
+                        throw new ClassNotFoundException(name, exception);
+                    }
+                }
+                return loaded;
+            }
+        }
+    }
+}
+
+enum ForeignEnum {
+    START_DESTROY_BLOCK, ABORT_DESTROY_BLOCK
 }

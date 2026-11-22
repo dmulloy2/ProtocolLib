@@ -1224,13 +1224,15 @@ public abstract class EnumWrappers {
      * @return A generic enum converter
      */
     public static <T extends Enum<T>> EquivalentConverter<T> getGenericConverter(Class<?> genericClass, Class<T> specificType) {
-        return cachedConverter(genericClass, specificType, EnumConverter::new);
+        // not cached: callers pass their own enums, and a static cache entry would keep the class loader of a disabled
+        // plugin alive. ProtocolLib's own accessors above use the shared converters.
+        return new EnumConverter<>(genericClass, specificType);
     }
 
     // Converters are stateless apart from their lookup caches, so one instance per enum pair is shared. Creating a new
     // converter for every packet access threw those caches away (and made aliased lookups throw on every read).
-    // One cache per conversion strategy: the same enum pair can be requested with alias support (the dedicated
-    // accessors) and without it (getGenericConverter), and neither may be answered with the other's converter.
+    // One cache per conversion strategy, so the plain and the alias-aware converter of an enum pair can never replace
+    // each other. Only ProtocolLib's own enums are cached here.
     private static final Map<Class<?>, Map<Class<?>, EquivalentConverter<?>>> CONVERTER_CACHE = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Map<Class<?>, EquivalentConverter<?>>> ALIASED_CONVERTER_CACHE = new ConcurrentHashMap<>();
 
