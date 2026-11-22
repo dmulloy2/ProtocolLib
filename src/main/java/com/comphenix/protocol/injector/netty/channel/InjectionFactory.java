@@ -105,9 +105,11 @@ public class InjectionFactory {
         Channel channel = (Channel) NettyChannelInjector.getChannelAccessor(networkManager.getClass()).get(networkManager);
         injector = NettyChannelInjector.findInjector(channel);
 
-        // the player is gone: don't build (and cache) a new injector for every packet sent to the stale player object
-        if (injector == null && closedInjector != null && !channel.isActive()) {
-            return closedInjector;
+        // the player is gone: closing an injector removes it from the caches and the channel, so without this check a
+        // new injector was built for every packet sent to the stale player object. The close future (rather than
+        // isActive) keeps fake channels that were never connected, such as those of NPCs, on the regular path
+        if (injector == null && channel.closeFuture().isDone()) {
+            return closedInjector != null ? closedInjector : new EmptyInjector(player);
         }
 
         if (injector != null) {
