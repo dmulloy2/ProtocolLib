@@ -537,12 +537,18 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
             return true;
         }
 
-        // the listeners of the packets inside a bundle are invoked as well, so they need the main thread too
+        // the listeners of the packets inside a bundle are invoked as well, so they need the main thread too. The raw
+        // packets are inspected: wrapping all of them just to read their types is not needed for this check
         if (packet.getType() == PacketType.Play.Server.BUNDLE) {
-            Iterable<PacketContainer> subPackets = packet.getPacketBundles().readSafely(0);
+            Iterable<?> subPackets = packet.getModifier().<Iterable<?>>withType(Iterable.class).readSafely(0);
             if (subPackets != null) {
-                for (PacketContainer subPacket : subPackets) {
-                    if (subPacket != null && this.hasMainThreadListener(subPacket.getType())) {
+                for (Object subPacket : subPackets) {
+                    if (subPacket == null) {
+                        continue;
+                    }
+
+                    PacketType subPacketType = PacketRegistry.getPacketType(PacketType.Protocol.PLAY, subPacket.getClass());
+                    if (subPacketType != null && this.hasMainThreadListener(subPacketType)) {
                         return true;
                     }
                 }
