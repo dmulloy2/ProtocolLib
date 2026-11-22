@@ -3,6 +3,7 @@ package com.comphenix.protocol.async;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.Queue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,8 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -145,6 +150,127 @@ class AsyncListenerHandlerTest {
 
         manager.unregisterAsyncHandlers(remaining);
         assertEquals(slots + 1, availableSlots(manager), "the processing slot of the packet was not released");
+    }
+
+    @Test
+    void testFullFirstListenerPassesPacketOn() throws Exception {
+        AsyncFilterManager manager = createManager(mock(ProtocolScheduler.class));
+        AsyncListenerHandler full = registerHandler(manager);
+        AsyncListenerHandler next = registerHandler(manager);
+        fillQueue(full);
+        int slots = availableSlots(manager);
+
+        Injector injector = mock(Injector.class);
+        AsyncMarker marker = enqueuePacket(manager, injector);
+
+        // the full first handler is skipped, the packet waits for the next one and holds one slot
+        assertEquals(1, queueSize(next));
+        assertEquals(slots - 1, availableSlots(manager));
+        assertEquals(1, marker.getProcessingDelay());
+
+        // the next handler processes it: the slot is released once and the packet is sent once
+        manager.signalPacketTransmission(pollQueue(next));
+        assertDelivered(manager, slots, marker, injector);
+    }
+
+    @Test
+    void testFullLaterListenerIsSkipped() throws Exception {
+        AsyncFilterManager manager = createManager(mock(ProtocolScheduler.class));
+        AsyncListenerHandler first = registerHandler(manager);
+        AsyncListenerHandler full = registerHandler(manager);
+        AsyncListenerHandler last = registerHandler(manager);
+        fillQueue(full);
+        int slots = availableSlots(manager);
+
+        Injector injector = mock(Injector.class);
+        AsyncMarker marker = enqueuePacket(manager, injector);
+        assertEquals(1, queueSize(first));
+
+        // after the first handler, the full one is skipped and the packet moves on to the last handler
+        manager.signalPacketTransmission(pollQueue(first));
+        assertEquals(1, queueSize(last));
+        assertEquals(slots - 1, availableSlots(manager));
+        assertEquals(1, marker.getProcessingDelay());
+
+        manager.signalPacketTransmission(pollQueue(last));
+        assertDelivered(manager, slots, marker, injector);
+    }
+
+    @Test
+    void testPacketIsSentWhenEveryListenerIsFull() throws Exception {
+        AsyncFilterManager manager = createManager(mock(ProtocolScheduler.class));
+        AsyncListenerHandler full = registerHandler(manager);
+        fillQueue(full);
+        int slots = availableSlots(manager);
+
+        Injector injector = mock(Injector.class);
+        AsyncMarker marker = enqueuePacket(manager, injector);
+
+        // no handler can take the packet: it is sent right away and its slot is released
+        assertEquals(1024, queueSize(full));
+        assertDelivered(manager, slots, marker, injector);
+    }
+
+    @Test
+    void testQueuedPacketsArePassedOnOutsideTheHandlerLock() throws Exception {
+        AsyncFilterManager manager = createManager(mock(ProtocolScheduler.class));
+        AsyncListenerHandler handler = registerHandler(manager);
+
+        // the packet passed on while closing is sent from there; that must not happen while the handler is locked
+        AtomicInteger sentWhileLocked = new AtomicInteger();
+        Injector injector = mock(Injector.class);
+        doAnswer(invocation -> {
+            if (Thread.holdsLock(handler)) {
+                sentWhileLocked.incrementAndGet();
+            }
+            return null;
+        }).when(injector).sendClientboundPacket(any(), any(), anyBoolean());
+
+        int slots = availableSlots(manager);
+        AsyncMarker marker = enqueuePacket(manager, injector);
+        assertEquals(1, queueSize(handler));
+
+        handler.cancel();
+        assertDelivered(manager, slots, marker, injector);
+        assertEquals(0, sentWhileLocked.get());
+    }
+
+    private static AsyncListenerHandler registerHandler(AsyncFilterManager manager) {
+        return manager.registerAsyncHandler(
+                new PacketAdapter(mock(Plugin.class), PacketType.Play.Server.SYSTEM_CHAT) { }, false);
+    }
+
+    private static void fillQueue(AsyncListenerHandler handler) {
+        // placeholders: no worker runs, so they stay in the queue
+        while (handler.offerPacket(mock(PacketEvent.class))) {
+        }
+    }
+
+    private AsyncMarker enqueuePacket(AsyncFilterManager manager, Injector injector) {
+        Player player = mock(Player.class);
+        // the sending queues are keyed by address
+        when(player.getAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 25565));
+        when(player.isOnline()).thenReturn(true);
+
+        AsyncMarker marker = manager.createAsyncMarker(injector);
+        manager.enqueueSyncPacket(PacketEvent.fromServer(this, new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT),
+                player), marker);
+        return marker;
+    }
+
+    private static void assertDelivered(AsyncFilterManager manager, int slots, AsyncMarker marker, Injector injector)
+            throws ReflectiveOperationException {
+        assertEquals(slots, availableSlots(manager), "the processing slot was not released exactly once");
+        assertEquals(0, marker.getProcessingDelay());
+        assertTrue(marker.isTransmitted());
+        verify(injector, times(1)).sendClientboundPacket(any(), any(), eq(false));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static PacketEvent pollQueue(AsyncListenerHandler handler) throws ReflectiveOperationException {
+        Field queueField = AsyncListenerHandler.class.getDeclaredField("queuedPackets");
+        queueField.setAccessible(true);
+        return ((Queue<PacketEvent>) queueField.get(handler)).poll();
     }
 
     private static int availableSlots(AsyncFilterManager manager) throws ReflectiveOperationException {

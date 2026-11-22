@@ -663,26 +663,33 @@ public class AsyncListenerHandler {
     /**
      * Close all worker threads and the handler itself.
      */
-    private synchronized void close() {
-        // Remove the listener itself
-        if (!cancelled) {
-            filterManager.unregisterAsyncHandlerInternal(this);
+    private void close() {
+        synchronized (this) {
+            if (cancelled) {
+                return;
+            }
+            // from here on new packets are rejected and go to the next listener, see offerPacket
             cancelled = true;
-            
+
             // Close processing tasks
             syncStop();
-            
-            // Tell every uncancelled thread to end
-            stopThreads();
         }
+
+        // Outside of the lock: removing the listener sends the queued packets that no other listener wants, and
+        // passing the remaining packets on reaches other handlers and the sending queues
+        filterManager.unregisterAsyncHandlerInternal(this);
+        passQueuedPacketsOn();
+
+        // Tell every uncancelled thread to end
+        stopThreads();
     }
-    
+
     /**
-     * Use the poision pill method to stop every worker thread.
+     * Pass the queued packets on instead of dropping them: a dropped packet keeps its processing slot forever and holds
+     * back the packets queued after it for the same player until it expires. Packets a worker is already processing
+     * are passed on by that worker.
      */
-    private void stopThreads() {
-        // Pass the queued packets on instead of dropping them: a dropped packet keeps its processing slot forever and
-        // holds back the packets queued after it for the same player until it expires
+    private void passQueuedPacketsOn() {
         PacketEvent queued;
         while ((queued = queuedPackets.poll()) != null) {
             if (queued == WAKEUP_PACKET || queued == INTERUPT_PACKET || queued.getAsyncMarker() == null) {
@@ -695,7 +702,12 @@ public class AsyncListenerHandler {
                 filterManager.getErrorReporter().reportMinimal(listener.getPlugin(), "close()", e);
             }
         }
+    }
 
+    /**
+     * Use the poision pill method to stop every worker thread.
+     */
+    private void stopThreads() {
         // Poison Pill Shutdown
         stop(started.get());
         
