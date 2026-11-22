@@ -17,6 +17,7 @@ package com.comphenix.protocol;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.BasicErrorReporter;
+import com.comphenix.protocol.error.ChatWarningLimiter;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -287,7 +288,18 @@ public class ProtocolLib extends JavaPlugin {
             @Override
             public void publish(LogRecord record) {
                 // Only display warnings and above
-                if (record.getLevel().intValue() >= Level.WARNING.intValue()) {
+                if (record.getLevel().intValue() < Level.WARNING.intValue()) {
+                    return;
+                }
+
+                // honour the "chat warnings" option
+                ProtocolConfig currentConfig = ProtocolLib.config;
+                if (currentConfig != null && !currentConfig.isChatWarnings()) {
+                    return;
+                }
+
+                // a warning logged for every packet would otherwise turn into a chat message for every packet
+                if (ChatWarningLimiter.tryAcquire()) {
                     ProtocolLib.this.commandPacket.broadcastMessageSilently(record.getMessage(), permission);
                 }
             }
@@ -568,6 +580,9 @@ public class ProtocolLib extends JavaPlugin {
         }
 
         protocolManager = null;
+        if (this.statistics != null) {
+            this.statistics.shutdown();
+        }
         this.statistics = null;
 
         // To clean up global parameters
