@@ -35,6 +35,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -233,6 +234,66 @@ class AsyncListenerHandlerTest {
         handler.cancel();
         assertDelivered(manager, slots, marker, injector);
         assertEquals(0, sentWhileLocked.get());
+    }
+
+    @Test
+    void testCancelledLastListenerLetsTheWorkerFinishItsPacket() throws Exception {
+        AsyncFilterManager manager = createManager(mock(ProtocolScheduler.class));
+        AsyncListenerHandler handler = registerHandler(manager);
+        int slots = availableSlots(manager);
+        Injector injector = mock(Injector.class);
+        AsyncMarker marker = enqueuePacket(manager, injector);
+
+        // a worker of the only handler is running the listener for this packet
+        PacketEvent inWorker = pollQueue(handler);
+        handler.cancel();
+        verify(injector, never()).sendClientboundPacket(any(), any(), anyBoolean());
+
+        // the listener returns, the worker passes the packet on
+        manager.signalPacketTransmission(inWorker);
+        assertDelivered(manager, slots, marker, injector);
+    }
+
+    @Test
+    void testCancelledLastListenerWaitsForDelayedPacket() throws Exception {
+        AsyncFilterManager manager = createManager(mock(ProtocolScheduler.class));
+        AsyncListenerHandler handler = registerHandler(manager);
+        int slots = availableSlots(manager);
+        Injector injector = mock(Injector.class);
+        AsyncMarker marker = enqueuePacket(manager, injector);
+
+        // the listener delays the packet and finishes it later, like a plugin waiting for a database
+        PacketEvent delayed = pollQueue(handler);
+        delayed.getAsyncMarker().incrementProcessingDelay();
+        manager.signalPacketTransmission(delayed);
+
+        handler.cancel();
+        verify(injector, never()).sendClientboundPacket(any(), any(), anyBoolean());
+
+        manager.signalPacketTransmission(delayed);
+        assertDelivered(manager, slots, marker, injector);
+    }
+
+    @Test
+    void testPacketCancelledAfterItsLastListenerIsRemovedIsNotSent() throws Exception {
+        AsyncFilterManager manager = createManager(mock(ProtocolScheduler.class));
+        AsyncListenerHandler handler = registerHandler(manager);
+        int slots = availableSlots(manager);
+        Injector injector = mock(Injector.class);
+        AsyncMarker marker = enqueuePacket(manager, injector);
+
+        PacketEvent delayed = pollQueue(handler);
+        delayed.getAsyncMarker().incrementProcessingDelay();
+        manager.signalPacketTransmission(delayed);
+        handler.cancel();
+
+        // the delayed listener decides to cancel the packet
+        delayed.setCancelled(true);
+        manager.signalPacketTransmission(delayed);
+
+        verify(injector, never()).sendClientboundPacket(any(), any(), anyBoolean());
+        assertEquals(slots, availableSlots(manager), "the processing slot was not released exactly once");
+        assertEquals(0, marker.getProcessingDelay());
     }
 
     private static AsyncListenerHandler registerHandler(AsyncFilterManager manager) {

@@ -675,8 +675,7 @@ public class AsyncListenerHandler {
             syncStop();
         }
 
-        // Outside of the lock: removing the listener sends the queued packets that no other listener wants, and
-        // passing the remaining packets on reaches other handlers and the sending queues
+        // Outside of the lock: passing the queued packets on reaches other handlers and the sending queues
         filterManager.unregisterAsyncHandlerInternal(this);
         passQueuedPacketsOn();
 

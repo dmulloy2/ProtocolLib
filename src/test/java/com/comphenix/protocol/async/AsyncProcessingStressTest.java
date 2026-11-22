@@ -53,6 +53,14 @@ class AsyncProcessingStressTest {
     private static final int PACKETS = 3000;
     private static final int PLAYERS = 4;
 
+    private enum Cancellation {
+        NONE,
+        // two of the three handlers, the last one keeps listening
+        SOME,
+        // every handler, the one that delays packets last
+        ALL
+    }
+
     @BeforeAll
     static void initializeBukkit() {
         BukkitInitialization.initializeAll();
@@ -60,15 +68,20 @@ class AsyncProcessingStressTest {
 
     @RepeatedTest(10)
     void testEveryPacketIsSentOnceWhileHandlersAreCancelled() throws Exception {
-        runTraffic(true, true, PLAYERS);
+        runTraffic(Cancellation.SOME, true, PLAYERS);
+    }
+
+    @RepeatedTest(10)
+    void testEveryPacketIsSentOnceWhenTheLastHandlerIsCancelled() throws Exception {
+        runTraffic(Cancellation.ALL, true, PLAYERS);
     }
 
     @RepeatedTest(10)
     void testEveryPacketIsSentOnce() throws Exception {
-        runTraffic(false, true, PLAYERS);
+        runTraffic(Cancellation.NONE, true, PLAYERS);
     }
 
-    private void runTraffic(boolean cancelHandlers, boolean delaySome, int playerCount) throws Exception {
+    private void runTraffic(Cancellation cancellation, boolean delaySome, int playerCount) throws Exception {
         ExecutorService workers = Executors.newCachedThreadPool();
         ScheduledExecutorService delayed = Executors.newScheduledThreadPool(2);
         try {
@@ -119,10 +132,17 @@ class AsyncProcessingStressTest {
 
             // every transmitted packet, counted per packet instance (packets with the same content are equal)
             Map<Object, AtomicInteger> sent = Collections.synchronizedMap(new IdentityHashMap<>());
+            // a packet must not be sent while a listener can still modify or cancel it
+            Map<Object, AsyncMarker> markersByPacket = Collections.synchronizedMap(new IdentityHashMap<>());
+            AtomicInteger sentWhileHeld = new AtomicInteger();
             Injector injector = mock(Injector.class);
             doAnswer(invocation -> {
+                Object packet = invocation.getArgument(0);
+                if (markersByPacket.get(packet).getProcessingDelay() > 0) {
+                    sentWhileHeld.incrementAndGet();
+                }
                 synchronized (sent) {
-                    sent.computeIfAbsent(invocation.getArgument(0), key -> new AtomicInteger()).incrementAndGet();
+                    sent.computeIfAbsent(packet, key -> new AtomicInteger()).incrementAndGet();
                 }
                 return null;
             }).when(injector).sendClientboundPacket(any(), any(), anyBoolean());
@@ -142,14 +162,26 @@ class AsyncProcessingStressTest {
                 // this test thread is the main thread of the manager
                 AsyncMarker marker = manager.createAsyncMarker(injector);
                 markers.add(marker);
-                manager.enqueueSyncPacket(PacketEvent.fromServer(this,
-                        new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT), players.get(i % playerCount)), marker);
+                PacketContainer packet = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT);
+                markersByPacket.put(packet.getHandle(), marker);
+                manager.enqueueSyncPacket(PacketEvent.fromServer(this, packet, players.get(i % playerCount)), marker);
 
                 // plugins are disabled in the middle of the traffic
-                if (cancelHandlers && i == PACKETS / 3) {
-                    manager.unregisterAsyncHandlers(slowPlugin);
-                } else if (cancelHandlers && i == 2 * PACKETS / 3) {
-                    manager.unregisterAsyncHandlers(delayingPlugin);
+                if (cancellation == Cancellation.SOME) {
+                    if (i == PACKETS / 3) {
+                        manager.unregisterAsyncHandlers(slowPlugin);
+                    } else if (i == 2 * PACKETS / 3) {
+                        manager.unregisterAsyncHandlers(delayingPlugin);
+                    }
+                } else if (cancellation == Cancellation.ALL) {
+                    if (i == PACKETS / 4) {
+                        manager.unregisterAsyncHandlers(slowPlugin);
+                    } else if (i == PACKETS / 2) {
+                        manager.unregisterAsyncHandlers(lastPlugin);
+                    } else if (i == 3 * PACKETS / 4) {
+                        // the delaying handler is the last listener of the packet type now
+                        manager.unregisterAsyncHandlers(delayingPlugin);
+                    }
                 }
                 if (i % 50 == 0) {
                     manager.sendProcessedPackets(tick++, true);
@@ -167,6 +199,7 @@ class AsyncProcessingStressTest {
                 Reference.reachabilityFence(players);
                 fail(describeStall(manager, markers, sent.size(), slots, slow, delaying, last));
             }
+            assertEquals(0, sentWhileHeld.get(), "packets were sent while a listener still held them");
             synchronized (sent) {
                 for (Map.Entry<Object, AtomicInteger> entry : sent.entrySet()) {
                     if (entry.getValue().get() != 1) {
@@ -179,7 +212,9 @@ class AsyncProcessingStressTest {
                 assertTrue(marker.isTransmitted());
             }
             assertEquals(slots, availableSlots(manager), "processing slots were not released");
-            assertTrue(processed.get() >= PACKETS, "every packet reaches at least one listener");
+            if (cancellation != Cancellation.ALL) {
+                assertTrue(processed.get() >= PACKETS, "every packet reaches at least one listener");
+            }
 
             manager.cleanupAll();
             // packet events and the sending queues only keep weak references to players; on a server the online

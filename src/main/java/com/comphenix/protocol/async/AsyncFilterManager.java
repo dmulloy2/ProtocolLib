@@ -36,7 +36,6 @@ import com.google.common.collect.Iterables;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -249,24 +248,21 @@ public class AsyncFilterManager implements AsynchronousManager {
     void unregisterAsyncHandlerInternal(AsyncListenerHandler handler) {
         
         PacketListener listener = handler.getAsyncListener();
-        boolean synchronusOK = onMainThread();
         
         // Unregister null packet listeners
         if (handler.getNullPacketListener() != null) {
             manager.removePacketListener(handler.getNullPacketListener());
         }
         
-        // Just remove it from the queue(s)
+        // Just remove it from the queue(s). The packets of the removed types are not sent from here: the handler passes
+        // its queued packets on, and the packets that a worker or a delaying listener still holds are passed on when
+        // that listener is done. Sending them here would send packets that a listener can still modify or cancel.
         if (hasValidWhitelist(listener.getSendingWhitelist())) {
-            List<PacketType> removed = serverProcessingQueue.removeListener(handler, listener.getSendingWhitelist());
-            
-            // We're already taking care of this, so don't do anything
-            playerSendingHandler.sendServerPackets(removed, synchronusOK);
+            serverProcessingQueue.removeListener(handler, listener.getSendingWhitelist());
         }
         
         if (hasValidWhitelist(listener.getReceivingWhitelist())) {
-            List<PacketType> removed = clientProcessingQueue.removeListener(handler, listener.getReceivingWhitelist());
-            playerSendingHandler.sendClientPackets(removed, synchronusOK);
+            clientProcessingQueue.removeListener(handler, listener.getReceivingWhitelist());
         }
     }
     
