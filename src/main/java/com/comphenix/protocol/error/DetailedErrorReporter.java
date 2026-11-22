@@ -391,8 +391,8 @@ public class DetailedErrorReporter implements ErrorReporter {
             writer.println("Server:");
             writer.println(addPrefix(Bukkit.getServer().getVersion(), SECOND_LEVEL_PREFIX));
 
-            // Inform of this occurrence
-            if (isChatWarnings()) {
+            // Inform of this occurrence, sharing the chat limit with the other broadcasts
+            if (isChatWarnings() && ChatWarningLimiter.tryAcquire()) {
                 Bukkit.getServer().broadcast(
                         String.format("Error %s (%s) occurred in %s.", report.getReportMessage(), report.getException(), sender),
                         ERROR_PERMISSION
