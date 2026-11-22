@@ -158,7 +158,9 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
         
         // A monitor listener should never modify a packet/event so we can simply invoke monitor listeners
         // independently of our injector pipeline 
-        if (!filters) {
+        // bundles are always passed on: the listener set invokes the listeners of the packets inside them
+        if (!filters && (packet.getType() == PacketType.Play.Server.BUNDLE
+                || this.outboundListeners.containsPacketType(packet.getType()))) {
             this.runMonitorListeners(packet, () -> {
                 PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
                 this.outboundListeners.invoke(event, ListenerPriority.MONITOR);
@@ -215,7 +217,7 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
 
             // Prevent possible de-sync if the packet was replaced by a listener.
             nmsPacket = event.getPacket().getHandle();
-        } else {
+        } else if (this.inboundListeners.containsPacketType(packet.getType())) {
             // A monitor listener should never modify a packet/event so we can simply invoke monitor listeners
             // independently of our injector pipeline 
             this.runMonitorListeners(packet, () -> {
@@ -527,7 +529,32 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
     }
     
     private boolean requiresMainThread(PacketContainer packet) {
-        return this.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread();
+        if (this.server.isPrimaryThread()) {
+            return false;
+        }
+
+        if (this.hasMainThreadListener(packet.getType())) {
+            return true;
+        }
+
+        // the listeners of the packets inside a bundle are invoked as well, so they need the main thread too. The raw
+        // packets are inspected: wrapping all of them just to read their types is not needed for this check
+        if (packet.getType() == PacketType.Play.Server.BUNDLE) {
+            Iterable<?> subPackets = packet.getModifier().<Iterable<?>>withType(Iterable.class).readSafely(0);
+            if (subPackets != null) {
+                for (Object subPacket : subPackets) {
+                    if (subPacket == null) {
+                        continue;
+                    }
+
+                    PacketType subPacketType = PacketRegistry.getPacketType(PacketType.Protocol.PLAY, subPacket.getClass());
+                    if (subPacketType != null && this.hasMainThreadListener(subPacketType)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void runMonitorListeners(PacketContainer packet, Runnable notifyMonitor) {
