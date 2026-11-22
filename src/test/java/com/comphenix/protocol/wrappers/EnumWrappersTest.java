@@ -1,5 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -75,5 +76,45 @@ public class EnumWrappersTest {
             // the second lookup is answered from the shared converter's cache
             assertSame(wrapped, converter.getSpecific(nativeConstant));
         }
+    }
+
+    @Test
+    public void testGenericConverterDoesNotReplaceAliasedConverter() throws ReflectiveOperationException {
+        // simulate a plugin that asks for the plain converter of an aliased enum before the wrappers are initialized
+        Field cacheField = EnumWrappers.class.getDeclaredField("CONVERTER_CACHE");
+        cacheField.setAccessible(true);
+        ((Map<?, ?>) cacheField.get(null)).clear();
+
+        EnumWrappers.getGenericConverter(EnumWrappers.getPlayerDigTypeClass(), EnumWrappers.PlayerDigType.class);
+        EnumWrappers.getGenericConverter(EnumWrappers.getPlayerActionClass(), EnumWrappers.PlayerAction.class);
+
+        // SWAP_HELD_ITEMS only exists as SWAP_ITEM_WITH_OFFHAND in the native enum
+        assertEquals(1, assertAliasesResolve(EnumWrappers.getPlayerDiggingActionConverter(),
+                EnumWrappers.getPlayerDigTypeClass(), EnumWrappers.PlayerDigType.values()));
+        assertAliasesResolve(EnumWrappers.getEntityActionConverter(),
+                EnumWrappers.getPlayerActionClass(), EnumWrappers.PlayerAction.values());
+    }
+
+    // converts every wrapper constant that only exists under an alias in the native enum, returns their number
+    private static <T extends Enum<T> & EnumWrappers.AliasedEnum> int assertAliasesResolve(
+            EquivalentConverter<T> converter, Class<?> nativeClass, T[] wrapperConstants) {
+        Set<String> nativeNames = Sets.newHashSet();
+        for (Object constant : nativeClass.getEnumConstants()) {
+            nativeNames.add(((Enum<?>) constant).name());
+        }
+
+        int aliased = 0;
+        for (T constant : wrapperConstants) {
+            if (nativeNames.contains(constant.name())) {
+                continue;
+            }
+            for (String alias : constant.getAliases()) {
+                if (nativeNames.contains(alias)) {
+                    assertEquals(alias, ((Enum<?>) converter.getGeneric(constant)).name());
+                    aliased++;
+                }
+            }
+        }
+        return aliased;
     }
 }

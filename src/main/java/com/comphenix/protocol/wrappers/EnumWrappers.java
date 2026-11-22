@@ -1145,11 +1145,11 @@ public abstract class EnumWrappers {
     }
 
     public static EquivalentConverter<PlayerDigType> getPlayerDiggingActionConverter() {
-        return cachedConverter(getPlayerDigTypeClass(), PlayerDigType.class, AliasedEnumConverter::new);
+        return cachedConverter(ALIASED_CONVERTER_CACHE, getPlayerDigTypeClass(), PlayerDigType.class, AliasedEnumConverter::new);
     }
 
     public static EquivalentConverter<PlayerAction> getEntityActionConverter() {
-        return cachedConverter(getPlayerActionClass(), PlayerAction.class, AliasedEnumConverter::new);
+        return cachedConverter(ALIASED_CONVERTER_CACHE, getPlayerActionClass(), PlayerAction.class, AliasedEnumConverter::new);
     }
 
     public static EquivalentConverter<ScoreboardAction> getUpdateScoreActionConverter() {
@@ -1229,17 +1229,25 @@ public abstract class EnumWrappers {
 
     // Converters are stateless apart from their lookup caches, so one instance per enum pair is shared. Creating a new
     // converter for every packet access threw those caches away (and made aliased lookups throw on every read).
+    // One cache per conversion strategy: the same enum pair can be requested with alias support (the dedicated
+    // accessors) and without it (getGenericConverter), and neither may be answered with the other's converter.
     private static final Map<Class<?>, Map<Class<?>, EquivalentConverter<?>>> CONVERTER_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Map<Class<?>, EquivalentConverter<?>>> ALIASED_CONVERTER_CACHE = new ConcurrentHashMap<>();
 
-    @SuppressWarnings("unchecked")
     private static <T> EquivalentConverter<T> cachedConverter(Class<?> genericClass, Class<T> specificType,
             BiFunction<Class<?>, Class<T>, EquivalentConverter<T>> factory) {
+        return cachedConverter(CONVERTER_CACHE, genericClass, specificType, factory);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> EquivalentConverter<T> cachedConverter(Map<Class<?>, Map<Class<?>, EquivalentConverter<?>>> cache,
+            Class<?> genericClass, Class<T> specificType, BiFunction<Class<?>, Class<T>, EquivalentConverter<T>> factory) {
         if (genericClass == null) {
             // unknown (or not yet resolved) class, don't keep a converter that cannot convert anything
             return factory.apply(null, specificType);
         }
 
-        Map<Class<?>, EquivalentConverter<?>> byGenericClass = CONVERTER_CACHE.computeIfAbsent(specificType,
+        Map<Class<?>, EquivalentConverter<?>> byGenericClass = cache.computeIfAbsent(specificType,
                 key -> new ConcurrentHashMap<>());
         return (EquivalentConverter<T>) byGenericClass.computeIfAbsent(genericClass,
                 key -> factory.apply(genericClass, specificType));
