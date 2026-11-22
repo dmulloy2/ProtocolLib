@@ -207,8 +207,10 @@ public class StructureModifier<T> {
         if (type == null) {
             throw new IllegalArgumentException("Type cannot be NULL.");
         }
-        if (!Util.isLoadedByProtocolLibOrParent(type)) {
-            // the class of another plugin: caching its fields would keep that plugin's class loader alive
+        if (!Util.isLoadedByProtocolLibOrParent(type)
+                || (superclassExclude != null && !Util.isLoadedByProtocolLibOrParent(superclassExclude))) {
+            // a class of another plugin: caching its fields, or using it as a cache key, would keep that plugin's
+            // class loader alive
             return findFields(type, superclassExclude);
         }
 

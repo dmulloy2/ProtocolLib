@@ -108,6 +108,8 @@ public class SharedStructureModifierTest {
         assertEquals(2, StructureModifier.forClass(foreignClass).withTarget(instance).size());
         assertNotNull(InternalStructure.getConverter().getSpecific(instance));
         StructureModifier.forClass(Sample.class).withType(foreignClass);
+        // the field cache of a shared server class, with a foreign class as the excluded superclass
+        assertEquals(4, new StructureModifier<>(Sample.class, foreignClass, false).size());
         return new WeakReference<>(foreignLoader);
     }
 
