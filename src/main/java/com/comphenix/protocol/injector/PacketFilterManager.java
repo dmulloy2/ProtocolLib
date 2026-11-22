@@ -529,7 +529,26 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
     }
     
     private boolean requiresMainThread(PacketContainer packet) {
-        return this.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread();
+        if (this.server.isPrimaryThread()) {
+            return false;
+        }
+
+        if (this.hasMainThreadListener(packet.getType())) {
+            return true;
+        }
+
+        // the listeners of the packets inside a bundle are invoked as well, so they need the main thread too
+        if (packet.getType() == PacketType.Play.Server.BUNDLE) {
+            Iterable<PacketContainer> subPackets = packet.getPacketBundles().readSafely(0);
+            if (subPackets != null) {
+                for (PacketContainer subPacket : subPackets) {
+                    if (subPacket != null && this.hasMainThreadListener(subPacket.getType())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void runMonitorListeners(PacketContainer packet, Runnable notifyMonitor) {
