@@ -141,12 +141,13 @@ public class NettyChannelInjectorTest {
 
     @Test
     public void testSkippedPacketsAreComparedByIdentity() throws Exception {
-        ListenerManager listenerManager = mock(ListenerManager.class);
-        when(listenerManager.hasOutboundListener(PacketType.Play.Server.SYSTEM_CHAT)).thenReturn(true);
-
         // two different packets with the same content: record packets compare equal
         Object first = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT).getHandle();
         Object second = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT).getHandle();
+
+        ListenerManager listenerManager = mock(ListenerManager.class);
+        when(listenerManager.hasOutboundListener(PacketType.Play.Server.SYSTEM_CHAT)).thenReturn(true);
+        when(listenerManager.mayHaveOutboundListener(first.getClass())).thenReturn(true);
         assertEquals(first, second);
         assertNotSame(first, second);
 
