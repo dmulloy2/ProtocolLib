@@ -1,5 +1,9 @@
 package com.comphenix.protocol.async;
 
+import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -8,10 +12,13 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.scheduler.ProtocolScheduler;
 import com.comphenix.protocol.scheduler.Task;
 
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -95,6 +102,63 @@ class AsyncListenerHandlerTest {
 
         assertTrue(outbound.isCancelled());
         assertTrue(inbound.isCancelled());
+    }
+
+    @Test
+    void testCancelledHandlerRejectsPackets() {
+        AsyncFilterManager manager = createManager(mock(ProtocolScheduler.class));
+        AsyncListenerHandler handler = manager.registerAsyncHandler(
+                new PacketAdapter(mock(Plugin.class), PacketType.Play.Server.SYSTEM_CHAT) { }, false);
+
+        handler.cancel();
+
+        // the workers of a cancelled handler are gone, a packet queued there would never be processed
+        assertFalse(handler.offerPacket(createQueuedEvent()));
+    }
+
+    @Test
+    void testUnregisteredHandlerPassesQueuedPacketsOn() throws Exception {
+        AsyncFilterManager manager = createManager(mock(ProtocolScheduler.class));
+        Plugin disabled = mock(Plugin.class);
+        Plugin remaining = mock(Plugin.class);
+        AsyncListenerHandler first = manager.registerAsyncHandler(
+                new PacketAdapter(disabled, PacketType.Play.Server.SYSTEM_CHAT) { }, false);
+        AsyncListenerHandler second = manager.registerAsyncHandler(
+                new PacketAdapter(remaining, PacketType.Play.Server.SYSTEM_CHAT) { }, false);
+
+        Player player = mock(Player.class);
+        // the sending queues are keyed by address
+        when(player.getAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 25565));
+        PacketEvent syncEvent = PacketEvent.fromServer(this,
+                new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT), player);
+        manager.enqueueSyncPacket(syncEvent, manager.createAsyncMarker(mock(Injector.class)));
+
+        // no worker has been started, so the packet waits in the queue of the first handler and holds a slot
+        int slots = availableSlots(manager);
+        assertEquals(1, queueSize(first));
+        assertEquals(0, queueSize(second));
+
+        // what disabling the plugin of the first handler does
+        manager.unregisterAsyncHandlers(disabled);
+        assertEquals(1, queueSize(second), "the queued packet was not passed on to the next handler");
+        assertEquals(slots, availableSlots(manager));
+
+        manager.unregisterAsyncHandlers(remaining);
+        assertEquals(slots + 1, availableSlots(manager), "the processing slot of the packet was not released");
+    }
+
+    private static int availableSlots(AsyncFilterManager manager) throws ReflectiveOperationException {
+        Field queueField = AsyncFilterManager.class.getDeclaredField("serverProcessingQueue");
+        queueField.setAccessible(true);
+        Field slotsField = PacketProcessingQueue.class.getDeclaredField("concurrentProcessing");
+        slotsField.setAccessible(true);
+        return ((Semaphore) slotsField.get(queueField.get(manager))).availablePermits();
+    }
+
+    private static int queueSize(AsyncListenerHandler handler) throws ReflectiveOperationException {
+        Field queueField = AsyncListenerHandler.class.getDeclaredField("queuedPackets");
+        queueField.setAccessible(true);
+        return ((Collection<?>) queueField.get(handler)).size();
     }
 
     private static AsyncFilterManager createManager(ProtocolScheduler scheduler) {

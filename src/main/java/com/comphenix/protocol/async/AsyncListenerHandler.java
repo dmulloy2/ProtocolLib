@@ -204,7 +204,17 @@ public class AsyncListenerHandler {
         if (packet == null)
             throw new IllegalArgumentException("packet is NULL");
 
+        // the workers of a cancelled handler are gone, so the caller passes the packet on instead
+        if (cancelled) {
+            return false;
+        }
+
         if (queuedPackets.offer(packet)) {
+            // close() may have drained the queue after the check above: take the packet back unless the drain already
+            // passed it on
+            if (cancelled && queuedPackets.remove(packet)) {
+                return false;
+            }
             return true;
         }
 
@@ -671,8 +681,22 @@ public class AsyncListenerHandler {
      * Use the poision pill method to stop every worker thread.
      */
     private void stopThreads() {
+        // Pass the queued packets on instead of dropping them: a dropped packet keeps its processing slot forever and
+        // holds back the packets queued after it for the same player until it expires
+        PacketEvent queued;
+        while ((queued = queuedPackets.poll()) != null) {
+            if (queued == WAKEUP_PACKET || queued == INTERUPT_PACKET || queued.getAsyncMarker() == null) {
+                continue;
+            }
+
+            try {
+                filterManager.signalPacketTransmission(queued);
+            } catch (RuntimeException e) {
+                filterManager.getErrorReporter().reportMinimal(listener.getPlugin(), "close()", e);
+            }
+        }
+
         // Poison Pill Shutdown
-        queuedPackets.clear();
         stop(started.get());
         
         // Individual shut down is irrelevant now
