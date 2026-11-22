@@ -158,7 +158,9 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
         
         // A monitor listener should never modify a packet/event so we can simply invoke monitor listeners
         // independently of our injector pipeline 
-        if (!filters && this.outboundListeners.containsPacketType(packet.getType())) {
+        // bundles are always passed on: the listener set invokes the listeners of the packets inside them
+        if (!filters && (packet.getType() == PacketType.Play.Server.BUNDLE
+                || this.outboundListeners.containsPacketType(packet.getType()))) {
             this.runMonitorListeners(packet, () -> {
                 PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
                 this.outboundListeners.invoke(event, ListenerPriority.MONITOR);
