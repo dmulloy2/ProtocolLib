@@ -48,6 +48,28 @@ public final class Util {
     }
 
     /**
+     * Whether the given class is loaded by ProtocolLib's class loader or one of its parents (the server and the JDK),
+     * so it lives at least as long as ProtocolLib. Static caches must only keep such classes: a class of another plugin
+     * would keep that plugin's class loader alive after the plugin is disabled or reloaded.
+     *
+     * @param type the class to check.
+     * @return true if the class may be kept in a static cache of ProtocolLib.
+     */
+    public static boolean isLoadedByProtocolLibOrParent(Class<?> type) {
+        ClassLoader loader = type.getClassLoader();
+        if (loader == null) {
+            return true;
+        }
+
+        for (ClassLoader current = Util.class.getClassLoader(); current != null; current = current.getParent()) {
+            if (current == loader) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Checks if the server is getting reloaded by walking down the current thread stack trace.
      *
      * @return true if the server is getting reloaded, false otherwise.

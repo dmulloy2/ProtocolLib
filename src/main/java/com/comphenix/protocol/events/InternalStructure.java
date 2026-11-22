@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.Converters;
 
 public class InternalStructure extends AbstractStructure {
@@ -21,6 +22,10 @@ public class InternalStructure extends AbstractStructure {
         StructureModifier<Object> modifier = MODIFIERS.get(type);
         if (modifier == null) {
             modifier = new StructureModifier<>(type);
+            if (!Util.isLoadedByProtocolLibOrParent(type)) {
+                // the class of another plugin: caching it would keep that plugin's class loader alive
+                return modifier;
+            }
             StructureModifier<Object> existing = MODIFIERS.putIfAbsent(type, modifier);
             if (existing != null) {
                 modifier = existing;

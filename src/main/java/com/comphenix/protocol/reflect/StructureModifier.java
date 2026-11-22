@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.utility.Util;
 
 /**
  * Provides list-oriented access to the fields of a Minecraft packet.
@@ -166,6 +167,10 @@ public class StructureModifier<T> {
         if (modifier == null) {
             // not computeIfAbsent: building a modifier may recursively access this map
             modifier = new StructureModifier<>(type, null, false);
+            if (!Util.isLoadedByProtocolLibOrParent(type)) {
+                // the class of another plugin: sharing it would keep that plugin's class loader alive
+                return modifier;
+            }
             StructureModifier<Object> existing = SHARED_MODIFIERS.putIfAbsent(type, modifier);
             if (existing != null) {
                 modifier = existing;
@@ -176,21 +181,42 @@ public class StructureModifier<T> {
 
     private static final Class<?> NULL_CACHE_CLASS_REPLACEMENT = Void.class;
 
+    private static List<FieldAccessor> findFields(Class<?> type, Class<?> superclassExclude) {
+        return FuzzyReflection.fromClass(type, true)
+            .getDeclaredFields(superclassExclude)
+            .stream()
+            .filter(field -> !Modifier.isStatic(field.getModifiers()))
+            .map(Accessors::getFieldAccessor)
+            .collect(Collectors.toList());
+    }
+
+    private static boolean isCacheableLookup(Class<?> fieldType, Class<?>[] paramTypes) {
+        if (!Util.isLoadedByProtocolLibOrParent(fieldType)) {
+            return false;
+        }
+        for (Class<?> paramType : paramTypes) {
+            if (!Util.isLoadedByProtocolLibOrParent(paramType)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Used to filter out irrelevant fields
     private static List<FieldAccessor> getFields(Class<?> type, Class<?> superclassExclude) {
         if (type == null) {
             throw new IllegalArgumentException("Type cannot be NULL.");
         }
+        if (!Util.isLoadedByProtocolLibOrParent(type)) {
+            // the class of another plugin: caching its fields would keep that plugin's class loader alive
+            return findFields(type, superclassExclude);
+        }
+
         Class<?> superclassKey = superclassExclude == null ? NULL_CACHE_CLASS_REPLACEMENT : superclassExclude;
         Map<Class<?>, List<FieldAccessor>> cache = FIELD_CACHE.computeIfAbsent(type, key -> new ConcurrentHashMap<>());
         List<FieldAccessor> accessors = cache.get(superclassKey);
         if (accessors == null) {
-            accessors = FuzzyReflection.fromClass(type, true)
-                .getDeclaredFields(superclassExclude)
-                .stream()
-                .filter(field -> !Modifier.isStatic(field.getModifiers()))
-                .map(Accessors::getFieldAccessor)
-                .collect(Collectors.toList());
+            accessors = findFields(type, superclassExclude);
             List<FieldAccessor> existing = cache.putIfAbsent(superclassKey, accessors);
             if (existing != null) {
                 accessors = existing;
@@ -602,12 +628,15 @@ public class StructureModifier<T> {
                 }
             }
 
-            // Cache structure modifiers
+            // Cache structure modifiers, unless the lookup uses a class of another plugin: modifiers can be shared
+            // statically, and the cache entry would keep that plugin's class loader alive
             result = this.withFieldType(fieldType, fields, defaults);
-            if (paramTypeKey == null) {
-                this.subtypeCache.put(fieldType, result);
-            } else {
-                paramCache.put(paramTypeKey, result);
+            if (isCacheableLookup(fieldType, paramTypes)) {
+                if (paramTypeKey == null) {
+                    this.subtypeCache.put(fieldType, result);
+                } else {
+                    paramCache.put(paramTypeKey, result);
+                }
             }
         }
 
