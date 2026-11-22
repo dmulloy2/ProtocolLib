@@ -17,6 +17,7 @@ package com.comphenix.protocol;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.BasicErrorReporter;
+import com.comphenix.protocol.error.ChatWarningLimiter;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -284,13 +285,6 @@ public class ProtocolLib extends JavaPlugin {
 
         // Broadcast information to every user too
         this.redirectHandler = new Handler() {
-            // a warning logged for every packet would otherwise turn into a chat message for every packet
-            private static final long WINDOW_MILLIS = 10_000;
-            private static final int MAX_MESSAGES_PER_WINDOW = 5;
-
-            private long windowStart;
-            private int messagesInWindow;
-
             @Override
             public void publish(LogRecord record) {
                 // Only display warnings and above
@@ -304,18 +298,10 @@ public class ProtocolLib extends JavaPlugin {
                     return;
                 }
 
-                if (this.tryAcquireMessage()) {
+                // a warning logged for every packet would otherwise turn into a chat message for every packet
+                if (ChatWarningLimiter.tryAcquire()) {
                     ProtocolLib.this.commandPacket.broadcastMessageSilently(record.getMessage(), permission);
                 }
-            }
-
-            private synchronized boolean tryAcquireMessage() {
-                long now = System.currentTimeMillis();
-                if (now - this.windowStart > WINDOW_MILLIS) {
-                    this.windowStart = now;
-                    this.messagesInWindow = 0;
-                }
-                return ++this.messagesInWindow <= MAX_MESSAGES_PER_WINDOW;
             }
 
             @Override
