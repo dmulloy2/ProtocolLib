@@ -755,7 +755,8 @@ public abstract class EnumWrappers {
     private static Class<?> HEIGHTMAP_TYPE_CLASS = null;
 
     private static boolean INITIALIZING = false;
-    private static boolean INITIALIZED = false;
+    // volatile: initialize() reads it without holding the lock, and readers must also see the filled maps
+    private static volatile boolean INITIALIZED = false;
     private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
     private static Map<Class<?>, EquivalentConverter<?>> FROM_WRAPPER = new HashMap<>();
     static Set<String> INVALID = new HashSet<>();
@@ -946,10 +947,13 @@ public abstract class EnumWrappers {
     }
 
     public static Map<Class<?>, EquivalentConverter<?>> getFromNativeMap() {
+        // the maps are only filled by initialize, callers may run before any other accessor did
+        initialize();
         return FROM_NATIVE;
     }
 
     public static Map<Class<?>, EquivalentConverter<?>> getFromWrapperMap() {
+        initialize();
         return FROM_WRAPPER;
     }
 

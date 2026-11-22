@@ -19,7 +19,7 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
 /**
@@ -30,7 +30,7 @@ import java.util.Map;
 public class ObjectWriter {
 
     // Cache structure modifiers
-    private static final Map<Class<?>, StructureModifier<Object>> CACHE = new HashMap<>();
+    private static final Map<Class<?>, StructureModifier<Object>> CACHE = new ConcurrentHashMap<>();
 
     /**
      * Retrieve a usable structure modifier for the given object type.

@@ -1,10 +1,10 @@
 package com.comphenix.protocol.concurrent;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketListener;
@@ -21,9 +21,10 @@ import com.google.common.collect.ImmutableSet;
 public class PacketTypeListenerSet {
 
     // Map to store packet types and their associated listeners
-    private final Map<PacketType, Set<PacketListener>> typeMap = new HashMap<>();
+    // concurrent collections: writes are synchronized, but reads happen lock-free from netty threads
+    private final Map<PacketType, Set<PacketListener>> typeMap = new ConcurrentHashMap<>();
     // Set to store packet classes of packet types that have listeners
-    private final Set<Class<?>> classSet = new HashSet<>();
+    private final Set<Class<?>> classSet = ConcurrentHashMap.newKeySet();
 
     /**
      * Adds a listener for a specific packet type.
@@ -44,7 +45,11 @@ public class PacketTypeListenerSet {
         }
 
         // we can always add the packet class here as long as the listener got added
-        this.classSet.add(packetType.getPacketClass());
+        // unsupported types have no class (and concurrent sets reject null)
+        Class<?> packetClass = packetType.getPacketClass();
+        if (packetClass != null) {
+            this.classSet.add(packetClass);
+        }
 
         return true;
     }
@@ -65,7 +70,7 @@ public class PacketTypeListenerSet {
         Set<PacketListener> listenerSet = this.typeMap.get(packetType);
         if (listenerSet == null) {
             // this should never happen so better check for it during unit tests
-            assert !classSet.contains(packetType.getPacketClass());
+            assert packetType.getPacketClass() == null || !classSet.contains(packetType.getPacketClass());
             return false;
         }
 
@@ -77,7 +82,10 @@ public class PacketTypeListenerSet {
         // packet type has no listeners remove type
         if (listenerSet.isEmpty()) {
             this.typeMap.remove(packetType);
-            this.classSet.remove(packetType.getPacketClass());
+            Class<?> packetClass = packetType.getPacketClass();
+            if (packetClass != null) {
+                this.classSet.remove(packetClass);
+            }
         }
 
         return true;
@@ -90,7 +98,8 @@ public class PacketTypeListenerSet {
      * @return true if there are listeners for the packet type, false otherwise
      */
     public boolean contains(PacketType packetType) {
-        return this.typeMap.containsKey(packetType);
+        // the concurrent map rejects null keys, unknown packets have no type
+        return packetType != null && this.typeMap.containsKey(packetType);
     }
 
     /**
@@ -100,7 +109,7 @@ public class PacketTypeListenerSet {
      * @return true if there are listeners for the packet class, false otherwise
      */
     public boolean contains(Class<?> packetClass) {
-        return this.classSet.contains(packetClass);
+        return packetClass != null && this.classSet.contains(packetClass);
     }
 
     /**
@@ -115,7 +124,7 @@ public class PacketTypeListenerSet {
     /**
      * Clears all listeners and their associated packet types.
      */
-    public void clear() {
+    public synchronized void clear() {
         this.typeMap.clear();
         this.classSet.clear();
     }

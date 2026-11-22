@@ -169,8 +169,19 @@ public class AggregateCloner implements Cloner {
     // List of clone methods
     private List<Cloner> cloners;
 
-    private WeakReference<Object> lastObject;
-    private int lastResult;
+    // object and cloner index of the last canClone call, published together: two separate fields could pair the
+    // object of one thread with the result of another
+    private volatile LastDecision lastDecision;
+
+    private static final class LastDecision {
+        private final WeakReference<Object> object;
+        private final int result;
+
+        private LastDecision(Object object, int result) {
+            this.object = new WeakReference<>(object);
+            this.result = result;
+        }
+    }
 
     /**
      * Begins constructing a new aggregate cloner.
@@ -206,9 +217,9 @@ public class AggregateCloner implements Cloner {
     @Override
     public boolean canClone(Object source) {
         // Optimize a bit
-        lastResult = getFirstCloner(source);
-        lastObject = new WeakReference<>(source);
-        return lastResult >= 0 && lastResult < cloners.size();
+        int result = getFirstCloner(source);
+        lastDecision = new LastDecision(source, result);
+        return result >= 0 && result < cloners.size();
     }
 
     /**
@@ -234,8 +245,9 @@ public class AggregateCloner implements Cloner {
         int index = 0;
 
         // Are we dealing with the same object?
-        if (lastObject != null && lastObject.get() == source) {
-            index = lastResult;
+        LastDecision decision = lastDecision;
+        if (decision != null && decision.object.get() == source) {
+            index = decision.result;
         } else {
             index = getFirstCloner(source);
         }
