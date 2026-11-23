@@ -70,9 +70,18 @@ public class DefaultInstances implements InstanceProvider {
      * The constructor that the search for the default value of each type chose with the registered providers. The
      * search tries the constructors in a fixed order, so without this every new value would fail on the same
      * constructors again, which costs microseconds when they throw: a new Vec3 tried Vec3(Vector3fc) with NULL before
-     * Vec3(Vec3i). Only classes that live as long as ProtocolLib are kept.
+     * Vec3(Vec3i). Only classes that live as long as ProtocolLib are kept, and only if {@link #rememberConstructors}.
      */
     private final Map<Class<?>, KnownConstructor> knownConstructors = new ConcurrentHashMap<>();
+
+    /**
+     * Whether the constructors that the searches chose can be remembered. A remembered constructor is only right as
+     * long as the search would choose it again, so every result that the search depends on must stay the same. Only the
+     * built-in providers ensure that. A custom provider can return a value for a type that it returned NULL for
+     * before, and then the search can choose a constructor that it ruled out. The same holds for a subclass, which can
+     * override {@link #createInstance(Class, Constructor, Class[], Object[])} and {@link #contains(Object[], Object)}.
+     */
+    private final boolean rememberConstructors;
 
     /**
      * What a search for the default value of a type went through: every type whose constructors it tried, the deepest
@@ -131,6 +140,7 @@ public class DefaultInstances implements InstanceProvider {
      */
     public DefaultInstances(ImmutableList<InstanceProvider> registered) {
         this.registered = registered;
+        this.rememberConstructors = canRememberConstructors();
     }
     
     /**
@@ -141,6 +151,31 @@ public class DefaultInstances implements InstanceProvider {
         this.nonNull = other.nonNull;
         this.maximumRecursion = other.maximumRecursion;
         this.registered = other.registered;
+        this.rememberConstructors = canRememberConstructors();
+    }
+
+    private boolean canRememberConstructors() {
+        if (getClass() != DefaultInstances.class || registered == null) {
+            return false;
+        }
+
+        for (InstanceProvider provider : registered) {
+            if (!isBuiltIn(provider)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Whether the provider is one of the built-in providers, whose results only depend on the type. A subclass can
+     * override {@link InstanceProvider#create(Class)}, so it must be an instance of that exact class.
+     */
+    private static boolean isBuiltIn(InstanceProvider provider) {
+        Class<?> providerClass = provider.getClass();
+        return providerClass == PrimitiveGenerator.class
+                || providerClass == CollectionGenerator.class
+                || provider == MinecraftGenerator.INSTANCE;
     }
     
     /**
@@ -383,7 +418,7 @@ public class DefaultInstances implements InstanceProvider {
             return null;
         }
 
-        boolean remember = providers == registered && Util.isLoadedByProtocolLibOrParent(type);
+        boolean remember = rememberConstructors && providers == registered && Util.isLoadedByProtocolLibOrParent(type);
         KnownConstructor known = remember ? knownConstructors.get(type) : null;
         if (known != null && !known.appliesTo(recursionLevel, maximumRecursion, creating)) {
             known = null;

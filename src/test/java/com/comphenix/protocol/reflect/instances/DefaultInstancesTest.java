@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.comphenix.protocol.BukkitInitialization;
 
@@ -91,6 +92,54 @@ public class DefaultInstancesTest {
         for (int i = 0; i < 2; i++) {
             assertEquals(nodeLinked, linkFirst.getDefault(Node.class).linked);
             assertEquals(linkNodeLinked, nodeFirst.getDefault(Link.class).node.linked);
+        }
+    }
+
+    @Test
+    public void testConstructorThatACustomProviderRuledOutIsTriedAgain() {
+        // A custom provider can return a value for a type that it returned null for before. The search must then
+        // choose the constructor that this value allows.
+        AtomicReference<Runnable> task = new AtomicReference<>();
+        InstanceProvider tasks = type -> type == Runnable.class ? task.get() : null;
+        DefaultInstances instances = DefaultInstances.fromArray(PrimitiveGenerator.INSTANCE, tasks);
+        instances.setNonNull(true);
+
+        assertFalse(instances.getDefault(Task.class).fromRunnable);
+        task.set(() -> {
+        });
+        assertTrue(instances.getDefault(Task.class).fromRunnable);
+    }
+
+    @Test
+    public void testConstructorThatASubclassRefusedIsTriedAgain() {
+        // An override of createInstance can create an instance with a constructor that it refused before. The search
+        // must then use the constructor listed first by the JVM again, whichever one that is.
+        List<Constructor<?>> attempted = new ArrayList<>();
+        DefaultInstances instances = new DefaultInstances(PrimitiveGenerator.INSTANCE) {
+            @Override
+            protected <T> T createInstance(Class<T> type, Constructor<T> constructor, Class<?>[] types, Object[] params) {
+                attempted.add(constructor);
+                // only the very first attempt fails
+                return attempted.size() == 1 ? null : super.createInstance(type, constructor, types, params);
+            }
+        };
+
+        assertNotNull(instances.getDefault(TiedConstructors.class));
+        int firstSearch = attempted.size();
+        assertNotNull(instances.getDefault(TiedConstructors.class));
+        assertEquals(attempted.get(0), attempted.get(firstSearch));
+    }
+
+    public static final class Task {
+
+        public final boolean fromRunnable;
+
+        public Task(Runnable runnable) {
+            this.fromRunnable = true;
+        }
+
+        public Task(int first, int second) {
+            this.fromRunnable = false;
         }
     }
 
