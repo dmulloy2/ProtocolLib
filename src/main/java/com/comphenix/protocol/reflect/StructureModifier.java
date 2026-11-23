@@ -87,10 +87,11 @@ public class StructureModifier<T> {
 
     // Improved default values
     protected Map<FieldAccessor, Integer> defaultFields;
-    // Cache of previous types
+    // Cache of previous types, as given to initialize. This class uses derivedModifiers instead; the field is NULL for
+    // modifiers created by withType, whose cache is only created when it is first needed.
     protected Map<Class<?>, StructureModifier<?>> subtypeCache;
-    // Cache of previous parameterized types, shared with all copies created by withTarget
-    private Map<List<Type>, StructureModifier<?>> paramTypeCache;
+    // Modifiers derived from this one by field type, shared with all copies created by withTarget
+    private DerivedModifiers derivedModifiers;
 
     private static final Class<?>[] NO_PARAM_TYPES = new Class<?>[0];
 
@@ -129,6 +130,60 @@ public class StructureModifier<T> {
      */
     protected StructureModifier() {
 
+    }
+
+    /**
+     * The modifiers derived from a modifier by field type, shared by the modifier and every copy created by withTarget.
+     * <p>
+     * Most modifiers, such as those returned by the typed getters of a packet, are never narrowed further. Their maps
+     * are only created when a derived modifier is first stored, instead of two maps for every modifier.
+     */
+    private static final class DerivedModifiers {
+
+        private volatile Map<Class<?>, StructureModifier<?>> byType;
+        private volatile Map<List<Type>, StructureModifier<?>> byParamType;
+
+        DerivedModifiers(Map<Class<?>, StructureModifier<?>> byType) {
+            this.byType = byType;
+        }
+
+        StructureModifier<?> get(Class<?> type) {
+            Map<Class<?>, StructureModifier<?>> map = this.byType;
+            return map == null ? null : map.get(type);
+        }
+
+        StructureModifier<?> get(List<Type> paramTypeKey) {
+            Map<List<Type>, StructureModifier<?>> map = this.byParamType;
+            return map == null ? null : map.get(paramTypeKey);
+        }
+
+        void put(Class<?> type, StructureModifier<?> modifier) {
+            Map<Class<?>, StructureModifier<?>> map = this.byType;
+            if (map == null) {
+                synchronized (this) {
+                    map = this.byType;
+                    if (map == null) {
+                        map = new ConcurrentHashMap<>();
+                        this.byType = map;
+                    }
+                }
+            }
+            map.put(type, modifier);
+        }
+
+        void put(List<Type> paramTypeKey, StructureModifier<?> modifier) {
+            Map<List<Type>, StructureModifier<?>> map = this.byParamType;
+            if (map == null) {
+                synchronized (this) {
+                    map = this.byParamType;
+                    if (map == null) {
+                        map = new ConcurrentHashMap<>();
+                        this.byParamType = map;
+                    }
+                }
+            }
+            map.put(paramTypeKey, modifier);
+        }
     }
 
     // Used to generate plausible default values
@@ -233,8 +288,8 @@ public class StructureModifier<T> {
      * @param other - information to set.
      */
     protected void initialize(StructureModifier<T> other) {
-        // share the cache before initializing, so that initialize does not allocate a new one
-        this.paramTypeCache = other.paramTypeCache;
+        // share the derived modifiers before initializing, so that initialize does not create new ones
+        this.derivedModifiers = other.derivedModifiers;
         this.initialize(
                 other.targetType,
                 other.fieldType,
@@ -252,7 +307,7 @@ public class StructureModifier<T> {
      * @param data          - list of fields to modify.
      * @param defaultFields - list of fields that will be automatically initialized.
      * @param converter     - converts between the common field type and the actual type the consumer expects.
-     * @param subTypeCache  - a structure modifier cache.
+     * @param subTypeCache  - a structure modifier cache, or NULL to create one when it is first needed.
      */
     protected void initialize(
             Class<?> targetType,
@@ -268,8 +323,9 @@ public class StructureModifier<T> {
         this.defaultFields = defaultFields;
         this.converter = converter;
         this.subtypeCache = subTypeCache;
-        if (this.paramTypeCache == null) {
-            this.paramTypeCache = new ConcurrentHashMap<>();
+        // keep the derived modifiers shared by initialize(other), unless a different cache is given
+        if (this.derivedModifiers == null || (subTypeCache != null && subTypeCache != this.derivedModifiers.byType)) {
+            this.derivedModifiers = new DerivedModifiers(subTypeCache);
         }
     }
 
@@ -583,20 +639,21 @@ public class StructureModifier<T> {
             paramTypeKey.addAll(Arrays.asList(paramTypes));
         }
 
-        Map<List<Type>, StructureModifier<?>> paramCache = this.paramTypeCache;
-        if (paramTypeKey != null && paramCache == null) {
+        DerivedModifiers derived = this.derivedModifiers;
+        if (derived == null) {
             // only possible for modifiers that were never initialized
-            paramCache = new ConcurrentHashMap<>();
-            this.paramTypeCache = paramCache;
+            derived = new DerivedModifiers(null);
+            this.derivedModifiers = derived;
         }
 
         // Do we need to update the cache?
         StructureModifier<R> result = (StructureModifier<R>) (paramTypeKey == null
-                ? this.subtypeCache.get(fieldType)
-                : paramCache.get(paramTypeKey));
+                ? derived.get(fieldType)
+                : derived.get(paramTypeKey));
         if (result == null) {
             List<FieldAccessor> fields = new ArrayList<>();
-            Map<FieldAccessor, Integer> defaults = new HashMap<>();
+            // most derived modifiers have no default fields and only read them, so they share an empty map
+            Map<FieldAccessor, Integer> defaults = null;
 
             // filter out all fields we don't need
             for (int i = 0; i < this.accessors.size(); i++) {
@@ -626,18 +683,21 @@ public class StructureModifier<T> {
                 // this field should be included
                 fields.add(accessor);
                 if (this.defaultFields.containsKey(accessor)) {
+                    if (defaults == null) {
+                        defaults = new HashMap<>();
+                    }
                     defaults.put(accessor, i);
                 }
             }
 
             // Cache structure modifiers, unless the lookup uses a class of another plugin: modifiers can be shared
             // statically, and the cache entry would keep that plugin's class loader alive
-            result = this.withFieldType(fieldType, fields, defaults);
+            result = this.withFieldType(fieldType, fields, defaults == null ? Collections.emptyMap() : defaults);
             if (isCacheableLookup(fieldType, paramTypes)) {
                 if (paramTypeKey == null) {
-                    this.subtypeCache.put(fieldType, result);
+                    derived.put(fieldType, result);
                 } else {
-                    paramCache.put(paramTypeKey, result);
+                    derived.put(paramTypeKey, result);
                 }
             }
         }
@@ -684,13 +744,14 @@ public class StructureModifier<T> {
             EquivalentConverter<V> converter
     ) {
         StructureModifier<V> result = new StructureModifier<>();
+        // the cache of the new modifier is created when it is first needed
         result.initialize(
                 this.targetType,
                 fieldType,
                 filtered,
                 defaults,
                 converter,
-                new ConcurrentHashMap<>());
+                null);
         return result;
     }
 
