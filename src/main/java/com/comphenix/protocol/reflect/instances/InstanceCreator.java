@@ -59,6 +59,15 @@ public final class InstanceCreator implements Supplier<Object> {
         return params;
     }
 
+    private static boolean containsNull(Object[] params) {
+        for (Object param : params) {
+            if (param == null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean containsBannedParameter(Class<?>[] paramTypes) {
         for (Class<?> paramType : paramTypes) {
             if (BANNED_PARAMETERS.containsKey(paramType)) {
@@ -86,6 +95,7 @@ public final class InstanceCreator implements Supplier<Object> {
 
         Object result = null;
         int minCount = Integer.MAX_VALUE;
+        boolean complete = false;
 
         for (Constructor<?> testCtor : type.getDeclaredConstructors()) {
             Class<?>[] paramTypes = testCtor.getParameterTypes();
@@ -99,10 +109,19 @@ public final class InstanceCreator implements Supplier<Object> {
 
             Object[] testParams = createParams(paramTypes);
 
+            // The JVM lists constructors in an unspecified order that can differ between runs. Among those with the
+            // fewest parameters, keep one that received a value for every parameter over one that received null,
+            // which can leave the instance incomplete, such as the content of a new SYSTEM_CHAT packet.
+            boolean testComplete = !containsNull(testParams);
+            if (paramTypes.length == minCount && complete && !testComplete) {
+                continue;
+            }
+
             try {
                 ConstructorAccessor testAccessor = Accessors.getConstructorAccessor(testCtor);
                 result = testAccessor.invoke(testParams);
                 minCount = paramTypes.length;
+                complete = testComplete;
                 this.constructor = testAccessor;
                 this.paramTypes = paramTypes;
             } catch (Exception ignored) {
@@ -114,6 +133,7 @@ public final class InstanceCreator implements Supplier<Object> {
         }
 
         minCount = Integer.MAX_VALUE;
+        complete = false;
 
         for (Method testMethod : type.getDeclaredMethods()) {
             int modifiers = testMethod.getModifiers();
@@ -136,10 +156,17 @@ public final class InstanceCreator implements Supplier<Object> {
 
             Object[] testParams = createParams(paramTypes);
 
+            // same preference as for the constructors
+            boolean testComplete = !containsNull(testParams);
+            if (paramTypes.length == minCount && complete && !testComplete) {
+                continue;
+            }
+
             try {
                 MethodAccessor testAccessor = Accessors.getMethodAccessor(testMethod);
                 result = testAccessor.invoke(null, testParams);
                 minCount = paramTypes.length;
+                complete = testComplete;
                 this.factoryMethod = testAccessor;
                 this.paramTypes = paramTypes;
             } catch (Exception ignored) {
