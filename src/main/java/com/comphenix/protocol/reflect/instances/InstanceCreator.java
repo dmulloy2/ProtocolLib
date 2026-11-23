@@ -32,6 +32,11 @@ public final class InstanceCreator implements Supplier<Object> {
     private Class<?>[] paramTypes = null;
     private boolean failed = false;
 
+    // The value of every parameter of the chosen constructor or factory method: NULL, a value that every instance
+    // receives, or a FreshValue for a value that is created for every instance. Set once the choice is made, after
+    // the fields above.
+    private volatile Object[] paramValues = null;
+
     private final Class<?> type;
 
     private InstanceCreator(Class<?> type) {
@@ -58,6 +63,53 @@ public final class InstanceCreator implements Supplier<Object> {
         Object[] params = new Object[paramTypes.length];
         for (int i = 0; i < paramTypes.length; i++) {
             params[i] = createInstance(paramTypes[i]);
+        }
+        return params;
+    }
+
+    /**
+     * A parameter whose default value is a new object every time, such as a list or a block position. Every instance
+     * receives its own value, so that changing the value of one instance does not change another.
+     */
+    private static final class FreshValue {
+
+        private final Class<?> type;
+
+        private FreshValue(Class<?> type) {
+            this.type = type;
+        }
+    }
+
+    /**
+     * Decide how every instance receives the default value of each parameter of the chosen constructor or factory
+     * method, given the values it received when it was chosen.
+     * <p>
+     * Searching for a default value can take microseconds, mostly when there is none: a new BLOCK_CHANGE packet spent
+     * that long on its block state, only to receive NULL. A parameter without a default value therefore keeps
+     * receiving NULL, and a parameter whose default value is the same object every time, such as a boxed number, an
+     * enum constant or an empty optional, keeps receiving that object. Only the other parameters are created again.
+     */
+    private Object[] planParams(Class<?>[] paramTypes, Object[] chosenParams) {
+        Object[] values = new Object[paramTypes.length];
+        for (int i = 0; i < paramTypes.length; i++) {
+            Object again = createInstance(paramTypes[i]);
+            if (chosenParams[i] == null && again == null) {
+                values[i] = null;
+            } else if (chosenParams[i] == again) {
+                values[i] = again;
+            } else {
+                values[i] = new FreshValue(paramTypes[i]);
+            }
+        }
+        return values;
+    }
+
+    private Object[] createParams(Object[] paramValues) {
+        Object[] params = paramValues.clone();
+        for (int i = 0; i < params.length; i++) {
+            if (params[i] instanceof FreshValue) {
+                params[i] = createInstance(((FreshValue) params[i]).type);
+            }
         }
         return params;
     }
@@ -107,6 +159,13 @@ public final class InstanceCreator implements Supplier<Object> {
 
     @Override
     public Object get() {
+        Object[] values = this.paramValues;
+        if (values != null) {
+            // the constructor or factory method was chosen
+            Object[] params = createParams(values);
+            return constructor != null ? constructor.invoke(params) : factoryMethod.invoke(null, params);
+        }
+
         Object[] params = paramTypes != null ? createParams(paramTypes) : null;
 
         if (constructor != null) {
@@ -122,6 +181,7 @@ public final class InstanceCreator implements Supplier<Object> {
         }
 
         Object result = null;
+        Object[] chosenParams = null;
         int minCount = Integer.MAX_VALUE;
         int bestRank = -1;
 
@@ -147,6 +207,7 @@ public final class InstanceCreator implements Supplier<Object> {
             try {
                 ConstructorAccessor testAccessor = Accessors.getConstructorAccessor(testCtor);
                 result = testAccessor.invoke(testParams);
+                chosenParams = testParams;
                 minCount = paramTypes.length;
                 bestRank = testRank;
                 this.constructor = testAccessor;
@@ -156,6 +217,7 @@ public final class InstanceCreator implements Supplier<Object> {
         }
 
         if (result != null) {
+            this.paramValues = planParams(this.paramTypes, chosenParams);
             return result;
         }
 
@@ -199,6 +261,7 @@ public final class InstanceCreator implements Supplier<Object> {
                 }
 
                 result = testResult;
+                chosenParams = testParams;
                 minCount = paramTypes.length;
                 bestRank = testRank;
                 this.factoryMethod = testAccessor;
@@ -209,6 +272,8 @@ public final class InstanceCreator implements Supplier<Object> {
 
         if (result == null) {
             this.failed = true;
+        } else {
+            this.paramValues = planParams(this.paramTypes, chosenParams);
         }
 
         return result;

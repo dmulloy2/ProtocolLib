@@ -19,6 +19,7 @@ package com.comphenix.protocol.reflect.instances;
 
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
@@ -29,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 /**
@@ -60,6 +62,14 @@ public class DefaultInstances implements InstanceProvider {
      * Whether or not the constructor must be non-null.
      */
     private boolean nonNull;
+
+    /**
+     * The constructor that last created the default value of each type with the registered providers, tried first the
+     * next time. The other constructors with as few parameters are tried in a fixed order, so without it every new
+     * value would fail on the same constructors again, which costs microseconds when they throw: a new Vec3 tried
+     * Vec3(Vector3fc) with NULL before Vec3(Vec3i). Only classes that live as long as ProtocolLib are kept.
+     */
+    private final Map<Class<?>, Constructor<?>> knownConstructors = new ConcurrentHashMap<>();
     
     /**
      * Construct a default instance generator using the given instance providers.
@@ -127,6 +137,7 @@ public class DefaultInstances implements InstanceProvider {
      */
     public void setNonNull(boolean nonNull) {
         this.nonNull = nonNull;
+        this.knownConstructors.clear();
     }
     
     /**
@@ -145,6 +156,7 @@ public class DefaultInstances implements InstanceProvider {
         if (maximumRecursion < 1)
             throw new IllegalArgumentException("Maxmimum recursion height must be one or higher.");
         this.maximumRecursion = maximumRecursion;
+        this.knownConstructors.clear();
     }
 
     /**
@@ -310,12 +322,26 @@ public class DefaultInstances implements InstanceProvider {
 
         creating.add(type);
         try {
+            boolean remember = providers == registered && Util.isLoadedByProtocolLibOrParent(type);
+            if (remember) {
+                Constructor<T> known = (Constructor<T>) knownConstructors.get(type);
+                if (known != null) {
+                    T instance = createWithDefaults(type, known, providers, recursionLevel + 1, creating);
+                    if (instance != null) {
+                        return instance;
+                    }
+                }
+            }
+
             // Several constructors can have the fewest parameters, and the JVM lists them in an unspecified order that
             // can differ between runs. Try each of them, so that one which cannot be created from default values, such
             // as Vec3(Vector3fc) since Minecraft 1.21.11, does not hide one that can, such as Vec3(Vec3i).
             for (Constructor<T> constructor : getMinimumConstructors(type, providers, recursionLevel + 1, creating)) {
                 T instance = createWithDefaults(type, constructor, providers, recursionLevel + 1, creating);
                 if (instance != null) {
+                    if (remember) {
+                        knownConstructors.put(type, constructor);
+                    }
                     return instance;
                 }
             }
