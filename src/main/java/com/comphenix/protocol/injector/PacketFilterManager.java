@@ -456,6 +456,9 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
                 public void handlePluginUnload(PluginDisableEvent event) {
                     // don't do this for our plugin!
                     if (event.getPlugin() != PacketFilterManager.this.plugin) {
+                        // async handlers run on our own scheduler and keep their worker threads (and the plugin
+                        // class loader) alive unless they are cancelled here
+                        PacketFilterManager.this.asyncFilterManager.unregisterAsyncHandlers(event.getPlugin());
                         PacketFilterManager.this.removePacketListeners(event.getPlugin());
                     }
                 }

@@ -152,10 +152,16 @@ class PacketProcessingQueue {
                 // Yes, removing the marker will cause the chain to stop
                 if (list != null) {
                     Iterator<AsyncListenerHandler> iterator = list.iterator();
-                    
-                    if (iterator.hasNext()) {
-                        marker.setListenerTraversal(iterator);
-                        iterator.next().enqueuePacket(packet);
+                    marker.setListenerTraversal(iterator);
+
+                    // a full handler queue used to throw here, losing both the packet and this processing slot;
+                    // skip handlers that cannot accept the packet instead
+                    boolean queued = false;
+                    while (!queued && iterator.hasNext()) {
+                        queued = iterator.next().offerPacket(packet);
+                    }
+
+                    if (queued) {
                         continue;
                     }
                 }

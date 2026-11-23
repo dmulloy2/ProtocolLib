@@ -23,10 +23,12 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ListeningWhitelist;
@@ -85,6 +87,8 @@ public class AsyncListenerHandler {
     
     // List of queued packets
     private ArrayBlockingQueue<PacketEvent> queuedPackets = new ArrayBlockingQueue<PacketEvent>(DEFAULT_CAPACITY);
+    // only warn once per handler when the queue overflows
+    private volatile boolean warnedQueueFull;
     
     // List of cancelled tasks
     private final Set<Integer> stoppedTasks = new HashSet<Integer>();
@@ -189,6 +193,37 @@ public class AsyncListenerHandler {
             throw new IllegalArgumentException("packet is NULL");
         
         queuedPackets.add(packet);
+    }
+
+    /**
+     * Queue a packet for processing if there is space left in the queue of this handler.
+     * @param packet - a packet for processing.
+     * @return TRUE if the packet was queued, FALSE if the queue is full.
+     */
+    boolean offerPacket(PacketEvent packet) {
+        if (packet == null)
+            throw new IllegalArgumentException("packet is NULL");
+
+        // the workers of a cancelled handler are gone, so the caller passes the packet on instead
+        if (cancelled) {
+            return false;
+        }
+
+        if (queuedPackets.offer(packet)) {
+            // close() may have drained the queue after the check above: take the packet back unless the drain already
+            // passed it on
+            if (cancelled && queuedPackets.remove(packet)) {
+                return false;
+            }
+            return true;
+        }
+
+        if (!warnedQueueFull) {
+            warnedQueueFull = true;
+            ProtocolLogger.log(Level.WARNING, "The asynchronous listener of " + PacketAdapter.getPluginName(listener)
+                    + " cannot keep up, packets are passed on without it (queue limit " + DEFAULT_CAPACITY + ")");
+        }
+        return false;
     }
     
     /**
@@ -404,7 +439,9 @@ public class AsyncListenerHandler {
             stopWarningTask();
             
             syncTask = filterManager.getScheduler().scheduleSyncRepeatingTask(() -> {
-                long stopTime = System.nanoTime() + unit.convert(time, TimeUnit.NANOSECONDS);
+                // the budget was converted in the wrong direction (and the check below inverted), so the whole queue
+                // was drained on the main thread every tick regardless of the requested time
+                long stopTime = System.nanoTime() + unit.toNanos(time);
 
                 while (!cancelled) {
                     PacketEvent packet = queuedPackets.poll();
@@ -423,7 +460,7 @@ public class AsyncListenerHandler {
                     }
 
                     // Check time here, ensuring that we at least process one packet
-                    if (System.nanoTime() < stopTime)
+                    if (System.nanoTime() >= stopTime)
                         break;
                 }
             }, tickDelay, tickDelay);
@@ -626,26 +663,51 @@ public class AsyncListenerHandler {
     /**
      * Close all worker threads and the handler itself.
      */
-    private synchronized void close() {
-        // Remove the listener itself
-        if (!cancelled) {
-            filterManager.unregisterAsyncHandlerInternal(this);
+    private void close() {
+        synchronized (this) {
+            if (cancelled) {
+                return;
+            }
+            // from here on new packets are rejected and go to the next listener, see offerPacket
             cancelled = true;
-            
+
             // Close processing tasks
             syncStop();
-            
-            // Tell every uncancelled thread to end
-            stopThreads();
+        }
+
+        // Outside of the lock: passing the queued packets on reaches other handlers and the sending queues
+        filterManager.unregisterAsyncHandlerInternal(this);
+        passQueuedPacketsOn();
+
+        // Tell every uncancelled thread to end
+        stopThreads();
+    }
+
+    /**
+     * Pass the queued packets on instead of dropping them: a dropped packet keeps its processing slot forever and holds
+     * back the packets queued after it for the same player until it expires. Packets a worker is already processing
+     * are passed on by that worker.
+     */
+    private void passQueuedPacketsOn() {
+        PacketEvent queued;
+        while ((queued = queuedPackets.poll()) != null) {
+            if (queued == WAKEUP_PACKET || queued == INTERUPT_PACKET || queued.getAsyncMarker() == null) {
+                continue;
+            }
+
+            try {
+                filterManager.signalPacketTransmission(queued);
+            } catch (RuntimeException e) {
+                filterManager.getErrorReporter().reportMinimal(listener.getPlugin(), "close()", e);
+            }
         }
     }
-    
+
     /**
      * Use the poision pill method to stop every worker thread.
      */
     private void stopThreads() {
         // Poison Pill Shutdown
-        queuedPackets.clear();
         stop(started.get());
         
         // Individual shut down is irrelevant now
