@@ -639,6 +639,7 @@ public final class MinecraftReflection {
 
     private static volatile Class<?> cachedPacketClass;
     private static volatile Optional<Class<?>> cachedPackedBundlePacketClass;
+    private static volatile Optional<Class<?>> cachedBundleDelimiterClass;
 
     public static Class<?> getByteBufClass() {
         return getClass("io.netty.buffer.ByteBuf");
@@ -682,7 +683,13 @@ public final class MinecraftReflection {
     }
 
     public static Optional<Class<?>> getBundleDelimiterClass() {
-        return getOptionalNMS("network.protocol.BundleDelimiterPacket","BundleDelimiterPacket");
+        // checked for every new packet, avoid the name based lookup after the first call
+        Optional<Class<?>> delimiterClass = cachedBundleDelimiterClass;
+        if (delimiterClass == null) {
+            delimiterClass = getOptionalNMS("network.protocol.BundleDelimiterPacket","BundleDelimiterPacket");
+            cachedBundleDelimiterClass = delimiterClass;
+        }
+        return delimiterClass;
     }
 
     public static Class<?> getIChatBaseComponentArrayClass() {

@@ -6,6 +6,8 @@ import com.mojang.authlib.GameProfile;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.protocol.BundleDelimiterPacket;
+import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.status.ServerStatus;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -137,6 +139,15 @@ public class MinecraftReflectionTest {
     @Test
     public void testGameProfile() {
         assertEquals(GameProfile.class, MinecraftReflection.getGameProfileClass());
+    }
+
+    @Test
+    public void testBundleDelimiterClass() {
+        assertEquals(BundleDelimiterPacket.class, MinecraftReflection.getBundleDelimiterClass().orElse(null));
+        // the class is cached after the first call
+        assertSame(MinecraftReflection.getBundleDelimiterClass(), MinecraftReflection.getBundleDelimiterClass());
+        assertTrue(MinecraftReflection.isBundleDelimiter(BundleDelimiterPacket.class));
+        assertFalse(MinecraftReflection.isBundleDelimiter(ClientboundAnimatePacket.class));
     }
 
     @Test
