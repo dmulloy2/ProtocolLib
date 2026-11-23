@@ -115,7 +115,7 @@ public class Vector3F {
 
             @Override
             public Vector3F getSpecific(Object generic) {
-                StructureModifier<Float> modifier = new StructureModifier<Float>(generic.getClass())
+                StructureModifier<Float> modifier = StructureModifier.forClass(generic.getClass())
                         .withTarget(generic).withType(float.class);
                 float x = modifier.read(0);
                 float y = modifier.read(1);

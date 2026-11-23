@@ -25,7 +25,7 @@ public class WrappedSaltedSignature extends AbstractWrapper {
         super(MinecraftReflection.getSaltedSignatureClass());
 
         this.setHandle(handle);
-        this.modifier = new StructureModifier<>(MinecraftReflection.getSaltedSignatureClass()).withTarget(handle);
+        this.modifier = StructureModifier.forClass(MinecraftReflection.getSaltedSignatureClass()).withTarget(handle);
     }
 
     /**
@@ -43,7 +43,7 @@ public class WrappedSaltedSignature extends AbstractWrapper {
         }
 
         this.setHandle(CONSTRUCTOR.invoke(salt, signature));
-        this.modifier = new StructureModifier<>(MinecraftReflection.getSaltedSignatureClass()).withTarget(this.handle);
+        this.modifier = StructureModifier.forClass(MinecraftReflection.getSaltedSignatureClass()).withTarget(this.handle);
     }
 
     /**

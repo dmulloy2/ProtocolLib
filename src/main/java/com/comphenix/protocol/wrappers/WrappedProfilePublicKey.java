@@ -125,7 +125,7 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
         public WrappedProfileKeyData(Object handle) {
             super(MinecraftReflection.getProfilePublicKeyDataClass());
             this.setHandle(handle);
-            this.modifier = new StructureModifier<>(MinecraftReflection.getProfilePublicKeyDataClass()).withTarget(handle);
+            this.modifier = StructureModifier.forClass(MinecraftReflection.getProfilePublicKeyDataClass()).withTarget(handle);
         }
 
         /**
@@ -145,7 +145,7 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
             }
 
             this.setHandle(CONSTRUCTOR.invoke(expireTime, key, signature));
-            this.modifier = new StructureModifier<>(MinecraftReflection.getProfilePublicKeyDataClass()).withTarget(this.handle);
+            this.modifier = StructureModifier.forClass(MinecraftReflection.getProfilePublicKeyDataClass()).withTarget(this.handle);
         }
 
         /**

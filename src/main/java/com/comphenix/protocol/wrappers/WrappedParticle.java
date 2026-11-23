@@ -178,7 +178,7 @@ public class WrappedParticle<T> {
     }
 
     private static WrappedBlockData getBlockData(Object handle) {
-        return new StructureModifier<>(handle.getClass())
+        return StructureModifier.forClass(handle.getClass())
                 .withTarget(handle)
                 .withType(MinecraftReflection.getIBlockDataClass(), BukkitConverters.getWrappedBlockDataConverter())
                 .read(0);
@@ -186,7 +186,7 @@ public class WrappedParticle<T> {
 
     private static Object getItem(Object handle) {
         if (MinecraftVersion.v26_1.atOrAbove()) {
-            Object template = new StructureModifier<>(handle.getClass())
+            Object template = StructureModifier.forClass(handle.getClass())
                     .withTarget(handle)
                     .withType(ItemStackTemplateAccessor.TYPE)
                     .read(0);
@@ -194,7 +194,7 @@ public class WrappedParticle<T> {
             return BukkitConverters.getItemStackConverter().getSpecific(itemStack);
         }
 
-        return new StructureModifier<>(handle.getClass())
+        return StructureModifier.forClass(handle.getClass())
                 .withTarget(handle)
                 .withType(MinecraftReflection.getItemStackClass(), BukkitConverters.getItemStackConverter())
                 .read(0);
@@ -204,7 +204,7 @@ public class WrappedParticle<T> {
         Color color;
         float scale;
 
-        StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+        StructureModifier<Object> modifier = StructureModifier.forClass(handle.getClass()).withTarget(handle);
 
         if (MinecraftVersion.v1_21_2.atOrAbove()) {
             int rgb = (int) modifier.withType(int.class).read(0);
@@ -225,7 +225,7 @@ public class WrappedParticle<T> {
             }
 
             Object rgb = modifier.withType(VECTOR_3FA).read(0);
-            StructureModifier<Object> rgbModifier = new StructureModifier<>(VECTOR_3FA).withTarget(rgb);
+            StructureModifier<Object> rgbModifier = StructureModifier.forClass(VECTOR_3FA).withTarget(rgb);
 
             int red = (int) (rgbModifier.<Float>withType(float.class).read(0) * 255);
             int green = (int) (rgbModifier.<Float>withType(float.class).read(1) * 255);
@@ -252,7 +252,7 @@ public class WrappedParticle<T> {
         float scale;
 
         if (MinecraftVersion.v1_21_2.atOrAbove()) {
-            StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+            StructureModifier<Object> modifier = StructureModifier.forClass(handle.getClass()).withTarget(handle);
             int fromRgb = (int) modifier.withType(int.class).read(0);
             fromColor = Color.fromRGB(fromRgb);
 
@@ -261,7 +261,7 @@ public class WrappedParticle<T> {
 
             scale = (float) modifier.withType(float.class).read(0);
         } else if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
-            StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+            StructureModifier<Object> modifier = StructureModifier.forClass(handle.getClass()).withTarget(handle);
             org.joml.Vector3f toRGB = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(1);
             org.joml.Vector3f fromRGB = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(0);
             scale = (float) modifier.withType(float.class).read(0);
@@ -280,13 +280,13 @@ public class WrappedParticle<T> {
                 VECTOR_3FA = MinecraftReflection.getLibraryClass("com.mojang.math.Vector3fa");
             }
 
-            StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+            StructureModifier<Object> modifier = StructureModifier.forClass(handle.getClass()).withTarget(handle);
 
             Object toRGB = modifier.withType(VECTOR_3FA).read(0);
             Object fromRGB = modifier.withType(VECTOR_3FA).read(1);
             scale = (float) modifier.withType(float.class).read(0);
-            StructureModifier<Object> rgbModifier = new StructureModifier<>(VECTOR_3FA).withTarget(fromRGB);
-            StructureModifier<Object> rgbModifier2 = new StructureModifier<>(VECTOR_3FA).withTarget(toRGB);
+            StructureModifier<Object> rgbModifier = StructureModifier.forClass(VECTOR_3FA).withTarget(fromRGB);
+            StructureModifier<Object> rgbModifier2 = StructureModifier.forClass(VECTOR_3FA).withTarget(toRGB);
 
             int fromR = (int) (rgbModifier.<Float>withType(float.class).read(0) * 255);
             int fromG = (int) (rgbModifier.<Float>withType(float.class).read(1) * 255);
@@ -298,7 +298,7 @@ public class WrappedParticle<T> {
             int toB = (int) (rgbModifier2.<Float>withType(float.class).read(2) * 255);
             toColor = Color.fromRGB(toR, toG, toB);
         } else {
-            StructureModifier<Float> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle).withType(float.class);
+            StructureModifier<Float> modifier = StructureModifier.forClass(handle.getClass()).withTarget(handle).withType(float.class);
             int toR = (int) (modifier.read(0) * 255);
             int toG = (int) (modifier.read(1) * 255);
             int toB = (int) (modifier.read(2) * 255);

@@ -750,7 +750,7 @@ public class WrappedDataWatcher implements IDataWatcher {
          */
         public WrappedDataWatcherObject(Object handle) {
             this.handle = handle;
-            this.modifier = new StructureModifier<>(HANDLE_TYPE).withTarget(handle);
+            this.modifier = StructureModifier.forClass(HANDLE_TYPE).withTarget(handle);
         }
 
         /**
@@ -1012,10 +1012,12 @@ public class WrappedDataWatcher implements IDataWatcher {
      * @author dmulloy2
      */
     public static class Registry {
-        private static boolean INITIALIZED = false;
+        private static volatile boolean INITIALIZED = false;
 
         private static Map<Type, Serializer> RAW_REGISTRY = null;
         private static Map<Type, Serializer> OPTIONAL_REGISTRY = null;
+        // serializer handle to wrapper, raw serializers take precedence like in the original linear search
+        private static Map<Object, Serializer> HANDLE_LOOKUP = null;
 
         /**
          * @deprecated use {@link #get(Type)} instead.
@@ -1088,25 +1090,17 @@ public class WrappedDataWatcher implements IDataWatcher {
             Validate.notNull(handle, "handle cannot be null!");
             initialize();
 
-            for (Serializer serializer : RAW_REGISTRY.values()) {
-                if (serializer.getHandle().equals(handle)) {
-                    return serializer;
-                }
-            }
-
-            for (Serializer serializer : OPTIONAL_REGISTRY.values()) {
-                if (serializer.getHandle().equals(handle)) {
-                    return serializer;
-                }
-            }
-
-            return null;
+            return HANDLE_LOOKUP.get(handle);
         }
 
         private static void initialize() {
             if (!INITIALIZED) {
-                INITIALIZED = true;
-            } else {
+                initializeRegistry();
+            }
+        }
+
+        private static synchronized void initializeRegistry() {
+            if (INITIALIZED) {
                 return;
             }
 
@@ -1143,8 +1137,15 @@ public class WrappedDataWatcher implements IDataWatcher {
                 }
             }
 
+            Map<Object, Serializer> handleLookup = new HashMap<>();
+            optionalRegistry.values().forEach(serializer -> handleLookup.put(serializer.getHandle(), serializer));
+            rawRegistry.values().forEach(serializer -> handleLookup.put(serializer.getHandle(), serializer));
+
             RAW_REGISTRY = Map.copyOf(rawRegistry);
             OPTIONAL_REGISTRY = Map.copyOf(optionalRegistry);
+            HANDLE_LOOKUP = Map.copyOf(handleLookup);
+            // publish last, the volatile write makes the maps visible to other threads
+            INITIALIZED = true;
         }
 
         // ---- Helper methods

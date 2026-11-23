@@ -62,7 +62,7 @@ public class MinecraftKey {
      * @return The resulting key
      */
     public static MinecraftKey fromHandle(Object handle) {
-        StructureModifier<String> modifier = new StructureModifier<String>(handle.getClass()).withTarget(handle).withType(String.class);
+        StructureModifier<String> modifier = StructureModifier.forClass(handle.getClass()).withTarget(handle).withType(String.class);
         return new MinecraftKey(modifier.read(0), modifier.read(1));
     }
 

@@ -230,4 +230,14 @@ public class WrappedDataWatcherTest {
             assertEquals(watcher.getObject(i), cloned.getObject(i));
         }
     }
+
+    @Test
+    public void testSerializerLookupByHandle() {
+        WrappedDataWatcher.Serializer byteSerializer = Registry.get(Byte.class);
+        assertSame(byteSerializer, Registry.fromHandle(byteSerializer.getHandle()));
+
+        WrappedDataWatcher.Serializer optionalChat = Registry.getChatComponentSerializer(true);
+        assertSame(optionalChat, Registry.fromHandle(optionalChat.getHandle()));
+        assertNull(Registry.fromHandle(new Object()));
+    }
 }
