@@ -45,6 +45,12 @@ public class InstanceCreatorTest {
     }
 
     @Test
+    public void testFactoryReturningNullIsSkipped() {
+        // the constructor fails, and the factory that receives a value for its parameter returns null
+        assertNotNull(InstanceCreator.forClass(FactoriesOnly.class).get());
+    }
+
+    @Test
     public void testPlayerInfoPacket() {
         // Paper adds a constructor taking a single entry, which receives a made-up entry where one can be created
         PacketContainer packet = new PacketContainer(PacketType.Play.Server.PLAYER_INFO);
@@ -86,6 +92,23 @@ public class InstanceCreatorTest {
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), CraftRegistry.getMinecraftRegistry());
         codec.encode(buffer, packet.getHandle());
         return PacketContainer.fromPacket(codec.decode(buffer));
+    }
+
+    public static final class FactoriesOnly {
+
+        private FactoriesOnly(boolean created) {
+            if (!created) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        public static FactoriesOnly fromString(String value) {
+            return null;
+        }
+
+        public static FactoriesOnly fromRunnable(Runnable value) {
+            return new FactoriesOnly(true);
+        }
     }
 
     public static final class CompleteFirst {

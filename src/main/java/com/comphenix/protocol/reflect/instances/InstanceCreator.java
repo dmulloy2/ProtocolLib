@@ -191,7 +191,14 @@ public final class InstanceCreator implements Supplier<Object> {
 
             try {
                 MethodAccessor testAccessor = Accessors.getMethodAccessor(testMethod);
-                result = testAccessor.invoke(null, testParams);
+                Object testResult = testAccessor.invoke(null, testParams);
+                if (testResult == null) {
+                    // this factory cannot create the instance, so it must neither replace one that did nor rule out
+                    // one that ranks lower
+                    continue;
+                }
+
+                result = testResult;
                 minCount = paramTypes.length;
                 bestRank = testRank;
                 this.factoryMethod = testAccessor;
