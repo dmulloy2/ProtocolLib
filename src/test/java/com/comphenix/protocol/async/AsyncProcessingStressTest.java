@@ -43,6 +43,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 /**
  * Asynchronous processing with real worker threads: listeners that are slow or delay packets and finish them from
@@ -84,19 +85,23 @@ class AsyncProcessingStressTest {
     private void runTraffic(Cancellation cancellation, boolean delaySome, int playerCount) throws Exception {
         ExecutorService workers = Executors.newCachedThreadPool();
         ScheduledExecutorService delayed = Executors.newScheduledThreadPool(2);
+        // every transmitted packet, counted per packet instance (packets with the same content are equal)
+        Map<Object, AtomicInteger> sent = Collections.synchronizedMap(new IdentityHashMap<>());
+        // a packet must not be sent while a listener can still modify or cancel it
+        Map<Object, AsyncMarker> markersByPacket = Collections.synchronizedMap(new IdentityHashMap<>());
         try {
-            ProtocolScheduler scheduler = mock(ProtocolScheduler.class);
+            ProtocolScheduler scheduler = stubOnly(ProtocolScheduler.class);
             when(scheduler.runTaskAsync(any())).thenAnswer(invocation -> {
                 workers.execute(invocation.getArgument(0));
-                return mock(Task.class);
+                return stubOnly(Task.class);
             });
-            AsyncFilterManager manager = new AsyncFilterManager(mock(ErrorReporter.class), scheduler);
-            manager.setManager(mock(ProtocolManager.class));
+            AsyncFilterManager manager = new AsyncFilterManager(stubOnly(ErrorReporter.class), scheduler);
+            manager.setManager(stubOnly(ProtocolManager.class));
 
             AtomicInteger processed = new AtomicInteger();
-            Plugin slowPlugin = mock(Plugin.class);
-            Plugin delayingPlugin = mock(Plugin.class);
-            Plugin lastPlugin = mock(Plugin.class);
+            Plugin slowPlugin = stubOnly(Plugin.class);
+            Plugin delayingPlugin = stubOnly(Plugin.class);
+            Plugin lastPlugin = stubOnly(Plugin.class);
 
             // slow: occasionally busy, so packets are in flight while it is cancelled
             AsyncListenerHandler slow = manager.registerAsyncHandler(new PacketAdapter(slowPlugin, PacketType.Play.Server.SYSTEM_CHAT) {
@@ -130,12 +135,8 @@ class AsyncProcessingStressTest {
             delaying.start(2);
             last.start(2);
 
-            // every transmitted packet, counted per packet instance (packets with the same content are equal)
-            Map<Object, AtomicInteger> sent = Collections.synchronizedMap(new IdentityHashMap<>());
-            // a packet must not be sent while a listener can still modify or cancel it
-            Map<Object, AsyncMarker> markersByPacket = Collections.synchronizedMap(new IdentityHashMap<>());
             AtomicInteger sentWhileHeld = new AtomicInteger();
-            Injector injector = mock(Injector.class);
+            Injector injector = stubOnly(Injector.class);
             doAnswer(invocation -> {
                 Object packet = invocation.getArgument(0);
                 if (markersByPacket.get(packet).getProcessingDelay() > 0) {
@@ -149,7 +150,7 @@ class AsyncProcessingStressTest {
 
             List<Player> players = new ArrayList<>();
             for (int i = 0; i < playerCount; i++) {
-                Player player = mock(Player.class);
+                Player player = stubOnly(Player.class);
                 when(player.getAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 30000 + i));
                 when(player.isOnline()).thenReturn(true);
                 players.add(player);
@@ -223,6 +224,9 @@ class AsyncProcessingStressTest {
         } finally {
             workers.shutdownNow();
             delayed.shutdownNow();
+            // Mockito keeps stubbed mocks, and the answer of the injector refers to these maps
+            sent.clear();
+            markersByPacket.clear();
         }
     }
 
@@ -297,6 +301,14 @@ class AsyncProcessingStressTest {
         Field queueField = AsyncListenerHandler.class.getDeclaredField("queuedPackets");
         queueField.setAccessible(true);
         return ((Collection<?>) queueField.get(handler)).size();
+    }
+
+    /**
+     * The mocks are called for every packet. Recording those calls would keep every packet of every repetition, and the
+     * stack trace of each call, in memory until the end of the test run.
+     */
+    private static <T> T stubOnly(Class<T> type) {
+        return mock(type, withSettings().stubOnly());
     }
 
     private static void sleep(long millis) {
