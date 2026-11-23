@@ -165,7 +165,7 @@ public class DefaultInstances implements InstanceProvider {
      * @return A default value/instance, or NULL if not possible.
      */
     public <T> T getDefault(Class<T> type) {
-        return getDefaultInternal(type, registered, 0);
+        return getDefaultInternal(type, registered, 0, null);
     }
 
     private final ThreadLocal<Map<Class<?>, Boolean>> cache = ThreadLocal.withInitial(WeakHashMap::new);
@@ -177,7 +177,7 @@ public class DefaultInstances implements InstanceProvider {
      * @return true if the class has a default value, false otherwise
      */
     public boolean hasDefault(Class<?> type) {
-        return cache.get().computeIfAbsent(type, aClass -> getDefaultInternal(aClass, registered, 0) != null);
+        return cache.get().computeIfAbsent(type, aClass -> getDefaultInternal(aClass, registered, 0, null) != null);
     }
 
     /**
@@ -190,7 +190,7 @@ public class DefaultInstances implements InstanceProvider {
      * @return A constructor with the fewest number of parameters, or NULL if the type has no constructors.
      */
     public <T> Constructor<T> getMinimumConstructor(Class<T> type) {
-        List<Constructor<T>> minimum = getMinimumConstructors(type, registered, 0);
+        List<Constructor<T>> minimum = getMinimumConstructors(type, registered, 0, null);
         return minimum.isEmpty() ? null : minimum.get(0);
     }
     
@@ -198,7 +198,8 @@ public class DefaultInstances implements InstanceProvider {
      * Retrieve every usable constructor that has the fewest number of parameters, in the order listed by the JVM.
      */
     @SuppressWarnings("unchecked")
-    private <T> List<Constructor<T>> getMinimumConstructors(Class<T> type, List<InstanceProvider> providers, int recursionLevel) {
+    private <T> List<Constructor<T>> getMinimumConstructors(Class<T> type, List<InstanceProvider> providers, int recursionLevel,
+            List<Class<?>> creating) {
         List<Constructor<T>> minimum = new ArrayList<>(1);
         int lastCount = Integer.MAX_VALUE;
         
@@ -212,7 +213,7 @@ public class DefaultInstances implements InstanceProvider {
                 if (!contains(types, type) && !contains(types, MinecraftReflection.getPacketDataSerializerClass())) {
                     if (nonNull) {
                         // Make sure all of these types are non-null
-                        if (isAnyNull(types, providers, recursionLevel)) {
+                        if (isAnyNull(types, providers, recursionLevel, creating)) {
                             continue;
                         }
                     }
@@ -240,12 +241,13 @@ public class DefaultInstances implements InstanceProvider {
      * @param types - types to check.
      * @param providers - instance providers.
      * @param recursionLevel - current recursion level.
+     * @param creating - the types that are being created, or NULL if none are.
      * @return TRUE if any of the types will return NULL, FALSE otherwise.
      */
-    private boolean isAnyNull(Class<?>[] types, List<InstanceProvider> providers, int recursionLevel) {
+    private boolean isAnyNull(Class<?>[] types, List<InstanceProvider> providers, int recursionLevel, List<Class<?>> creating) {
         // Just check if any of them are NULL
         for (Class<?> type : types) {
-            if (getDefaultInternal(type, providers, recursionLevel) == null) {
+            if (getDefaultInternal(type, providers, recursionLevel, creating) == null) {
                 return true;
             }
         }
@@ -272,11 +274,14 @@ public class DefaultInstances implements InstanceProvider {
      * @return A default value/instance, or NULL if not possible.
      */
     public <T> T getDefault(Class<T> type, List<InstanceProvider> providers) {
-        return getDefaultInternal(type, providers, 0);
+        return getDefaultInternal(type, providers, 0, null);
     }
     
+    /**
+     * @param creating - the types whose default values are being created on the way to this one, or NULL if none are.
+     */
     @SuppressWarnings("unchecked")
-    private <T> T getDefaultInternal(Class<T> type, List<InstanceProvider> providers, int recursionLevel) {
+    private <T> T getDefaultInternal(Class<T> type, List<InstanceProvider> providers, int recursionLevel, List<Class<?>> creating) {
         // The instance providiers should protect themselves against recursion
         try {
             for (InstanceProvider generator : providers) {
@@ -294,21 +299,36 @@ public class DefaultInstances implements InstanceProvider {
             return null;
         }
         
-        // Several constructors can have the fewest parameters, and the JVM lists them in an unspecified order that can
-        // differ between runs. Try each of them, so that one which cannot be created from default values, such as
-        // Vec3(Vector3fc) since Minecraft 1.21.11, does not hide one that can, such as Vec3(Vec3i).
-        for (Constructor<T> constructor : getMinimumConstructors(type, providers, recursionLevel + 1)) {
-            T instance = createWithDefaults(type, constructor, providers, recursionLevel + 1);
-            if (instance != null) {
-                return instance;
+        // A type that is needed again while its own default value is being created gets NULL, as it would once the
+        // maximum recursion is reached. Otherwise trying every constructor below would explore the same cycle again
+        // and again until that limit.
+        if (creating == null) {
+            creating = new ArrayList<>(4);
+        } else if (creating.contains(type)) {
+            return null;
+        }
+
+        creating.add(type);
+        try {
+            // Several constructors can have the fewest parameters, and the JVM lists them in an unspecified order that
+            // can differ between runs. Try each of them, so that one which cannot be created from default values, such
+            // as Vec3(Vector3fc) since Minecraft 1.21.11, does not hide one that can, such as Vec3(Vec3i).
+            for (Constructor<T> constructor : getMinimumConstructors(type, providers, recursionLevel + 1, creating)) {
+                T instance = createWithDefaults(type, constructor, providers, recursionLevel + 1, creating);
+                if (instance != null) {
+                    return instance;
+                }
             }
+        } finally {
+            creating.remove(creating.size() - 1);
         }
 
         // No suitable default value could be found
         return null;
     }
 
-    private <T> T createWithDefaults(Class<T> type, Constructor<T> constructor, List<InstanceProvider> providers, int recursionLevel) {
+    private <T> T createWithDefaults(Class<T> type, Constructor<T> constructor, List<InstanceProvider> providers, int recursionLevel,
+            List<Class<?>> creating) {
         // Create the type with this constructor using default values. This might fail, though.
         try {
             Class<?>[] types = constructor.getParameterTypes();
@@ -316,7 +336,7 @@ public class DefaultInstances implements InstanceProvider {
 
             // Fill out
             for (int i = 0; i < types.length; i++) {
-                params[i] = getDefaultInternal(types[i], providers, recursionLevel);
+                params[i] = getDefaultInternal(types[i], providers, recursionLevel, creating);
 
                 // Did we break the non-null contract?
                 if (params[i] == null && nonNull) {
