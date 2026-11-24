@@ -1,6 +1,7 @@
 package com.comphenix.protocol.reflect.instances;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.comphenix.protocol.BukkitInitialization;
@@ -90,6 +91,23 @@ public class InstanceCreatorParametersTest {
     }
 
     @Test
+    public void testParametersFollowTheSettingsOfTheDefaultInstances() {
+        int maximumRecursion = DefaultInstances.DEFAULT.getMaximumRecursion();
+        InstanceCreator creator = InstanceCreator.forClass(NeedsChain.class);
+        try {
+            // the end of the chain is beyond the maximum recursion, so the chain cannot be created
+            DefaultInstances.DEFAULT.setMaximumRecursion(1);
+            assertNull(((NeedsChain) creator.get()).chain);
+            assertNull(((NeedsChain) creator.get()).chain);
+
+            DefaultInstances.DEFAULT.setMaximumRecursion(maximumRecursion);
+            assertNotNull(((NeedsChain) creator.get()).chain);
+        } finally {
+            DefaultInstances.DEFAULT.setMaximumRecursion(maximumRecursion);
+        }
+    }
+
+    @Test
     public void testVec3Default() {
         // Vec3(Vector3fc) cannot be created from default values, Vec3(Vec3i) can
         for (int i = 0; i < 3; i++) {
@@ -143,6 +161,23 @@ public class InstanceCreatorParametersTest {
     }
 
     public static final class Element {
+    }
+
+    public static final class ChainEnd {
+    }
+
+    public static final class Chain {
+        public Chain(ChainEnd end) {
+            Objects.requireNonNull(end);
+        }
+    }
+
+    public static final class NeedsChain {
+        public final Chain chain;
+
+        public NeedsChain(Chain chain) {
+            this.chain = chain;
+        }
     }
 
     public static final class NoDefault {

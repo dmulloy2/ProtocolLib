@@ -84,6 +84,13 @@ public class DefaultInstances implements InstanceProvider {
     private final boolean rememberConstructors;
 
     /**
+     * Changes whenever {@link #nonNull} or {@link #maximumRecursion} is set, since every default value can depend on
+     * them. Nothing found with the earlier settings is then used with the new ones: neither a constructor remembered by
+     * a search that was still running when the memory was cleared, nor the parameter plan of an InstanceCreator.
+     */
+    private volatile int revision;
+
+    /**
      * What a search for the default value of a type went through: every type whose constructors it tried, the deepest
      * recursion level at which it tried them, and whether the maximum recursion or a type that was already being
      * created cut it short somewhere.
@@ -111,21 +118,28 @@ public class DefaultInstances implements InstanceProvider {
      * short either, it tries the same constructors with the same default values and chooses the same constructor. That
      * holds when it does not reach the maximum recursion from the current level and none of its types is already being
      * created. Elsewhere, such as further down a cycle, the search runs again.
+     * <p>
+     * This assumes that a constructor which fails with the default values fails again with the same values, as
+     * {@link InstanceCreator} has always assumed for the constructor that it chooses. A constructor that only fails
+     * until the server reaches some state is not tried again once a later one succeeds.
      */
     private static final class KnownConstructor {
 
         private final Constructor<?> constructor;
         private final Set<Class<?>> types;
         private final int depth;
+        private final int revision;
 
-        private KnownConstructor(Constructor<?> constructor, Search search, int recursionLevel) {
+        private KnownConstructor(Constructor<?> constructor, Search search, int recursionLevel, int revision) {
             this.constructor = constructor;
             this.types = Collections.unmodifiableSet(new HashSet<>(search.types));
             this.depth = search.deepestLevel - recursionLevel;
+            this.revision = revision;
         }
 
-        private boolean appliesTo(int recursionLevel, int maximumRecursion, List<Class<?>> creating) {
-            return recursionLevel + depth < maximumRecursion && (creating == null || Collections.disjoint(types, creating));
+        private boolean appliesTo(int recursionLevel, int maximumRecursion, List<Class<?>> creating, int revision) {
+            return this.revision == revision && recursionLevel + depth < maximumRecursion
+                    && (creating == null || Collections.disjoint(types, creating));
         }
 
         private void addTo(Search search, int recursionLevel) {
@@ -226,6 +240,7 @@ public class DefaultInstances implements InstanceProvider {
      */
     public void setNonNull(boolean nonNull) {
         this.nonNull = nonNull;
+        this.revision++;
         this.knownConstructors.clear();
     }
     
@@ -245,7 +260,17 @@ public class DefaultInstances implements InstanceProvider {
         if (maximumRecursion < 1)
             throw new IllegalArgumentException("Maxmimum recursion height must be one or higher.");
         this.maximumRecursion = maximumRecursion;
+        this.revision++;
         this.knownConstructors.clear();
+    }
+
+    /**
+     * Retrieve a number that changes whenever {@link #setNonNull(boolean)} or {@link #setMaximumRecursion(int)} is
+     * called, and so whenever the default values can change.
+     * @return The current revision of the settings.
+     */
+    int getRevision() {
+        return revision;
     }
 
     /**
@@ -419,8 +444,9 @@ public class DefaultInstances implements InstanceProvider {
         }
 
         boolean remember = rememberConstructors && providers == registered && Util.isLoadedByProtocolLibOrParent(type);
+        int revision = this.revision;
         KnownConstructor known = remember ? knownConstructors.get(type) : null;
-        if (known != null && !known.appliesTo(recursionLevel, maximumRecursion, creating)) {
+        if (known != null && !known.appliesTo(recursionLevel, maximumRecursion, creating, revision)) {
             known = null;
         }
 
@@ -451,7 +477,8 @@ public class DefaultInstances implements InstanceProvider {
                     T instance = createWithDefaults(type, constructor, providers, recursionLevel + 1, creating, search);
                     if (instance != null) {
                         if (remember && !search.cut) {
-                            knownConstructors.put(type, new KnownConstructor(constructor, search, recursionLevel));
+                            knownConstructors.put(type, new KnownConstructor(constructor, search, recursionLevel,
+                                    revision));
                         }
                         return instance;
                     }

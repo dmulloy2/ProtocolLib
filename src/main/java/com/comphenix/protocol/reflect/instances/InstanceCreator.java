@@ -32,10 +32,9 @@ public final class InstanceCreator implements Supplier<Object> {
     private Class<?>[] paramTypes = null;
     private boolean failed = false;
 
-    // The value of every parameter of the chosen constructor or factory method: NULL, a value that every instance
-    // receives, or a FreshValue for a value that is created for every instance. Set once the choice is made, after
-    // the fields above.
-    private volatile Object[] paramValues = null;
+    // How every parameter of the chosen constructor or factory method receives its value. Set once the choice is
+    // made, after the fields above, and made again when the settings of DefaultInstances.DEFAULT change.
+    private volatile ParamPlan paramPlan = null;
 
     private final Class<?> type;
 
@@ -77,6 +76,22 @@ public final class InstanceCreator implements Supplier<Object> {
 
         private FreshValue(Class<?> type) {
             this.type = type;
+        }
+    }
+
+    /**
+     * The value of every parameter of the chosen constructor or factory method: NULL, a value that every instance
+     * receives, or a FreshValue for a value that is created for every instance. It holds as long as the settings of
+     * DefaultInstances.DEFAULT stay as they were in the given revision, since the default values depend on them.
+     */
+    private static final class ParamPlan {
+
+        private final Object[] values;
+        private final int revision;
+
+        private ParamPlan(Object[] values, int revision) {
+            this.values = values;
+            this.revision = revision;
         }
     }
 
@@ -159,10 +174,18 @@ public final class InstanceCreator implements Supplier<Object> {
 
     @Override
     public Object get() {
-        Object[] values = this.paramValues;
-        if (values != null) {
+        ParamPlan plan = this.paramPlan;
+        if (plan != null) {
             // the constructor or factory method was chosen
-            Object[] params = createParams(values);
+            Object[] params;
+            int revision = DefaultInstances.DEFAULT.getRevision();
+            if (plan.revision == revision) {
+                params = createParams(plan.values);
+            } else {
+                // the settings of DEFAULT changed, and so may have the default values
+                params = createParams(paramTypes);
+                this.paramPlan = new ParamPlan(planParams(paramTypes, params), revision);
+            }
             return constructor != null ? constructor.invoke(params) : factoryMethod.invoke(null, params);
         }
 
@@ -180,6 +203,8 @@ public final class InstanceCreator implements Supplier<Object> {
             return null;
         }
 
+        // read before any default value is created, so that a change of the settings during the choice is noticed
+        int revision = DefaultInstances.DEFAULT.getRevision();
         Object result = null;
         Object[] chosenParams = null;
         int minCount = Integer.MAX_VALUE;
@@ -217,7 +242,7 @@ public final class InstanceCreator implements Supplier<Object> {
         }
 
         if (result != null) {
-            this.paramValues = planParams(this.paramTypes, chosenParams);
+            this.paramPlan = new ParamPlan(planParams(this.paramTypes, chosenParams), revision);
             return result;
         }
 
@@ -273,7 +298,7 @@ public final class InstanceCreator implements Supplier<Object> {
         if (result == null) {
             this.failed = true;
         } else {
-            this.paramValues = planParams(this.paramTypes, chosenParams);
+            this.paramPlan = new ParamPlan(planParams(this.paramTypes, chosenParams), revision);
         }
 
         return result;
