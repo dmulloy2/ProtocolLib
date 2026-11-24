@@ -486,7 +486,7 @@ public class StructureModifier<T> {
     }
 
     /**
-     * Sets all non-primitive fields to a more fitting default value. See {@link DefaultInstances#getDefault(Class)}.
+     * Writes default values to non-primitive fields for which a default instance can be created.
      *
      * @return The current structure modifier - for chaining.
      * @throws FieldAccessException If we're unable to write to the fields due to a security limitation.
