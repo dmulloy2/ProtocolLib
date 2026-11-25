@@ -28,7 +28,10 @@ import org.jetbrains.annotations.NotNull;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.StreamSerializer;
@@ -664,6 +667,76 @@ public abstract class AbstractStructure {
      * @return A modifier for EntityUseAction class fields.
      */
     public StructureModifier<WrappedEnumEntityUseAction> getEnumEntityUseActions() {
+        if (MinecraftVersion.v26_1.atOrAbove()) {
+            final Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
+            final ConstructorAccessor constructor = Accessors.getConstructorAccessor(
+                    packetClass,
+                    int.class,
+                    EnumWrappers.getHandClass(),
+                    MinecraftReflection.getVec3DClass(),
+                    boolean.class
+            );
+
+            return new StructureModifier<WrappedEnumEntityUseAction>() {
+                @Override
+                public WrappedEnumEntityUseAction read(int fieldIndex) {
+                    if (fieldIndex != 0) {
+                        throw FieldAccessException.fromFormat(
+                                "Field index %d is out of bounds for length %s",
+                                fieldIndex,
+                                1);
+                    }
+
+                    return WrappedEnumEntityUseAction.fromHandle(handle);
+                }
+
+                @Override
+                public WrappedEnumEntityUseAction readSafely(int fieldIndex) {
+                    return fieldIndex == 0 && handle != null ? WrappedEnumEntityUseAction.fromHandle(handle) : null;
+                }
+
+                @Override
+                public StructureModifier<WrappedEnumEntityUseAction> write(int fieldIndex, WrappedEnumEntityUseAction value) {
+                    if (fieldIndex != 0) {
+                        throw FieldAccessException.fromFormat(
+                                "Field index %d is out of bounds for length %s",
+                                fieldIndex,
+                                1);
+                    }
+
+                    if (value == null) {
+                        return this;
+                    }
+
+                    if (handle == null) {
+                        throw new IllegalStateException("Cannot write USE_ENTITY action without a packet handle");
+                    }
+
+                    StructureModifier<Object> current = new StructureModifier<>(packetClass).withTarget(handle);
+                    int entityId = (Integer) current.withType(int.class).read(0);
+                    boolean usingSecondaryAction = (Boolean) current.withType(boolean.class).read(0);
+
+                    Object genericHand = EnumWrappers.getHandConverter().getGeneric(value.getHand());
+                    Object genericVector = BukkitConverters.getVectorConverter().getGeneric(value.getPosition());
+
+                    Object newHandle = constructor.invoke(entityId, genericHand, genericVector, usingSecondaryAction);
+                    AbstractStructure.this.handle = newHandle;
+                    AbstractStructure.this.structureModifier = AbstractStructure.this.structureModifier.withTarget(newHandle);
+                    return this;
+                }
+
+                @Override
+                public StructureModifier<WrappedEnumEntityUseAction> writeSafely(int fieldIndex, WrappedEnumEntityUseAction value) {
+                    return write(fieldIndex, value);
+                }
+
+                @Override
+                protected com.comphenix.protocol.reflect.accessors.FieldAccessor findFieldAccessor(int fieldIndex) {
+                    return null;
+                }
+            };
+        }
+
         return structureModifier.withType(
                 MinecraftReflection.getEnumEntityUseActionClass(),
                 WrappedEnumEntityUseAction.CONVERTER);
