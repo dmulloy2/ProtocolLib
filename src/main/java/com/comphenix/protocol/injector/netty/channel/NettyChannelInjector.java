@@ -41,6 +41,7 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.collect.MapMaker;
 
@@ -378,7 +379,7 @@ public class NettyChannelInjector implements Injector {
         // check if the name of the player is already known to the injector
         if (this.playerName != null) {
             Player bukkitPlayer = Bukkit.getPlayerExact(this.playerName);
-            if (bukkitPlayer != null) {
+            if (bukkitPlayer != null && MinecraftFields.getNetworkManager(bukkitPlayer) == this.networkManager) {
                 this.player = bukkitPlayer;
                 this.injectionFactory.cacheInjector(this.player, this);
             }
