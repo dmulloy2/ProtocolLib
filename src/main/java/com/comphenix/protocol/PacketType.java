@@ -109,6 +109,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
             public static final PacketType BUNDLE =                       new PacketType(PROTOCOL, SENDER, 0x00, "BundleDelimiter", "Delimiter", "BundleDelimiterPacket");
             public static final PacketType SPAWN_ENTITY =                 new PacketType(PROTOCOL, SENDER, 0x01, "AddEntity", "SpawnEntity", "SPacketSpawnObject");
+            /**
+             * Entity animations such as waking up and critical hits. Since 26.3, hand swings use {@link #SWING_ANIMATION}.
+             */
             public static final PacketType ANIMATION =                    new PacketType(PROTOCOL, SENDER, 0x02, "Animate", "Animation", "SPacketAnimation");
             public static final PacketType STATISTIC =                    new PacketType(PROTOCOL, SENDER, 0x03, "AwardStats", "Statistic", "SPacketStatistics");
             public static final PacketType BLOCK_CHANGED_ACK =            new PacketType(PROTOCOL, SENDER, 0x04, "BlockChangedAck");
@@ -542,7 +545,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             public static final PacketType DEBUG_SAMPLE_SUBSCRIPTION =    new PacketType(PROTOCOL, SENDER, 0x16, "DebugSampleSubscription");
 
             /**
-             * @deprecated Removed in 26.3
+             * @deprecated Removed in 26.3. Use {@link #PUNCH} for the new main-hand punch request;
+             * it does not carry the hand field of this packet.
              */
             @Deprecated
             public static final PacketType ARM_ANIMATION =                new PacketType(PROTOCOL, SENDER, 252, "Swing", "ArmAnimation", "CPacketAnimation");

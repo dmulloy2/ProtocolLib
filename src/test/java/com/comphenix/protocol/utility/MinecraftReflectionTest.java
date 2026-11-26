@@ -137,6 +137,21 @@ public class MinecraftReflectionTest {
     }
 
     @Test
+    public void testItemStackMirrorPreservesComponents() {
+        var original = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND, 3);
+        Component name = Component.literal("26.3 mirror");
+        original.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, name);
+
+        ItemStack mirror = MinecraftReflection.getBukkitItemStack(original);
+        mirror.setAmount(7);
+        assertEquals(7, original.getCount());
+
+        var roundTrip = (net.minecraft.world.item.ItemStack) MinecraftReflection.getMinecraftItemStack(mirror);
+        assertEquals(7, roundTrip.getCount());
+        assertEquals(name, roundTrip.get(net.minecraft.core.component.DataComponents.CUSTOM_NAME));
+    }
+
+    @Test
     public void testGameProfile() {
         assertEquals(GameProfile.class, MinecraftReflection.getGameProfileClass());
     }

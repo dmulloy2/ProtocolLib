@@ -74,6 +74,8 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Preconditions;
 
 public abstract class AbstractStructure {
+    private static volatile EquivalentConverter<WrappedMessageSignature> optionalMessageSignatureConverter;
+
     protected transient Object handle;
     protected transient StructureModifier<Object> structureModifier;
 
@@ -1166,37 +1168,30 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Since 26.3 the signature fields are optional, an absent signature is read and written as {@code null}.
+     * Since 26.3 the signature fields in chat packets are optional; an absent signature is read and written as {@code null}.
      *
-     * @return read/writer structure direct access to unsalted signature data for example in chat message (since 1.19.3)
+     * @return read/write structure for unsalted signature data (since 1.19.3).
      */
     public StructureModifier<WrappedMessageSignature> getMessageSignatures() {
+        Class<?> signatureClass = MinecraftReflection.getMessageSignatureClass();
         if (MinecraftVersion.v26_3.atOrAbove()) {
-            EquivalentConverter<WrappedMessageSignature> converter = BukkitConverters.getWrappedMessageSignatureConverter();
-            return structureModifier.withParamType(
+            EquivalentConverter<WrappedMessageSignature> converter = optionalMessageSignatureConverter;
+            if (converter == null) {
+                converter = createNullableOptionalConverter(BukkitConverters.getWrappedMessageSignatureConverter());
+                optionalMessageSignatureConverter = converter;
+            }
+            StructureModifier<WrappedMessageSignature> optionalModifier = structureModifier.withParamType(
                     Optional.class,
-                    new EquivalentConverter<WrappedMessageSignature>() {
-                        @Override
-                        public Object getGeneric(WrappedMessageSignature specific) {
-                            return Optional.ofNullable(converter.getGeneric(specific));
-                        }
-
-                        @Override
-                        public WrappedMessageSignature getSpecific(Object generic) {
-                            return generic == null ? null : ((Optional<?>) generic).map(converter::getSpecific).orElse(null);
-                        }
-
-                        @Override
-                        public Class<WrappedMessageSignature> getSpecificType() {
-                            return WrappedMessageSignature.class;
-                        }
-                    },
-                    MinecraftReflection.getMessageSignatureClass()
+                    converter,
+                    signatureClass
             );
+            if (optionalModifier.size() > 0) {
+                return optionalModifier;
+            }
         }
 
         return structureModifier.withType(
-                MinecraftReflection.getMessageSignatureClass(),
+                signatureClass,
                 BukkitConverters.getWrappedMessageSignatureConverter()
         );
     }
@@ -1318,6 +1313,14 @@ public abstract class AbstractStructure {
         return structureModifier.withType(Optional.class, Converters.optional(converter));
     }
 
+    private static <T> EquivalentConverter<T> createNullableOptionalConverter(EquivalentConverter<T> converter) {
+        EquivalentConverter<Optional<T>> optionalConverter = Converters.optional(converter);
+        return Converters.handle(
+                value -> optionalConverter.getGeneric(Optional.ofNullable(value)),
+                value -> optionalConverter.getSpecific(value).orElse(null),
+                converter.getSpecificType());
+    }
+
     public StructureModifier<Iterable<PacketContainer>> getPacketBundles() {
         return structureModifier.withType(Iterable.class, Converters.iterable(
             BukkitConverters.getPacketContainerConverter(), ArrayList::new, ArrayList::new
@@ -1327,7 +1330,8 @@ public abstract class AbstractStructure {
     /**
      * Retrieve a read/write structure for {@link WrappedPositionMoveRotation} (available since Minecraft 1.21.2).
      * <p>
-     * This is used in packets such as {@code ENTITY_TELEPORT} and {@code ENTITY_POSITION_SYNC} (before 26.3).
+     * This is used in packets such as {@code ENTITY_TELEPORT}. Since 26.3,
+     * {@code ENTITY_POSITION_SYNC} carries a position path instead and returns an empty modifier.
      *
      * @return A modifier for PositionMoveRotation fields.
      */

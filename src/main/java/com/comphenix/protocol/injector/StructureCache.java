@@ -110,6 +110,11 @@ public class StructureCache {
     }
 
     static Supplier<Object> determineBestCreator(Class<?> clazz) {
+        // Optional's erased private constructor would create Optional<Object> via InstanceCreator.
+        if (clazz == Optional.class) {
+            return Optional::empty;
+        }
+
         boolean packetClass = MinecraftReflection.isPacketClass(clazz);
         boolean immutableClass = ImmutableDetector.isImmutable(clazz);
 

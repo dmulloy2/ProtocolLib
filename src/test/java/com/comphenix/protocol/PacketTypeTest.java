@@ -268,6 +268,8 @@ public class PacketTypeTest {
         assertEquals(0x7B, PacketType.Play.Server.SWING_ANIMATION.getCurrentId());
         assertEquals(0x2E, PacketType.Play.Client.PUNCH.getCurrentId());
         assertNotEquals(PacketType.Play.Client.PUNCH, PacketType.Play.Client.RECIPE_SETTINGS);
+        assertTrue(PacketType.Play.Client.ARM_ANIMATION.isDeprecated());
+        assertFalse(PacketType.Play.Client.ARM_ANIMATION.isSupported());
     }
 
     @Test
@@ -320,7 +322,6 @@ public class PacketTypeTest {
     }
 
     @Test
-    @Disabled // TODO -- lots of constructor parameters :(
     public void testCreateMapChunk() {
         new PacketContainer(PacketType.Play.Server.MAP_CHUNK);
     }
@@ -346,8 +347,7 @@ public class PacketTypeTest {
 			}
 
             if (type == PacketType.Play.Server.ENTITY_SOUND
-                || type == PacketType.Play.Server.SCOREBOARD_OBJECTIVE
-                || type == PacketType.Play.Server.MAP_CHUNK) {
+                || type == PacketType.Play.Server.SCOREBOARD_OBJECTIVE) {
                 continue;
             }
 

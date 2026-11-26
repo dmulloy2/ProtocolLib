@@ -18,6 +18,7 @@
 package com.comphenix.protocol.utility;
 
 import com.comphenix.protocol.BukkitInitialization;
+import net.minecraft.SharedConstants;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -53,8 +54,7 @@ class MinecraftVersionTest {
 
     @Test
     void testCurrentProtocol() {
-        // MIN_VALUE is returned when the current version is not supported
-        assertNotEquals(MinecraftProtocolVersion.getCurrentVersion(), Integer.MIN_VALUE);
+        assertEquals(SharedConstants.getCurrentVersion().protocolVersion(), MinecraftProtocolVersion.getCurrentVersion());
     }
 
     @Test
