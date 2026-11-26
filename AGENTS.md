@@ -42,6 +42,7 @@ Do not introduce another build system, test runner, formatter, or lint tool unle
 - `ProtocolLibrary.java`: supported version bounds and latest release date.
 - `utility/MinecraftReflection.java`: centralized NMS and CraftBukkit class discovery.
 - `reflect/StructureModifier.java`: indexed packet field access and conversion contract.
+- `injector/StructureCache.java` and `reflect/instances/`: packet and default-instance construction.
 - `wrappers/`: stable public representations of unstable NMS structures.
 - `events/PacketContainer.java` and `events/AbstractStructure.java`: packet construction and typed field access.
 - `src/test/java/com/comphenix/protocol/BukkitInitialization.java`: test bootstrap for CraftBukkit and NMS access.
@@ -83,7 +84,9 @@ not execute in the local test run.
 - Prefer existing `MinecraftReflection`, `FuzzyReflection`, and accessor helpers over new direct reflection.
 - Prefer structural and type-based matching where obfuscated names are unstable.
 - Search for an existing class resolver, converter, or accessor before adding another one.
-- Cache stable reflective lookups following nearby patterns; do not repeatedly scan classes on packet hot paths.
+- Cache stable reflective lookups and `EquivalentConverter` instances following nearby patterns; do not repeatedly scan
+  classes or allocate converters on packet hot paths. Initialize cached converters lazily when constructing them would
+  trigger `BukkitConverters` or `MinecraftReflection` static initialization from early-loaded classes.
 - Do not hide reflection failures with broad catches, silent defaults, or unrelated fallback types.
 - Account for static fields, inherited fields, records, nested implementations, and duplicate field types when writing
   fuzzy contracts.
@@ -101,6 +104,13 @@ Typed accessors returned from packet APIs must behave like normal `StructureModi
 
 If a packet no longer contains a real backing field, prefer an empty modifier when compatible. If a virtual field is
 required for API compatibility, initialize all modifier metadata and test its inherited methods.
+
+- Keep `AbstractStructure` typed accessors field-type driven (`withType` / `withParamType`) rather than branching on
+  `PacketType`; `AbstractStructure` is shared with `InternalStructure` for nested NMS objects. When Minecraft wraps a
+  field in `Optional<T>`, prefer `getOptionals(...)` or parameterized type matching over packet-specific overrides in
+  existing getters.
+- Fix default-instance creation in `StructureCache` or `reflect/instances/` rather than adding per-type special cases in
+  `StructureModifier.writeDefaults()`.
 
 ## Wrapper and Converter Rules
 
