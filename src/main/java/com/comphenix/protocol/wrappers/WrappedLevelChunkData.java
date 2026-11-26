@@ -3,7 +3,6 @@ package com.comphenix.protocol.wrappers;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,11 +52,8 @@ public final class WrappedLevelChunkData {
             FuzzyReflection reflection = FuzzyReflection.fromClass(HANDLE_TYPE, true);
 
             if (MinecraftVersion.v26_3.atOrAbove()) {
-                LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(reflection.getConstructor(FuzzyMethodContract.newBuilder()
-                        .parameterExactType(Map.class)
-                        .parameterExactType(byte[].class)
-                        .parameterExactType(List.class)
-                        .build()));
+                LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE,
+                        Map.class, byte[].class, List.class);
             } else {
                 LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(reflection.getConstructor(FuzzyMethodContract.newBuilder()
                         .parameterDerivedOf(MinecraftReflection.getPacketDataSerializerClass())
@@ -168,14 +164,15 @@ public final class WrappedLevelChunkData {
          * @param blockEntityInfo the new list of block entities
          */
         public void setBlockEntityInfo(List<BlockEntityInfo> blockEntityInfo) {
-            List handleList = new ArrayList<>(blockEntityInfo.size());
+            BLOCK_ENTITIES_DATA_ACCESSOR.set(handle, toBlockEntityHandles(blockEntityInfo));
+        }
 
+        private static List<Object> toBlockEntityHandles(List<BlockEntityInfo> blockEntityInfo) {
+            List<Object> handleList = new ArrayList<>(blockEntityInfo.size());
             for (BlockEntityInfo info : blockEntityInfo) {
-                //noinspection unchecked
                 handleList.add(info.getHandle());
             }
-
-            BLOCK_ENTITIES_DATA_ACCESSOR.set(handle, handleList);
+            return handleList;
         }
 
         /**
@@ -191,18 +188,13 @@ public final class WrappedLevelChunkData {
          */
         @Deprecated
         public static ChunkData fromValues(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
-            ChunkData data;
-            if (MinecraftVersion.v26_3.atOrAbove()) {
-                data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(Collections.emptyMap(), new byte[0], Collections.emptyList()));
-            } else {
-                data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
-            }
+            ChunkData data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
 
             data.setHeightmapsTag(heightmapsTag);
             data.setBuffer(buffer);
             data.setBlockEntityInfo(blockEntityInfo);
 
-            return new ChunkData(data);
+            return data;
         }
 
         /**
@@ -214,18 +206,17 @@ public final class WrappedLevelChunkData {
          * @return a newly created wrapper
          */
         public static ChunkData fromValues(Map<EnumWrappers.HeightmapType, long[]> heightmaps, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
-            ChunkData data;
             if (MinecraftVersion.v26_3.atOrAbove()) {
-                data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(Collections.emptyMap(), new byte[0], Collections.emptyList()));
-            } else {
-                data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
+                return new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(
+                        HEIGHTMAPS_CONVERTER.getGeneric(heightmaps), buffer, toBlockEntityHandles(blockEntityInfo)));
             }
+            ChunkData data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
 
             data.setHeightmaps(heightmaps);
             data.setBuffer(buffer);
             data.setBlockEntityInfo(blockEntityInfo);
 
-            return new ChunkData(data);
+            return data;
         }
     }
 
@@ -246,11 +237,16 @@ public final class WrappedLevelChunkData {
         static {
             FuzzyReflection reflection = FuzzyReflection.fromClass(HANDLE_TYPE, true);
 
-            LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(reflection.getConstructor(FuzzyMethodContract.newBuilder()
-            		.parameterDerivedOf(MinecraftReflection.getPacketDataSerializerClass())
-            		.parameterExactType(int.class)
-            		.parameterExactType(int.class)
-            		.build()));
+            if (MinecraftVersion.v26_3.atOrAbove()) {
+                LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE,
+                        BitSet.class, BitSet.class, BitSet.class, BitSet.class, List.class, List.class);
+            } else {
+                LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(reflection.getConstructor(FuzzyMethodContract.newBuilder()
+                        .parameterDerivedOf(MinecraftReflection.getPacketDataSerializerClass())
+                        .parameterExactType(int.class)
+                        .parameterExactType(int.class)
+                        .build()));
+            }
             BIT_SET_ACCESSORS = Accessors.getFieldAccessorArray(HANDLE_TYPE, BitSet.class, true);
             BYTE_ARRAY_LIST_ACCESSORS = Accessors.getFieldAccessorArray(HANDLE_TYPE, List.class, true);
 
@@ -422,6 +418,10 @@ public final class WrappedLevelChunkData {
          */
         public static LightData fromValues(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask,
                                            List<byte[]> skyUpdates, List<byte[]> blockUpdates) {
+            if (MinecraftVersion.v26_3.atOrAbove()) {
+                return new LightData(LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR.invoke(skyYMask, blockYMask,
+                        emptySkyYMask, emptyBlockYMask, new ArrayList<>(skyUpdates), new ArrayList<>(blockUpdates)));
+            }
             LightData data = new LightData(LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
 
             data.setSkyYMask(skyYMask);
@@ -454,15 +454,11 @@ public final class WrappedLevelChunkData {
 
         static {
             FuzzyReflection reflection = FuzzyReflection.fromClass(HANDLE_TYPE, true);
-
             if (MinecraftVersion.v26_3.atOrAbove()) {
                 BLOCK_ENTITY_INFO_CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE, byte.class, short.class,
                         MinecraftReflection.getBlockEntityTypeClass(), Optional.class);
                 PACKED_XZ_ACCESSOR = new IntegerFieldAccessor(Accessors.getFieldAccessor(HANDLE_TYPE, byte.class, true), Number::byteValue);
                 Y_ACCESSOR = new IntegerFieldAccessor(Accessors.getFieldAccessor(HANDLE_TYPE, short.class, true), Number::shortValue);
-                TAG_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
-                    .typeExact(Optional.class)
-                    .build()));
             } else {
                 List<Field> posFields = reflection.getFieldList(FuzzyFieldContract.newBuilder().typeExact(int.class).build());
 
@@ -470,12 +466,12 @@ public final class WrappedLevelChunkData {
                         MinecraftReflection.getBlockEntityTypeClass(), MinecraftReflection.getNBTCompoundClass());
                 PACKED_XZ_ACCESSOR = Accessors.getFieldAccessor(posFields.get(0));
                 Y_ACCESSOR = Accessors.getFieldAccessor(posFields.get(1));
-                TAG_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
-                    .typeExact(MinecraftReflection.getNBTCompoundClass())
-                    .build()));
             }
             TYPE_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
                     .typeExact(MinecraftReflection.getBlockEntityTypeClass())
+                    .build()));
+            TAG_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
+                    .typeExact(MinecraftVersion.v26_3.atOrAbove() ? Optional.class : MinecraftReflection.getNBTCompoundClass())
                     .build()));
         }
 
@@ -491,7 +487,7 @@ public final class WrappedLevelChunkData {
          * @return the unpacked X-coordinate.
          */
         public int getSectionX() {
-            return (int) PACKED_XZ_ACCESSOR.get(handle) >> 4;
+            return ((int) PACKED_XZ_ACCESSOR.get(handle) & 0xFF) >> 4;
         }
 
         /**
@@ -566,7 +562,7 @@ public final class WrappedLevelChunkData {
         public NbtCompound getAdditionalData() {
             Object tagHandle = TAG_ACCESSOR.get(handle);
             if (MinecraftVersion.v26_3.atOrAbove()) {
-                tagHandle = ((Optional<Object>) tagHandle).orElse(null);
+                tagHandle = ((Optional<?>) tagHandle).orElse(null);
             }
 
             return tagHandle == null ? null : NbtFactory.fromNMSCompound(tagHandle);
@@ -578,11 +574,8 @@ public final class WrappedLevelChunkData {
          * @param additionalData the additional data for this block entity, can be {@code null}
          */
         public void setAdditionalData(@Nullable NbtCompound additionalData) {
-            if (MinecraftVersion.v26_3.atOrAbove()) {
-                TAG_ACCESSOR.set(handle, Optional.ofNullable(additionalData).map(data -> NbtFactory.fromBase(data).getHandle()));
-            } else {
-                TAG_ACCESSOR.set(handle, additionalData == null ? null : NbtFactory.fromBase(additionalData).getHandle());
-            }
+            Object tagHandle = additionalData == null ? null : NbtFactory.fromBase(additionalData).getHandle();
+            TAG_ACCESSOR.set(handle, MinecraftVersion.v26_3.atOrAbove() ? Optional.ofNullable(tagHandle) : tagHandle);
         }
 
         /**
@@ -608,20 +601,16 @@ public final class WrappedLevelChunkData {
          */
         public static BlockEntityInfo fromValues(int sectionX, int sectionZ, int y, MinecraftKey typeKey, @Nullable NbtCompound additionalData) {
             if (MinecraftVersion.v26_3.atOrAbove()) {
-                return new BlockEntityInfo(BLOCK_ENTITY_INFO_CONSTRUCTOR.invoke(
-                    (byte) (sectionX << 4 | sectionZ),
-                    (short) y,
-                    REGISTRY.get(typeKey),
-                    Optional.ofNullable(additionalData).map(data -> NbtFactory.fromBase(data).getHandle())
-                ));
-            } else {
-                return new BlockEntityInfo(BLOCK_ENTITY_INFO_CONSTRUCTOR.invoke(
+                return new BlockEntityInfo(BLOCK_ENTITY_INFO_CONSTRUCTOR.invoke((byte) (sectionX << 4 | sectionZ),
+                        (short) y, REGISTRY.get(typeKey),
+                        Optional.ofNullable(additionalData).map(data -> NbtFactory.fromBase(data).getHandle())));
+            }
+            return new BlockEntityInfo(BLOCK_ENTITY_INFO_CONSTRUCTOR.invoke(
                     sectionX << 4 | sectionZ,
                     y,
                     REGISTRY.get(typeKey),
                     additionalData == null ? null : NbtFactory.fromBase(additionalData).getHandle()
-                ));
-            }
+            ));
         }
     }
 

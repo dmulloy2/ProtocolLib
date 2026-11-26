@@ -49,6 +49,7 @@ import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -62,6 +63,8 @@ import org.junit.jupiter.api.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.injector.StructureCache;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -104,6 +107,16 @@ import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.MessageSignature;
+import net.minecraft.network.protocol.common.ClientboundPostEffectsPacket;
+import net.minecraft.network.protocol.game.ClientboundAddTransientBlockPacket;
+import net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket;
+import net.minecraft.network.protocol.game.ServerboundPunchPacket;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.component.SwingAnimation;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.BrandPayload;
@@ -930,6 +943,116 @@ public class PacketContainerTest {
         Assertions.assertEquals("system", firstData.getProfile().getName());
         Assertions.assertEquals(20, firstData.getLatency());
         Assertions.assertEquals(NativeGameMode.CREATIVE, firstData.getGameMode());
+    }
+
+    @Test
+    public void testTransientBlockPacketCodec() {
+        var transientBlock = new ClientboundAddTransientBlockPacket(new BlockPos(15, -64, 7), Blocks.STONE.defaultBlockState());
+        var decodedBlock = (ClientboundAddTransientBlockPacket) roundTrip(PacketType.Play.Server.ADD_TRANSIENT_BLOCK, transientBlock);
+        assertEquals(transientBlock.getPos(), decodedBlock.getPos());
+        assertEquals(transientBlock.getBlockState(), decodedBlock.getBlockState());
+    }
+
+    @Test
+    public void testPostEffectsPacketCodecs() {
+        var effects = new ClientboundPostEffectsPacket(List.of(Identifier.withDefaultNamespace("creeper")));
+        assertEquals(effects, roundTrip(PacketType.Play.Server.POST_EFFECTS, effects));
+        assertEquals(effects, roundTrip(PacketType.Configuration.Server.POST_EFFECTS, effects));
+    }
+
+    @Test
+    public void testSwingAnimationPacket() {
+        var swing = new ClientboundSwingAnimationPacket(42, InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT);
+        var packet = new PacketContainer(PacketType.Play.Server.SWING_ANIMATION, swing);
+        packet.getHands().write(0, EnumWrappers.Hand.OFF_HAND);
+        var decodedSwing = (ClientboundSwingAnimationPacket) roundTrip(packet.getType(), packet.getHandle());
+        assertEquals(42, decodedSwing.entityId());
+        assertEquals(InteractionHand.OFF_HAND, decodedSwing.hand());
+        assertEquals(SwingAnimation.DEFAULT, decodedSwing.animation());
+        assertEquals(decodedSwing, packet.deepClone().getHandle());
+    }
+
+    @Test
+    public void testPunchPacketCodec() {
+        assertEquals(ServerboundPunchPacket.INSTANCE, roundTrip(PacketType.Play.Client.PUNCH, ServerboundPunchPacket.INSTANCE));
+    }
+
+    @Test
+    public void testOptionalDefaultInstances() {
+        assertEquals(Optional.empty(), StructureCache.newInstance(Optional.class));
+
+        PacketContainer packet = new PacketContainer(PacketType.Play.Server.CHAT);
+        packet.getModifier().writeDefaults();
+        assertEquals(List.of(Optional.empty(), Optional.empty()),
+                packet.getOptionals(Converters.passthrough(Object.class)).getValues());
+        assertNull(packet.getMessageSignatures().read(0));
+    }
+
+    @Test
+    public void testServerChatOptionalFields() {
+        PacketContainer packet = new PacketContainer(PacketType.Play.Server.CHAT);
+        byte[] bytes = new byte[256];
+        bytes[0] = 42;
+        var signature = new WrappedMessageSignature(bytes);
+        var text = WrappedChatComponent.fromText("unsigned content");
+
+        assertEquals(0, packet.getChatComponents().size());
+
+        var signatures = packet.getMessageSignatures();
+        var optionalComponents = packet.getOptionals(BukkitConverters.getWrappedChatComponentConverter());
+        signatures.write(0, signature);
+        optionalComponents.write(1, Optional.of(text));
+
+        assertEquals(1, signatures.size());
+        assertEquals(Optional.class, signatures.getField(0).getType());
+        assertArrayEquals(bytes, signatures.read(0).getBytes());
+        assertEquals(Optional.of(text), optionalComponents.read(1));
+        assertNull(signatures.readSafely(1));
+        signatures.writeSafely(1, signature);
+
+        signatures.write(0, null);
+        assertEquals(Optional.empty(), Accessors.getFieldAccessor(signatures.getField(0)).get(packet.getHandle()));
+        assertNull(signatures.read(0));
+        assertEquals(Optional.of(text), optionalComponents.read(1));
+
+        signatures.writeDefaults();
+        assertNull(signatures.read(0));
+
+        PacketContainer other = new PacketContainer(PacketType.Play.Server.CHAT);
+        signatures.withTarget(other.getHandle()).write(0, signature);
+        assertArrayEquals(bytes, other.getMessageSignatures().read(0).getBytes());
+        assertNull(signatures.read(0));
+    }
+
+    @Test
+    public void testDirectMessageSignatureStructure() {
+        byte[] bytes = new byte[256];
+        bytes[0] = 7;
+        var packed = new MessageSignature.Packed(new MessageSignature(bytes));
+        InternalStructure structure = InternalStructure.getConverter().getSpecific(packed);
+
+        var signatures = structure.getMessageSignatures();
+        assertEquals(1, signatures.size());
+        assertArrayEquals(bytes, signatures.read(0).getBytes());
+
+        byte[] updated = new byte[256];
+        updated[0] = 9;
+        signatures.write(0, new WrappedMessageSignature(updated));
+        assertArrayEquals(updated, signatures.read(0).getBytes());
+    }
+
+    private Object roundTrip(PacketType type, Object handle) {
+        assertEquals(type, PacketRegistry.getPacketType(type.getProtocol(), handle.getClass()));
+        var codec = PacketRegistry.getStreamCodec(handle.getClass());
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), CraftRegistry.getMinecraftRegistry());
+        try {
+            codec.encode(buffer, handle);
+            Object decoded = codec.decode(buffer);
+            assertFalse(buffer.isReadable());
+            return decoded;
+        } finally {
+            buffer.release();
+        }
     }
 
     @Test

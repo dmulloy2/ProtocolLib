@@ -1,127 +1,165 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Field;
-import java.util.BitSet;
-import java.util.List;
-
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.utility.MinecraftReflection;
-
-import org.apache.commons.lang3.builder.EqualsBuilder;
+import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.WrappedLevelChunkData.BlockEntityInfo;
+import com.comphenix.protocol.wrappers.WrappedLevelChunkData.ChunkData;
+import com.comphenix.protocol.wrappers.WrappedLevelChunkData.LightData;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import io.netty.buffer.Unpooled;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.network.protocol.game.ClientboundLightUpdatePacketData;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author Etrayed
- */
-@Disabled // todo: figure this registry update out
-public class WrappedLevelChunkDataTest {
+import java.util.BitSet;
+import java.util.List;
+import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+public class WrappedLevelChunkDataTest {
     @BeforeAll
     public static void initializeBukkitAndNMS() {
-        /*BukkitInitialization.initializeAll();
-
-        ILightAccess access = mock(ILightAccess.class);
-
-        when(access.c(0, 0)).thenReturn(BlockAccessAir.a);
-        when(access.q()).thenReturn(BlockAccessAir.a);
-
-        LightEngine engine = new LightEngine(access, true, true);
-        WorldServer nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
-
-        //when(nmsWorld.s()).thenReturn();
-        // TODO: somehow find a way to always call the real code for all LevelHeightAccessor implementations
-        when(nmsWorld.v_()).thenReturn(256);
-        when(nmsWorld.ai()).thenReturn(16); // LevelHeightAccessor is mocked and therefore always returns 0, there are further methods like this which might cause errors in the future
-
-        when(nmsWorld.l_()).thenReturn(engine);*/
-    }
-
-   //  private final WorldServer nmsWorld;
-
-   // private final Chunk chunk;
-
-    public WrappedLevelChunkDataTest() {
-       /* this.nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
-        this.chunk = new Chunk(nmsWorld, new ChunkCoordIntPair(5, 5));
-
-        IBlockData bellData = BuiltInRegistries.f.a(new MinecraftKey("bell")).o();
-
-        chunk.b(0).a(0, 0, 0, bellData);
-        chunk.a(new TileEntityBell(BlockPosition.b, bellData));*/
+        BukkitInitialization.initializeAll();
     }
 
     @Test
-    public void testChunkData() {
-       /* ClientboundLevelChunkWithLightPacket packet = new ClientboundLevelChunkWithLightPacket(chunk, nmsWorld., null, null, false);
-        PacketContainer container = PacketContainer.fromPacket(packet);
-        Object rawInstance = container.getSpecificModifier(MinecraftReflection.getLevelChunkPacketDataClass()).read(0);
-        Object virtualInstance = BukkitConverters.getWrappedChunkDataConverter().getGeneric(container.getLevelChunkData().read(0));
+    public void testBlockEntityInfo() {
+        var tag = NbtFactory.ofCompound("");
+        tag.put("marker", "preserved");
+        var info = BlockEntityInfo.fromValues(15, 14, -64, new MinecraftKey("chest"), tag);
+        assertEquals(15, info.getSectionX());
+        assertEquals(14, info.getSectionZ());
+        assertEquals(-64, info.getY());
+        assertEquals(new MinecraftKey("chest"), info.getTypeKey());
+        assertEquals("preserved", info.getAdditionalData().getString("marker"));
 
-        assertTrue(new ReflectionEquals(rawInstance, FuzzyReflection.fromClass(rawInstance.getClass(), true)
-                .getFieldListByType(List.class).get(0).getName())
-                .matches(virtualInstance));
-        assertTrue(blockEntitiesEqual(rawInstance, virtualInstance));
-        */
-    }
-
-    private boolean blockEntitiesEqual(Object raw, Object virtual) {
-        if (raw == null && virtual == null) {
-            return true;
-        }
-
-        if (raw == null || virtual == null) {
-            return false;
-        }
-
-        FieldAccessor accessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(raw.getClass(), true)
-                .getField(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
-        List rawList = (List) accessor.get(raw);
-        List virtualList = (List) accessor.get(virtual);
-
-        if (rawList.size() != virtualList.size()) {
-            return false;
-        }
-
-        for (int i = 0; i < rawList.size(); i++) {
-            if (!EqualsBuilder.reflectionEquals(rawList.get(0), virtualList.get(0))) {
-                return false;
-            }
-        }
-
-        return true;
+        info.setSectionX(8);
+        assertEquals(8, info.getSectionX());
+        assertEquals(14, info.getSectionZ());
+        info.setSectionZ(1);
+        info.setY(319);
+        info.setTypeKey(new MinecraftKey("bell"));
+        assertEquals(8, info.getSectionX());
+        assertEquals(1, info.getSectionZ());
+        assertEquals(319, info.getY());
+        assertEquals(new MinecraftKey("bell"), info.getTypeKey());
+        assertEquals("preserved", info.getAdditionalData().getString("marker"));
+        info.setAdditionalData(null);
+        assertNull(info.getAdditionalData());
+        info.setAdditionalData(tag);
+        assertEquals(tag, info.getAdditionalData());
+        assertNull(BlockEntityInfo.fromValues(0, 0, 0, new MinecraftKey("chest")).getAdditionalData());
     }
 
     @Test
-    public void testLightData() {
-        /*ClientboundLevelChunkWithLightPacket packet = new ClientboundLevelChunkWithLightPacket(chunk, nmsWorld.l_(), null, null, false);
-        PacketContainer container = PacketContainer.fromPacket(packet);
-
-        randomizeBitSets(container.getSpecificModifier(MinecraftReflection.getLightUpdatePacketDataClass()).read(0));
-
-        assertTrue(new ReflectionEquals(container.getSpecificModifier(MinecraftReflection.getLightUpdatePacketDataClass()).read(0))
-                .matches(BukkitConverters.getWrappedLightDataConverter().getGeneric(container.getLightUpdateData().read(0))));*/
+    public void testChunkAndLightDataConverters() {
+        PacketContainer packet = createChunkPacket();
+        ChunkData chunk = createChunkData();
+        LightData light = createLightData();
+        packet.getLevelChunkData().write(0, chunk);
+        packet.getLightUpdateData().write(0, light);
+        assertEquals(chunk, packet.getLevelChunkData().read(0));
+        assertEquals(light, packet.getLightUpdateData().read(0));
+        assertSame(chunk.getHandle(), BukkitConverters.getWrappedChunkDataConverter().getGeneric(chunk));
+        assertSame(light.getHandle(), BukkitConverters.getWrappedLightDataConverter().getGeneric(light));
     }
 
-    private void randomizeBitSets(Object lightData) {
-        for (Field field : FuzzyReflection.fromClass(MinecraftReflection.getLightUpdatePacketDataClass(), true).getFieldListByType(BitSet.class)) {
-            try {
-                field.setAccessible(true);
-
-                randomizeBitSet((BitSet) field.get(lightData));
-            } catch (IllegalAccessException ignored) {}
+    @Test
+    public void testChunkAndLightDataCodec() {
+        PacketContainer packet = createChunkPacket();
+        ChunkData chunk = packet.getLevelChunkData().read(0);
+        LightData light = packet.getLightUpdateData().read(0);
+        var raw = (ClientboundLevelChunkWithLightPacket) packet.getHandle();
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), CraftRegistry.getMinecraftRegistry());
+        try {
+            ClientboundLevelChunkWithLightPacket.STREAM_CODEC.encode(buffer, raw);
+            var decoded = ClientboundLevelChunkWithLightPacket.STREAM_CODEC.decode(buffer);
+            assertEquals(12, decoded.x());
+            assertEquals(-9, decoded.z());
+            ChunkData decodedChunk = new ChunkData(decoded.chunkData());
+            assertArrayEquals(new byte[]{1, 2, 3}, decodedChunk.getBuffer());
+            assertArrayEquals(new long[]{4, 5}, decodedChunk.getHeightmaps().get(EnumWrappers.HeightmapType.WORLD_SURFACE));
+            BlockEntityInfo blockEntity = chunk.getBlockEntityInfo().get(0);
+            BlockEntityInfo decodedEntity = decodedChunk.getBlockEntityInfo().get(0);
+            assertEquals(blockEntity, decodedEntity);
+            assertEquals(blockEntity.hashCode(), decodedEntity.hashCode());
+            assertNull(decodedEntity.getAdditionalData());
+            LightData decodedLight = new LightData(decoded.lightData());
+            assertEquals(light.getSkyYMask(), decodedLight.getSkyYMask());
+            assertEquals(light.getBlockYMask(), decodedLight.getBlockYMask());
+            assertEquals(light.getEmptySkyYMask(), decodedLight.getEmptySkyYMask());
+            assertEquals(light.getEmptyBlockYMask(), decodedLight.getEmptyBlockYMask());
+            assertArrayEquals(light.getSkyUpdates().get(0), decodedLight.getSkyUpdates().get(0));
+            assertArrayEquals(light.getBlockUpdates().get(0), decodedLight.getBlockUpdates().get(0));
+            assertFalse(buffer.isReadable());
+        } finally {
+            buffer.release();
         }
     }
 
-    private void randomizeBitSet(BitSet bitSet) {
-        for (int i = 0; i < bitSet.size(); i++) {
-            if (Math.random() >= 0.5D) {
-                bitSet.set(i);
-            }
-        }
+    @Test
+    public void testChunkCloneIsIndependent() {
+        PacketContainer packet = createChunkPacket();
+        ChunkData chunk = packet.getLevelChunkData().read(0);
+        ChunkData clone = packet.deepClone().getLevelChunkData().read(0);
+        assertArrayEquals(chunk.getBuffer(), clone.getBuffer());
+        assertEquals(chunk.getBlockEntityInfo().get(0), clone.getBlockEntityInfo().get(0));
+
+        // The constructor must retain a mutable list even when its input was List.of(...).
+        chunk.getBlockEntityInfo().clear();
+        chunk.getBuffer()[0] = 9;
+        chunk.getHeightmaps().get(EnumWrappers.HeightmapType.WORLD_SURFACE)[0] = 99;
+        assertTrue(chunk.getBlockEntityInfo().isEmpty());
+        assertEquals(1, clone.getBlockEntityInfo().size());
+        assertArrayEquals(new byte[]{1, 2, 3}, clone.getBuffer());
+        assertArrayEquals(new long[]{4, 5}, clone.getHeightmaps().get(EnumWrappers.HeightmapType.WORLD_SURFACE));
+    }
+
+    @Test
+    public void testChunkSettersPreservePacketCoordinates() {
+        PacketContainer packet = createChunkPacket();
+        ChunkData chunk = packet.getLevelChunkData().read(0);
+        chunk.setBlockEntityInfo(List.of());
+        chunk.setBuffer(new byte[]{9});
+        chunk.setHeightmaps(Map.of());
+        assertTrue(chunk.getBlockEntityInfo().isEmpty());
+        assertTrue(chunk.getHeightmaps().isEmpty());
+        assertArrayEquals(new byte[]{9}, chunk.getBuffer());
+        var raw = (ClientboundLevelChunkWithLightPacket) packet.getHandle();
+        assertEquals(12, raw.x());
+        assertEquals(-9, raw.z());
+    }
+
+    @Test
+    public void testLightMaskSetterPreservesOtherMasks() {
+        LightData light = createLightData();
+        light.setSkyYMask(BitSet.valueOf(new long[]{16}));
+        assertEquals(BitSet.valueOf(new long[]{16}), ((ClientboundLightUpdatePacketData) light.getHandle()).skyYMask());
+        assertEquals(BitSet.valueOf(new long[]{2}), light.getBlockYMask());
+        assertEquals(BitSet.valueOf(new long[]{4}), light.getEmptySkyYMask());
+        assertEquals(BitSet.valueOf(new long[]{8}), light.getEmptyBlockYMask());
+    }
+
+    private ChunkData createChunkData() {
+        var blockEntity = BlockEntityInfo.fromValues(15, 8, -64, new MinecraftKey("chest"));
+        return ChunkData.fromValues(Map.of(EnumWrappers.HeightmapType.WORLD_SURFACE, new long[]{4, 5}),
+                new byte[]{1, 2, 3}, List.of(blockEntity));
+    }
+
+    private LightData createLightData() {
+        return LightData.fromValues(BitSet.valueOf(new long[]{1}), BitSet.valueOf(new long[]{2}),
+                BitSet.valueOf(new long[]{4}), BitSet.valueOf(new long[]{8}),
+                List.of(new byte[2048]), List.of(new byte[2048]));
+    }
+
+    private PacketContainer createChunkPacket() {
+        return PacketContainer.fromPacket(new ClientboundLevelChunkWithLightPacket(12, -9,
+                (ClientboundLevelChunkPacketData) createChunkData().getHandle(),
+                (ClientboundLightUpdatePacketData) createLightData().getHandle()));
     }
 }
