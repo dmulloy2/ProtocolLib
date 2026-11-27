@@ -217,7 +217,7 @@ public class CommandFilter extends CommandBase {
     private boolean uninitialized;
     
     public CommandFilter(ErrorReporter reporter, Plugin plugin, ProtocolConfig config) {
-        super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 2);
+        super(reporter, "protocol.command.filter", NAME, 2);
         this.plugin = plugin;
         this.config = config;
         

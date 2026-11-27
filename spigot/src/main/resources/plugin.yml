@@ -14,23 +14,23 @@ commands:
   protocol:
     description: Performs administrative tasks regarding ProtocolLib.
     usage: /<command> config|check|update|timings|listeners|version|dump
-    permission: protocol.admin
+    permission: protocol.command.protocol
     permission-message: You don't have <permission>
   packet:
     description: Add or remove a simple packet listener.
     usage: /<command> add|remove|names client|server [ID start]-[ID stop] [detailed]
-    permission: protocol.admin
+    permission: protocol.command.packet
     permission-message: You don't have <permission>
   filter:
     description: Add or remove programmable filters to the packet listeners.
     usage: /<command> add|remove name [ID start]-[ID stop]
     aliases: [packet_filter]
-    permission: protocol.admin
+    permission: protocol.command.filter
     permission-message: You don't have <permission>
   packetlog:
     description: Logs hex representations of packets to a file or console
     usage: /<command> <protocol> <sender> <packet> [location]
-    permission: protocol.admin
+    permission: protocol.command.packetlog
     permission-message: You don't have <permission>
 
 permissions:
@@ -42,6 +42,14 @@ permissions:
   protocol.admin:
     description: Able to initiate the update process, and can configure debug mode.
     default: op
+    children:
+      protocol.command.filter: true
+      protocol.command.packet: true
+      protocol.command.packetlog: true
+      protocol.command.protocol: true
   protocol.info:
     description: Can read update notifications and error reports.
     default: op
+    children:
+      protocol.info.error: true
+      protocol.info.notifications: true

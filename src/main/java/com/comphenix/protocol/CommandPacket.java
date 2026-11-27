@@ -96,7 +96,7 @@ class CommandPacket extends CommandBase {
     private final CommandFilter filter;
     
     public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, CommandFilter filter, ProtocolManager manager) {
-        super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
+        super(reporter, "protocol.command.packet", NAME, 1);
         this.plugin = plugin;
         this.logger = logger;
         this.manager = manager;
